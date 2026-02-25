@@ -24,12 +24,11 @@ io.on("connection", (socket) => {
   // Socket auto connect khi login vô
   socket.on("identity", async (userId) => {
     try {
-      console.log({ userId })
+      ({ userId })
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
         userId,
         socketId: socket.id
       })
-      console.log(`✅ User ${userId} connected with socket ${socket.id}`);
     } catch (error) {
       console.error('❌ Identity error:', error.response?.data || error.message);
     }
@@ -57,7 +56,6 @@ io.on("connection", (socket) => {
 
   // Socket join room
   socket.on("join-room", async ({ roomId }) => {
-    console.log({ roomId })
     socket.join(roomId)
   })
 
@@ -68,7 +66,6 @@ io.on("connection", (socket) => {
   })
 
   socket.on("disconnect", (reason) => {
-    console.log("❌ User disconnected:", socket.id, "| reason:", reason);
   });
 
   socket.on("error", (err) => {

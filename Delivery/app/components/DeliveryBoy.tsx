@@ -10,7 +10,7 @@ const DeliveryBoy = async () => {
 
   const deliveryBoyId = session?.user?.id;
 
-  const orders = await Orders.find({ assignedDeliveryBoy: deliveryBoyId, deliveryOTPVerification: true })
+  const orders = await Orders?.find({ assignedDeliveryBoy: deliveryBoyId, deliveryOTPVerification: true })
 
   const today = new Date().toDateString();
 

@@ -209,7 +209,7 @@ const Checkout = () => {
                 }))
                 setSearchLoading(false)
             } catch (error: any) {
-                console.log({ error })
+                console.error({ error })
                 setSearchLoading(false)
             } finally {
                 setSearchLoading(false)

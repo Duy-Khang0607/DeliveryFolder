@@ -68,7 +68,6 @@ const MyOrders = () => {
     const socket = getSocket()
 
     socket?.on('order-assigned', (data) => {
-      console.log({ data }) 
       const { orderId, assignmentDeliveryBoy } = data
 
       setOrders((prevOrders) => {

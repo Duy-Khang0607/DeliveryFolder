@@ -29,7 +29,6 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
 
     // Khi có đơn hàng mới, cập nhật số tiền earning tương ứng theo filter
     socket?.on('new-order', (newOrder) => {
-      console.log({newOrder})
       const orderAmount = Number(newOrder?.totalAmount) || 0;
 
       if (filter === "today") {

@@ -16,7 +16,8 @@ interface IDeliveryLocation {
     longitude: number;
 }
 
-const DeliveryBoyDashboard = ({ earning }: { earning: number }) => {
+const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) => {
+    const [earning, setEarning] = useState(initialEarning);
     const [assignments, setAssignments] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -57,7 +58,7 @@ const DeliveryBoyDashboard = ({ earning }: { earning: number }) => {
     const handleAccept = async (assignmentId: string) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/delivery/assignment/${assignmentId}/accept-assignment`);
+            await axios.get(`/api/delivery/assignment/${assignmentId}/accept-assignment`);
         } catch (error) {
             console.error('Error accepting assignment:', error);
             setLoading(false);
@@ -98,7 +99,7 @@ const DeliveryBoyDashboard = ({ earning }: { earning: number }) => {
     const sendOTP = async (orderId: string) => {
         setLoadingMarkAsDelivered(true);
         try {
-            const response = await axios.post(`/api/delivery/otp/send`, { orderId });
+            await axios.post(`/api/delivery/otp/send`, { orderId });
             setShowOTP(true);
         } catch (error) {
             console.error('Error sending OTP:', error);
@@ -115,6 +116,7 @@ const DeliveryBoyDashboard = ({ earning }: { earning: number }) => {
         try {
             await axios.post(`/api/delivery/otp/verify`, { orderId, otp });
             setOtp('');
+            setEarning((prev) => prev + 40);
             await fetchCurrentOrder();
             await getAssignments();
             window.scrollTo({ top: 0, behavior: "smooth" });
