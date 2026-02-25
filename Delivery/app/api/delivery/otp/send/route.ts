@@ -24,8 +24,6 @@ export async function POST(req: NextRequest) {
 
         await sendEmail(order.user.email, "Your delivery OTP", `<h2> Your delivery OTP is <strong>${otp}</strong></h2>`)
 
-        await emitEventHandler("order-delivered", { orderId: order?._id, success: true, message: "OTP sent successfully" })
-
         return NextResponse.json({ success: true, message: "OTP sent successfully" }, { status: 200 })
 
     } catch (error) {

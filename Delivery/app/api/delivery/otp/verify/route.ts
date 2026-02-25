@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
             { $set: { status: 'completed', assignedTo: null } }
         )
 
+        await emitEventHandler("order-delivered", { orderId: order?._id, success: true, message: "OTP sent successfully" })
+
         return NextResponse.json({ success: true, message: "OTP verified successfully" }, { status: 200 })
 
     } catch (error) {
