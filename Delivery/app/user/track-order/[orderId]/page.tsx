@@ -32,7 +32,7 @@ const TrackOrder = () => {
     latitude: 0,
     longitude: 0,
   })
-  const [orderDelivered, setOrderDelivered] = useState<boolean>(false)
+  const [orderDelivered, setOrderDelivered] = useState<any>({})
 
   const fetchOrder = async () => {
     try {
@@ -68,9 +68,8 @@ const TrackOrder = () => {
     socket?.on('order-delivered', (data) => {
       console.log({ data })
       if (data?.success) {
-        setOrderDelivered(data?.success)
+        setOrderDelivered(data)
       }
-      setOrderDelivered(false)
     })
 
     return () => {
@@ -102,7 +101,7 @@ const TrackOrder = () => {
         </motion.div>
       ) : (
         <>
-          {orderDelivered ? (
+          {orderDelivered?.success ? (
             <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -114,7 +113,7 @@ const TrackOrder = () => {
               }}
               className='flex flex-col items-center justify-center min-h-screen'
             >
-              <h2 className="text-2xl font-bold mb-2 text-green-700">My orders successfully delivered</h2>
+              <h2 className="text-2xl font-bold mb-2 text-green-700">My orders {orderDelivered?.orderId?.toString()?.slice(-6)} successfully delivered</h2>
               <p className="mb-4 text-green-600">Thank you for using our service.</p>
               <motion.button
                 whileTap={{ scale: 0.97 }}
