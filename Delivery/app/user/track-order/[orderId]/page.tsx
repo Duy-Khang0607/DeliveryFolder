@@ -7,7 +7,7 @@ import { IOrder } from "@/app/models/orders.model"
 import { RootState } from "@/app/redux/store"
 import { useSelector } from "react-redux"
 import { motion } from "framer-motion"
-import { ArrowLeft, Box, MoveRight } from "lucide-react"
+import { ArrowLeft, Box, MoveRight, CircleCheckBig, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import LiveMap from "@/app/components/LiveMap"
 import { getSocket } from "@/app/lib/socket"
@@ -102,28 +102,70 @@ const TrackOrder = () => {
       ) : (
         <>
           {orderDelivered?.success ? (
-            <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: [0, -10, 0], opacity: 1 }}
-              transition={{
-                delay: 0.2,
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className='flex flex-col items-center justify-center min-h-screen'
-            >
-              <h2 className="text-2xl font-bold mb-2 text-green-700">My orders {orderDelivered?.orderId?.toString()?.slice(-6)} successfully delivered</h2>
-              <p className="mb-4 text-green-600">Thank you for using our service.</p>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                whileHover={{ scale: 1.06 }}
-                onClick={() => router.push('/user/my-orders')}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-5 py-2 mt-2 transition"
+            <div className='flex items-center justify-center min-h-screen'>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className='relative bg-white rounded-2xl shadow-xl border border-gray-100 p-8 max-w-sm w-full text-center overflow-hidden'
               >
-                View my orders <MoveRight className='w-5 h-5' />
-              </motion.button>
-            </motion.div>
+                {/* Confetti decorations */}
+                <div className="absolute top-0 left-0 w-full h-24 pointer-events-none overflow-hidden">
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="absolute top-3 left-6 w-2 h-2 bg-green-400 rounded-full" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="absolute top-5 left-16 w-3 h-1 bg-yellow-400 rounded-full rotate-45" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="absolute top-8 left-28 w-2 h-2 bg-red-400 rounded-full" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="absolute top-2 right-20 w-2 h-2 bg-blue-400 rounded-full" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="absolute top-6 right-8 w-3 h-1 bg-pink-400 rounded-full -rotate-45" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="absolute top-10 right-28 w-2 h-2 bg-orange-400 rounded-full" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="absolute top-4 left-40 w-1.5 h-1.5 bg-purple-400 rounded-full" />
+                  <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="absolute top-12 left-10 w-3 h-1 bg-teal-400 rounded-full rotate-12" />
+                </div>
+
+                {/* Checkmark icon */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                  className='mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center'
+                >
+                  <CircleCheckBig className='w-10 h-10 text-green-600' strokeWidth={2} />
+                </motion.div>
+
+                {/* Title */}
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">🎉 Delivered!</h2>
+                <p className="text-gray-600 text-sm mb-1">
+                  Order <span className="font-semibold text-gray-800">#{orderDelivered?.orderId?.toString()?.slice(-6)}</span> has arrived.
+                </p>
+                <p className="text-gray-400 text-sm mb-5">Thank you for shopping with us.</p>
+
+                {/* Divider */}
+                <div className="border-t border-dashed border-gray-200 my-4" />
+
+                {/* Info rows */}
+                <div className="flex justify-between items-center mb-3 px-2">
+                  <span className="text-gray-500 text-sm">Estimated delivery:</span>
+                  <span className="text-green-600 font-semibold text-sm flex items-center gap-1">
+                    Completed <Check className="w-4 h-4" />
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-6 px-2">
+                  <span className="text-gray-500 text-sm">Payment status:</span>
+                  <span className="text-green-600 font-semibold text-sm flex items-center gap-1">
+                    Paid <Check className="w-4 h-4" />
+                  </span>
+                </div>
+
+                {/* Button */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.03 }}
+                  onClick={() => router.push('/user/my-orders')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl px-5 py-3 transition cursor-pointer"
+                >
+                  Track Another Order
+                </motion.button>
+              </motion.div>
+            </div>
           ) : (
             <>
               <div className='flex flex-row items-center justify-start gap-4 border border-gray-300 rounded-md p-4 shadow-md overflow-hidden w-full h-full'>
