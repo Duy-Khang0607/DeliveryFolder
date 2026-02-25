@@ -151,9 +151,6 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            // onClick={() => {
-                            //     router.push(`/user/track-order/${orders?._id.toString()}`)
-                            // }}
                             className='flex flex-row justify-center items-center gap-2 bg-green-600 text-white rounded-2xl p-2 border border-green-200 shadow-md hover:shadow-xl transition-all duration-300 w-full cursor-pointer text-sm md:text-lg'>
 
                             {status === 'Delivered' ? (

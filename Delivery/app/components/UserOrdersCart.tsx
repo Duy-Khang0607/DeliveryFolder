@@ -59,6 +59,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {
+            console.log({ data })
             if (data?.orderId?.toString() === orders?._id.toString()) {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }
