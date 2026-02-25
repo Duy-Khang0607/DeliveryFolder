@@ -1,4 +1,5 @@
 import connectDB from "@/app/lib/db"
+import { emitEventHandler } from "@/app/lib/emitEventHandler"
 import { sendEmail } from "@/app/lib/mailer"
 import Orders from "@/app/models/orders.model"
 import { NextRequest, NextResponse } from "next/server"
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
         await order.save()
 
         await sendEmail(order.user.email, "Your delivery OTP", `<h2> Your delivery OTP is <strong>${otp}</strong></h2>`)
+
+        await emitEventHandler("order-delivered", { orderId: order?._id, success: true, message: "OTP sent successfully" })
 
         return NextResponse.json({ success: true, message: "OTP sent successfully" }, { status: 200 })
 

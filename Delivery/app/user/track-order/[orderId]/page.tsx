@@ -7,7 +7,7 @@ import { IOrder } from "@/app/models/orders.model"
 import { RootState } from "@/app/redux/store"
 import { useSelector } from "react-redux"
 import { motion } from "framer-motion"
-import { ArrowLeft, Box } from "lucide-react"
+import { ArrowLeft, Box, MoveRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import LiveMap from "@/app/components/LiveMap"
 import { getSocket } from "@/app/lib/socket"
@@ -32,6 +32,7 @@ const TrackOrder = () => {
     latitude: 0,
     longitude: 0,
   })
+  const [orderDelivered, setOrderDelivered] = useState<boolean>(false)
 
   const fetchOrder = async () => {
     try {
@@ -56,14 +57,25 @@ const TrackOrder = () => {
 
   useEffect(() => {
     const socket = getSocket()
+
     socket?.on('update-deliveryBoy-location', (data) => {
       setDeliveryBoyLocation({
         latitude: data?.location?.coordinates?.[1],
         longitude: data?.location?.coordinates?.[0],
       })
     })
+
+    socket?.on('order-delivered', (data) => {
+      console.log({ data })
+      if (data?.success) {
+        setOrderDelivered(data?.success)
+      }
+      setOrderDelivered(false)
+    })
+
     return () => {
       socket.off('update-deliveryBoy-location')
+      socket.off('order-delivered')
     }
   }, [order])
 
@@ -90,37 +102,61 @@ const TrackOrder = () => {
         </motion.div>
       ) : (
         <>
-          {/* Titiel */}
-          <div className='flex flex-row items-center justify-start gap-4 border border-gray-300 rounded-md p-4 shadow-md overflow-hidden w-full h-full'>
-            <motion.button
-              onClick={() => router.back()}
-              whileTap={{ scale: 0.97 }}
-              whileHover={{ scale: 1.06 }}
-              className='flex items-center gap-2 text-green-700 hover:text-green-800 font-semibold cursor-pointer bg-white shadow-lg p-2 rounded-xl'>
-              <ArrowLeft className='w-5 h-5' />
-              <span className='hidden md:flex font-semibold tracking-wide'>Back to home</span>
-            </motion.button>
+          {orderDelivered ? (
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: [0, -10, 0], opacity: 1 }}
+              transition={{
+                delay: 0.2,
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className='flex flex-col items-center justify-center min-h-screen'
+            >
+              <h2 className="text-2xl font-bold mb-2 text-green-700">My orders successfully delivered</h2>
+              <p className="mb-4 text-green-600">Thank you for using our service.</p>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.06 }}
+                onClick={() => router.push('/user/my-orders')}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-5 py-2 mt-2 transition"
+              >
+                View my orders <MoveRight className='w-5 h-5' />
+              </motion.button>
+            </motion.div>
+          ) : (
+            <>
+              <div className='flex flex-row items-center justify-start gap-4 border border-gray-300 rounded-md p-4 shadow-md overflow-hidden w-full h-full'>
+                <motion.button
+                  onClick={() => router.back()}
+                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.06 }}
+                  className='flex items-center gap-2 text-green-700 hover:text-green-800 font-semibold cursor-pointer bg-white shadow-lg p-2 rounded-xl'>
+                  <ArrowLeft className='w-5 h-5' />
+                  <span className='hidden md:flex font-semibold tracking-wide'>Back to home</span>
+                </motion.button>
 
-            <div className='flex flex-col gap-2'>
-              <h1 className='text-green-700 font-extrabold text-2xl md:text-3xl tracking-wide'>Track order</h1>
-              <p className='mb-4'>Order: <span className="text-red-500 text-sm font-semibold">#{order?._id?.toString()?.slice(-6)}</span> - <span className="text-green-700 font-semibold">{order?.status}</span></p>
-            </div>
-          </div >
+                <div className='flex flex-col gap-2'>
+                  <h1 className='text-green-700 font-extrabold text-2xl md:text-3xl tracking-wide'>Track order</h1>
+                  <p className='mb-4'>Order: <span className="text-red-500 text-sm font-semibold">#{order?._id?.toString()?.slice(-6)}</span> - <span className="text-green-700 font-semibold">{order?.status}</span></p>
+                </div>
+              </div>
 
-          {/* Map */}
-          <div className="w-full h-full">
-            <LiveMap userLocation={userLocation} deliveryLocation={deliveryBoyLocation} />
-          </div>
+              <div className="w-full h-full">
+                <LiveMap userLocation={userLocation} deliveryLocation={deliveryBoyLocation} />
+              </div>
 
-          {/* Chat */}
-          {
-            order?._id && userData?._id && (
-              <DeliveryChat
-                orderId={order._id}
-                deliveryBoyId={userData._id} 
-                role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
-            )
-          }
+              {
+                order?._id && userData?._id && (
+                  <DeliveryChat
+                    orderId={order._id}
+                    deliveryBoyId={userData._id}
+                    role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
+                )
+              }
+            </>
+          )}
         </>
       )}
     </div >
