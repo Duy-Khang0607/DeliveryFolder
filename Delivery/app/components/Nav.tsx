@@ -6,12 +6,12 @@ import Image from 'next/image'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signOut } from 'next-auth/react'
-import { useDebouncedCallback } from 'use-debounce'
 import { useSelector } from 'react-redux'
 import { RootState } from '../redux/store'
 import { useRouter } from 'next/navigation'
 import { IOrder } from '../models/orders.model'
 import axios from 'axios'
+import profileImage from '../assets/profile.jpg'
 
 const Nav = ({ user }: { user: IUser }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -147,7 +147,7 @@ const Nav = ({ user }: { user: IUser }) => {
 
         {/* User Image */}
         <div ref={avatarRef} className='relative min-w-[30px]' onClick={() => setShowUserMenu(prev => !prev)}>
-          <Image src={user?.image || ''} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer'
+          <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer'
           />
         </div>
 
@@ -163,8 +163,8 @@ const Nav = ({ user }: { user: IUser }) => {
               className='absolute top-16 right-10 w-48 bg-white rounded-2xl shadow-md p-4'
             >
               {/* Profile */}
-              <Link href='/profile' className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
-                <Image src={user?.image || ''} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
+              <Link href='#' className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
+                <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
                 <div className='flex flex-col gap-1'>
                   <span className='text-black font-bold text-xs'>{user?.name.toUpperCase()}</span>
                   <span className='text-green-400 text-xs w-auto font-semibold tracking-wide'>{user?.role?.toUpperCase()}</span>

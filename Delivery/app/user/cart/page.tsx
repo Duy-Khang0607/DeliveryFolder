@@ -14,16 +14,18 @@ const Cart = () => {
     const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state?.cart as ICartSlice)
 
     return (
-        <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto min-h-screen mt-8 mb-24 relative'>
+        <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
             {/* Back to home */}
-            <ButtonHome />
+            <div className='min-h-[40px]'>
+                <ButtonHome />
+            </div>
 
             {/* Title */}
             <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className='absolute top-16 left-1/2 -translate-1/2 gap-2 flex flex-row w-full justify-center'
+                className='gap-2 flex flex-row w-full justify-center mt-4 mb-5'
             >
                 <ShoppingBag className='w-10 h-10 text-gray-400' />
                 <span className='text-green-700 text-2xl sm:text-3xl md:text-4xl font-bold'>Your Shopping Cart</span>
@@ -32,7 +34,7 @@ const Cart = () => {
             {/* Items */}
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-5'>
                 {/* Items ordered */}
-                <div className='lg:col-span-2 pt-17'>
+                <div className='lg:col-span-2'>
                     <AnimatePresence>
                         {cartData?.length === 0 ? (
                             <motion.div
@@ -95,8 +97,7 @@ const Cart = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className='w-full p-5 bg-white shadow-2xl rounded-2xl flex flex-col mb-4 border border-gray-100 h-fit 
-                    sticky lg:mt-17'
+                    className='w-full p-5 bg-white shadow-2xl rounded-2xl flex flex-col mb-4 border border-gray-100 h-fit sticky'
                 >
                     <div className='flex flex-col gap-2'>
                         {/* Title */}

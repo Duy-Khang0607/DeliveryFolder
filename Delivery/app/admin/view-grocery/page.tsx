@@ -62,29 +62,18 @@ const ViewGrocery = () => {
         </motion.div>
       ) : (
         <>
-          <motion.div className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto py-10 relative'>
+          <motion.div className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
             {/* Back to home */}
-            {/* <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className='w-full h-full flex flex-row justify-between'
-            >
-              <motion.button onClick={() => router.push('/')} whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.06 }} className='bg-white shadow-2xl w-auto rounded-xl text-green-700 text-center flex flex-row gap-2 p-1.5 hover:bg-green-200 cursor-pointer transition-all duration-200 items-center'>
-                <ArrowLeft className='w-5 h-5' />
-                <span className='hidden md:flex font-semibold tracking-wide'>Back to home</span>
-              </motion.button>
-
-              <motion.h1 className=' text-lg md:text-2xl text-green-700 font-extrabold'>Manage Grocery</motion.h1>
-            </motion.div> */}
-            <ButtonHome />
+            <div className='min-h-[40px]'>
+              <ButtonHome />
+            </div>
 
             {/* Search */}
             <motion.form
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className='w-full h-full flex flex-row justify-center items-center mt-5'
+              className='w-full h-full flex flex-row justify-center items-center'
               onSubmit={handleSearchGrocery}
             >
               <div className='relative w-full max-w-lg'>
@@ -109,7 +98,6 @@ const ViewGrocery = () => {
                 </motion.button>
               </div>
             </motion.form>
-
 
             {filter?.length > 0 ? (
               <div
