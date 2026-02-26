@@ -1,12 +1,13 @@
 'use client'
-import { Leaf, Lock, User, Eye, Loader2 } from 'lucide-react'
+import { Leaf, Lock, User, Eye, Loader2, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react';
 import Image from 'next/image';
 import googleImage from '@/app/assets/google.jpg'
 import Link from 'next/link';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/app/components/Toast'
 
 
 const LoginForm = () => {
@@ -15,8 +16,7 @@ const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-
-    const { data, status } = useSession();
+    const { showToast } = useToast();
 
     const handleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -26,11 +26,17 @@ const LoginForm = () => {
         e.preventDefault();
         try {
             setLoading(true);
-            const response = await signIn('credentials', { email, password, redirect: false });
-            router.push('/');
-
+            const res = await signIn('credentials', { email, password, redirect: false });
+            if (!res?.error) {
+                showToast("Login successfully", "success");
+                router.push('/');
+            } else {
+                showToast('Email or password is incorrect', "error");
+                setLoading(false);
+            }
         } catch (error: any) {
-            console.error({ error: error.response.data });
+            showToast('Please try again later', "error");
+            setLoading(false);
         } finally {
             setLoading(false);
         }
@@ -38,7 +44,6 @@ const LoginForm = () => {
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-center text-center relative">
-
             {/* Title */}
             <motion.div
                 initial={{ opacity: 0 }}
@@ -79,7 +84,7 @@ const LoginForm = () => {
                 <div className='relative w-full flex flex-col gap-3'>
                     <Lock className='w-5 h-5 text-gray-500 absolute top-3.5 left-2.5' />
                     <input type={showPassword ? "text" : "password"} placeholder='Your password' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 pl-10 transition-all duration-300' value={password} onChange={(e) => setPassword(e.target.value)} />
-                    <Eye className='w-5 h-5 text-gray-500 absolute top-3.5 right-2.5' onClick={handleShowPassword} />
+                    {showPassword ? <Eye className='w-5 h-5 text-gray-500 absolute top-3.5 right-2.5 cursor-pointer' onClick={handleShowPassword} /> : <EyeOff className='w-5 h-5 text-gray-500 absolute top-3.5 right-2.5 cursor-pointer' onClick={handleShowPassword} />}
                 </div>
 
                 {/* Button Login */}

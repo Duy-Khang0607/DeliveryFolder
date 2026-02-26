@@ -1,7 +1,7 @@
 'use client'
-import { ArrowLeft, BadgePlus, Upload, Loader2 } from 'lucide-react'
+import { BadgePlus, Upload, Loader2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChangeEvent, FormEvent, useState } from 'react'
+import { ChangeEvent, useState } from 'react'
 import Image from 'next/image'
 import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
@@ -73,7 +73,6 @@ const AddGrocery = () => {
   const disableAdd = name?.length > 0 && category?.length > 0 && unit?.length > 0 && price?.length > 0;
   const [open, setOpen] = useState(false);
   const { showToast } = useToast();
-  const router = useRouter()
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
