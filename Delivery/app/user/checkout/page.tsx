@@ -182,7 +182,7 @@ const Checkout = () => {
                         message: error.message,
                     });
                 }, {
-                // enableHighAccuracy: true,
+                enableHighAccuracy: true,
                 maximumAge: 0,
                 timeout: 10000,
             }
@@ -200,6 +200,7 @@ const Checkout = () => {
                 const res = await axios.get(
                     `/api/geocode/reverse?lat=${position[0]}&lon=${position[1]}`
                 )
+                console.log({res: res?.data})
                 setInfo(prev => ({
                     ...prev,
                     city: res?.data?.address?.city,

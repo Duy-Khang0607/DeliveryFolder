@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Trả lỗi thành công
-        return NextResponse.json({ success: true, message: 'User updated successfully', user }, { status: 200 });
+        return NextResponse.json({ success: true, message: 'Welcome to the Delivery App', user }, { status: 200 });
 
     } catch (error) {
         // Trả lỗi lỗi hệ thống

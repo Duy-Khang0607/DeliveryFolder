@@ -6,7 +6,7 @@ export interface IUser {
     name: string;
     password?: string;
     email: string;
-    mobile?: number;
+    mobile?: string;
     role?: "user" | "admin" | 'deliveryBoy';
     image?: string;
     location?: {
@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema<IUser>({
         unique: true,
     },
     mobile: {
-        type: Number,
+        type: String,
         required: false,
     },
     role: {

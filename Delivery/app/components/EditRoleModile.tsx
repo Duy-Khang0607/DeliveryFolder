@@ -99,7 +99,7 @@ const EditRoleModile = () => {
             {/*Enter mobile number*/}
             <div className='mt-6 w-full md:max-w-100'>
                 <label htmlFor="mobile" className='text-md ml-1 md:text-center'>Enter your mobile number</label>
-                <input type="number" id="mobile" placeholder='0999.....' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500  transition-all duration-300 mt-2' value={mobile} onChange={(e) => setMobile(e.target.value)} />
+                <input type="tel" id="mobile" placeholder='0999.....' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500  transition-all duration-300 mt-2' value={mobile} onChange={(e) => setMobile(e.target.value)} />
             </div>
 
             {/* Button go to home */}
