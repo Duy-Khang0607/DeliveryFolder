@@ -217,6 +217,23 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
+    // Lắng nghe khi đơn hàng đã được hủy phân công
+    useEffect(() => {
+        const socket = getSocket()
+        socket?.on('assignment-canceled', (data) => {
+            console.log({ data })
+            const { message, orderId, assignmentId } = data
+            showToast(message, 'info');
+            setAssignments((prev) => prev?.filter((item: any) =>
+                item?._id?.toString() !== assignmentId?.toString() &&
+                item?.order?._id?.toString() !== orderId?.toString()
+            ))
+        })
+        return () => {
+            socket.off('assignment-canceled')
+        }
+    }, [])
+
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {
