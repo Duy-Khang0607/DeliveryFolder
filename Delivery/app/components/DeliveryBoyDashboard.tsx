@@ -223,13 +223,17 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
             console.log('[DeliveryBoy] order-status-updated received:', data)
             // Chỉ xử lý khi admin đổi status về "Pending" (hủy giao hàng)
             if (data?.status === 'Pending') {
-                showToast('Assignment canceled successfully', 'info')
                 // Loại bỏ assignment có status là "Pending"
                 setAssignments((prev) => prev?.filter((item: any) => item?.order?._id.toString() !== data?.orderId?.toString()))
-                setCurrentOrder(null)
-                setUserlocation({
-                    latitude: 0,
-                    longitude: 0,
+
+                // Chỉ thông báo cho delivery boy đang giao đơn hàng này
+                setCurrentOrder((prev: any) => {
+                    if (prev?.order?._id?.toString() === data?.orderId?.toString()) {
+                        showToast('Assignment canceled successfully', 'info')
+                        setUserlocation({ latitude: 0, longitude: 0 })
+                        return null
+                    }
+                    return prev
                 })
             }
         })

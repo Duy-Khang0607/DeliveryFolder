@@ -3,9 +3,8 @@
 import { IOrder } from "@/app/models/orders.model"
 import axios from "axios"
 import { useEffect, useState } from "react"
-import { ArrowLeft, Box, Boxes } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useRouter } from "next/navigation"
+import { Box, Boxes } from 'lucide-react'
+import { motion } from 'framer-motion'
 import AdminOrdersCart from "@/app/components/AdminOrdersCart"
 import { getSocket } from "@/app/lib/socket"
 import ButtonHome from "@/app/components/ButtonHome"
@@ -14,8 +13,6 @@ import ButtonHome from "@/app/components/ButtonHome"
 const ManageOrders = () => {
     const [orders, setOrders] = useState<IOrder[]>([])
     const [loading, setLoading] = useState(false)
-    const [isLeaving, setIsLeaving] = useState(false)
-    const router = useRouter()
 
     const fetchOrder = async () => {
         setLoading(true)
@@ -39,11 +36,13 @@ const ManageOrders = () => {
 
         // Đơn hàng mới được tạo
         socket?.on('new-order', (newOrder) => {
+            console.log('[Admin] new-order received:', newOrder)
             setOrders((prev) => [newOrder, ...prev!])
         })
 
         // Đơn hàng được phân công cho delivery boy ( khi nhấn Accpect đơn hàng )
         socket?.on('order-assigned', (data) => {
+            console.log('[Admin] order-assigned received:', data)
             const { orderId, assignmentDeliveryBoy } = data
 
             setOrders((prevOrders) => {
