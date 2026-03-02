@@ -229,7 +229,7 @@ const Nav = ({ user }: { user: IUser }) => {
 
             {/* Profile */}
             <div className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center gap-2 p-2 mt-5 shadow-md shadow-white/50 border-white border-1 '>
-              <Image src={user?.image || ''} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
+              <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
               <div className='flex flex-col gap-1'>
                 <span className='text-white font-bold text-sm'>{user?.name.toUpperCase()}</span>
                 <span className='text-green-400 text-xs w-auto font-bold tracking-wide'>{user?.role?.toUpperCase()}</span>

@@ -6,7 +6,6 @@ import Image from 'next/image'
 import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
-import { useRouter } from 'next/navigation'
 import ButtonHome from '@/app/components/ButtonHome'
 
 const categories = [
@@ -103,6 +102,12 @@ const AddGrocery = () => {
       const response: any = await axios.post('/api/auth/admin/add-grocery', formData)
       if (response?.data?.success) {
         showToast(response?.data?.message, "success");
+        setName('')
+        setCategory('')
+        setUnit('')
+        setPrice('')
+        setBackendImage(null)
+        setPreview(null)
       } else {
         showToast(response?.data?.message, "error");
       }
@@ -122,7 +127,7 @@ const AddGrocery = () => {
       </div>
 
       {/* Form add grocery */}
-      <div className='flex justify-center items-center h-full'>
+      <div className='flex justify-center items-center min-h-[calc(100vh-100px)]'>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{
@@ -136,7 +141,7 @@ const AddGrocery = () => {
               <BadgePlus className='w-5 h-5 text-green-700' />
               Add Grocery
             </div>
-            <p className='text-sm max-w-sm md:max-w-xl'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis id quasi, aspernatur harum quibusdam pariatur ducimus atque culpa cum veniam? Repellat, cupiditate! Maiores autem corrupti quo animi illo, dolorum laborum.</p>
+            <p className='text-sm max-w-sm md:max-w-xl'>Add new grocery item to your store</p>
           </div>
 
           <form className='flex flex-col gap-3' >
@@ -172,13 +177,13 @@ const AddGrocery = () => {
               <input required type="number" placeholder='$' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
 
-            <div className='relative w-full md:max-w-[160px] flex flex-row gap-3 text-green-700 items-center'>
-              <Upload className='w-5 h-5 absolute top-3.5 left-2.5' />
+            <div className='w-full md:max-w-[160px] h-auto flex flex-row gap-3 text-green-700 items-center'>
               <label
                 htmlFor="file-upload"
-                className="w-[160px] shrink-0 flex-none p-3 h-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 pl-10 transition-all duration-300 cursor-pointer" onClick={(e) => e.stopPropagation()}
+                className="w-[160px] shrink-0 flex-none p-3 h-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 pl-10 transition-all duration-300 cursor-pointer relative" onClick={(e) => e.stopPropagation()}
               >
                 Upload image
+                <Upload className='w-5 h-5 absolute top-3.5 left-2.5' />
               </label>
               <input
                 type="file"

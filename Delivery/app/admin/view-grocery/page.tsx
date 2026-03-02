@@ -4,10 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Box, Edit, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Box, Edit, Search, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import FormEditGrocery from '@/app/components/FormEditGrocery'
 import ButtonHome from '@/app/components/ButtonHome'
+import { useToast } from '@/app/components/Toast'
+import PopupImage from '@/app/HOC/PopupImage'
 
 const ViewGrocery = () => {
   const [groceries, setGrocery] = useState<IGrocery[]>([])
@@ -16,14 +18,26 @@ const ViewGrocery = () => {
   const [editItem, setEditItem] = useState<IGrocery | null>(null)
   const [search, setSearch] = useState<string>('')
   const [filter, setFilter] = useState<IGrocery[]>([])
+  const { showToast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10
+  const [open, setOpen] = useState(false)
 
 
-  const fetchGrocery = async () => {
+  const fetchGrocery = async (page: number = 1) => {
     try {
       setLoading(true)
-      const res = await axios.get('/api/auth/admin/get-grocery')
-      setGrocery(res?.data)
-      setFilter(res?.data)
+      const res = await axios.get(`/api/auth/admin/get-grocery?page=${page}&limit=${itemsPerPage}`)
+      if (res?.data?.success) {
+        setGrocery(res?.data?.groceries)
+        setFilter(res?.data?.groceries)
+        setCurrentPage(res?.data?.pagination?.currentPage)
+        setTotalPages(res?.data?.pagination?.totalPages)
+        setTotalItems(res?.data?.pagination?.totalItems || 0)
+      }
+      setLoading(false)
     } catch (error) {
       console.error({ error })
       setLoading(false)
@@ -32,15 +46,44 @@ const ViewGrocery = () => {
     }
   }
 
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      fetchGrocery(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      fetchGrocery(currentPage + 1)
+    }
+  }
+
   useEffect(() => {
-    fetchGrocery()
-  }, [])
+    fetchGrocery(currentPage)
+  }, [itemsPerPage, currentPage])
 
   const handleSearchGrocery = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const value = search.toLowerCase()
 
     setFilter(groceries?.filter((item: IGrocery) => item?.name?.toLowerCase()?.includes(value) || item?.category?.toLowerCase()?.includes(value)))
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this grocery?')) return
+    try {
+      const res = await axios.delete(`/api/auth/admin/delete-grocery`, { data: { id: id } })
+      console.log({ res })
+      if (res?.data?.success) {
+        showToast(res?.data?.message, "success");
+        await fetchGrocery()
+      } else {
+        showToast(res?.data?.message, "error");
+      }
+    } catch (error) {
+      console.error({ error })
+      showToast('System error', "error");
+    }
   }
 
 
@@ -99,55 +142,74 @@ const ViewGrocery = () => {
               </div>
             </motion.form>
 
+            {/* Grocery items */}
             {filter?.length > 0 ? (
-              <div
-                className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 mt-10 w-full'
-              >
-                {filter?.map((item: IGrocery, index: number) => {
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className='w-full h-full flex flex-row justify-between items-center px-4 py-5 rounded-2xl shadow-xl border border-gray-200 bg-white gap-4 hover:shadow-2xl transition-all duration-200 cursor-pointer'
-                    >
-                      <div className='flex flex-row items-center gap-4 w-full'>
-                        <Image src={item?.image[0]} alt='grocery' width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl' />
+              <>
+                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 py-5 w-full'>
+                  {filter?.map((item: IGrocery, index: number) => {
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className='w-full h-full flex flex-row justify-between items-center px-4 py-5 rounded-2xl shadow-xl border border-gray-200 bg-white gap-4 hover:shadow-2xl transition-all duration-200 cursor-pointer'
+                      >
+                        <div className='flex flex-row items-center gap-4 w-full'>
+                          <Image onClick={() => {
+                            setOpen(true)
+                            setEditItem(item)
+                          }} src={item?.image[0]} alt='grocery' width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl border border-gray-300 shadow-md shadow-gray-300 cursor-pointer' />
 
-                        <div className='flex flex-col items-start justify-start gap-2'>
-                          <h1 className='text-lg md:text-2xl font-extrabold text-green-700'>{item?.name}</h1>
-                          <p className='text-sm md:text-base text-gray-500'>{item?.category}</p>
-                          <p className='text-sm md:text-base text-green-700 font-extrabold'>${item?.price} <span className='text-sm md:text-base text-gray-500'>/{item?.unit}</span></p>
+                          <div className='flex flex-col items-start justify-start gap-2'>
+                            <h1 className='text-sm md:text-xl font-extrabold text-green-700'>{item?.name}</h1>
+                            <p className='text-sm md:text-base text-gray-500'>{item?.category}</p>
+                            <p className='text-sm md:text-base text-green-700 font-extrabold'>${item?.price} <span className='text-sm md:text-base text-gray-500'>/{item?.unit}</span></p>
+                          </div>
+
                         </div>
 
-                      </div>
+                        <div className='flex flex-row items-center gap-2'>
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            whileHover={{ scale: 1.06 }}
+                            className='bg-green-700 text-white rounded-md p-2 hover:bg-green-800 cursor-pointer transition-all duration-200 w-auto h-auto'
+                            onClick={() => {
+                              setEdit(true)
+                              setEditItem(item)
+                            }}
+                          >
+                            <Edit className='w-5 h-5' />
+                          </motion.button>
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            whileHover={{ scale: 1.06 }}
+                            onClick={() => handleDelete(item?._id?.toString() || '')}
+                            className='bg-red-500 text-white rounded-md p-2 hover:bg-red-800 cursor-pointer transition-all duration-200 w-auto h-auto'
+                          >
+                            <Trash2 className='w-5 h-5' />
+                          </motion.button>
+                        </div>
+                      </motion.div>
 
-                      <div className='flex flex-row items-center gap-2'>
-                        <motion.button
-                          whileTap={{ scale: 0.97 }}
-                          whileHover={{ scale: 1.06 }}
-                          className='bg-green-700 text-white rounded-md p-2 hover:bg-green-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                          onClick={() => {
-                            setEdit(true)
-                            setEditItem(item)
-                          }}
-                        >
-                          <Edit className='w-5 h-5' />
-                        </motion.button>
-                        <motion.button
-                          whileTap={{ scale: 0.97 }}
-                          whileHover={{ scale: 1.06 }}
-                          className='bg-red-500 text-white rounded-md p-2 hover:bg-red-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                        >
-                          <Trash2 className='w-5 h-5' />
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )
-                }
-                )}
-              </div>
+
+                    )
+                  }
+                  )}
+                </div>
+
+                {/* Total items */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className='w-full h-full flex flex-row justify-between items-center gap-2 ml-2'
+                >
+                  <span className='text-sm md:text-base text-gray-500 font-bold'>Pages of items: {" "}
+                    <span className='text-sm md:text-base text-green-700 font-extrabold'>{currentPage} of {totalItems}</span>
+                  </span>
+                </motion.div>
+              </>
             ) : (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -160,10 +222,102 @@ const ViewGrocery = () => {
             )}
           </motion.div>
 
+          {/* Pagination */}
+          {totalItems > 0 && (
+            <div className='fixed left-1/2 -translate-x-1/2 bottom-2 md:bottom-0 flex flex-row justify-center items-center z-50 bg-white/50 backdrop-blur-sm rounded-full p-2 border border-gray-300'>
+              {/* Prev Page */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.06 }}
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === 1 ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
+              >
+                <ArrowLeft className='w-5 h-5' />
+              </motion.button>
+              {/* Show pages 1, 2, 3, 4, 5 */}
+              {totalPages > 5 ? (
+                <>
+                  {currentPage !== totalPages && (
+                    <>
+                      <motion.button
+                        key={currentPage}
+                        whileTap={{ scale: 0.97 }}
+                        whileHover={{ scale: 1.06 }}
+                        onClick={() => {
+                          if (1 !== currentPage) fetchGrocery(1)
+                        }}
+                        className={`
+                      bg-green-700 text-white rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
+                      >
+                        <span className='text-sm md:text-base w-full text-center'>{currentPage}</span>
+                      </motion.button>
+
+                      <span className="mx-1 text-gray-500 text-base font-bold select-none">...</span>
+                    </>
+                  )}
+
+
+                  <motion.button
+                    key={totalPages}
+                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.06 }}
+                    onClick={() => {
+                      if (totalPages !== currentPage) fetchGrocery(totalPages)
+                    }}
+                    className={`${currentPage === totalPages
+                      ? 'bg-green-700 text-white'
+                      : 'bg-white text-green-700 border border-green-700'
+                      } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
+                  >
+                    <span className='text-sm md:text-base w-full text-center'>{totalPages}</span>
+                  </motion.button>
+                </>
+              ) : (
+                Array.from({ length: totalPages }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <motion.button
+                      key={pageNum}
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.06 }}
+                      onClick={() => {
+                        if (pageNum !== currentPage) fetchGrocery(pageNum)
+                      }}
+                      className={`${pageNum === currentPage
+                        ? 'bg-green-700 text-white'
+                        : 'bg-white text-green-700 border border-green-700'
+                        } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
+                    >
+                      <span className='text-sm md:text-base w-full text-center'>{pageNum}</span>
+                    </motion.button>
+                  );
+                })
+              )}
+              {/* Next Page */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.06 }}
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === totalPages ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
+              >
+                <ArrowRight className='w-5 h-5' />
+              </motion.button>
+            </div>
+          )}
+
           {/* Edit Grocery */}
           <AnimatePresence mode='wait' onExitComplete={() => setEdit(false)}>
             {isEdit && (
               <FormEditGrocery isEdit={isEdit} title="Edit Grocery" description="Edit a grocery item in your store." setEdit={setEdit} editItem={editItem} fetchGrocery={fetchGrocery} />
+            )}
+          </AnimatePresence>
+
+          {/*Popup image*/}
+          <AnimatePresence mode='popLayout'>
+            {open && editItem?.image?.[0] && (
+              <PopupImage image={editItem?.image?.[0] || ''} setOpen={setOpen} />
             )}
           </AnimatePresence>
         </>

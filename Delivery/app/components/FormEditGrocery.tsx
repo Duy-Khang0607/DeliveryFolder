@@ -8,6 +8,57 @@ import Image from 'next/image'
 import PopupImage from '../HOC/PopupImage'
 import { IGrocery } from '../models/grocery.model'
 
+const categories = [
+    "Fresh Food",
+    "Vegetables",
+    "Fruits",
+    "Meat",
+    "Seafood",
+    "Eggs & Dairy",
+    "Frozen Food",
+    "Rice & Noodles",
+    "Cooking Oil & Spices",
+    "Sauces & Condiments",
+    "Canned Food",
+    "Snacks",
+    "Beverages",
+    "Coffee & Tea",
+    "Bakery",
+    "Health & Supplements",
+    "Household Supplies",
+    "Cleaning Products",
+    "Personal Care",
+    "Baby Products",
+    "Pet Supplies"
+]
+
+const units = [
+    "Kilogram (kg)",
+    "Gram (g)",
+    "Milligram (mg)",
+    "Liter (L)",
+    "Milliliter (ml)",
+    "Piece (pcs)",
+    "Pack (pack)",
+    "Box (box)",
+    "Bottle (btl)",
+    "Can (can)",
+    "Bag (bag)",
+    "Tray (tray)",
+    "Bunch (bunch)",
+    "Set (set)",
+    "Dozen (doz)",
+    "Carton (ctn)",
+    "Bundle (bdl)",
+    "Roll (roll)",
+    "Jar (jar)",
+    "Tube (tube)",
+    "Sack (sack)",
+    "Gallon (gal)",
+    "Pound (lb)",
+    "Ounce (oz)"
+]
+
 
 interface FormGroceryProps {
     isEdit: boolean,
@@ -78,6 +129,8 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
         }
     }
 
+    
+
 
     return (
         <div
@@ -85,7 +138,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
             onClick={() => setEdit(false)}
         >
             <motion.div
-                className="relative max-w-[50vw] max-h-[50vh] cursor-pointer rounded-2xl bg-white shadow-2xl p-5 border border-green-200"
+                className="relative w-full md:max-w-[60vw] h-fit cursor-pointer rounded-2xl bg-white shadow-2xl p-5 border border-green-200"
                 initial={{ scale: 0.92, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.92, opacity: 0, y: 10 }}
@@ -115,13 +168,22 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                         {/* Category */}
                         <div className='w-full flex flex-col gap-2'>
                             <label className='text-base font-semibold'>Category <span className='text-red-500'>*</span></label>
-                            <input required type="text" placeholder='Category' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={category} onChange={(e) => setCategory(e.target.value)} />
-
+                            <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={category} onChange={(e) => setCategory(e.target.value)} >
+                                <option value=''>Select category</option>
+                                {categories?.map((item, index) => (
+                                    <option key={index} value={item}>{item}</option>
+                                ))}
+                            </select>
                         </div>
                         {/* Unit */}
                         <div className='w-full flex flex-col gap-2'>
                             <label className='text-base font-semibold'>Unit <span className='text-red-500'>*</span></label>
-                            <input required type="text" placeholder='Unit' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={unit} onChange={(e) => setUnit(e.target.value)} />
+                            <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={unit} onChange={(e) => setUnit(e.target.value)} >
+                                <option value=''>Select units</option>
+                                {units?.map((item, index) => (
+                                    <option key={index} value={item}>{item}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
