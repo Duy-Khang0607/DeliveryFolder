@@ -202,6 +202,21 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
+    // Lắng nghe khi 1 delivery boy khác đã accept đơn hàng → xóa assignment đó khỏi danh sách
+    useEffect(() => {
+        const socket = getSocket()
+        socket?.on('assignment-accepted', (data) => {
+            const { assignmentId, orderId } = data
+            setAssignments((prev) => prev?.filter((item: any) =>
+                item?._id?.toString() !== assignmentId?.toString() &&
+                item?.order?._id?.toString() !== orderId?.toString()
+            ))
+        })
+        return () => {
+            socket.off('assignment-accepted')
+        }
+    }, [])
+
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {

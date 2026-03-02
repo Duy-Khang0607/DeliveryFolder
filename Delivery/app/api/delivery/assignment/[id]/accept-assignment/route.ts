@@ -54,6 +54,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Gọi event socket khi accpect order
         await emitEventHandler('order-assigned', { orderId: order?._id, assignmentDeliveryBoy: order?.assignedDeliveryBoy })
 
+        // Thông báo tất cả delivery boys khác rằng đơn hàng đã được nhận → xóa khỏi danh sách
+        await emitEventHandler('assignment-accepted', { assignmentId: assignment?._id, orderId: order?._id })
+
         await DeliveryAssignment.updateMany({
             _id: { $ne: assignment?._id },
             brodcastedTo: deliveryBoyId,
