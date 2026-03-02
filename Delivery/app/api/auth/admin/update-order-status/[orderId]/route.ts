@@ -132,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             order.assignment = null;
 
             // Thông báo cho delivery boy khác rằng đơn hàng đã được hủy phân công
-            await emitEventHandler("assignment-canceled", { message: 'Assignment canceled successfully', orderId: order?._id?.toString(), assignmentId: order?.assignment?._id?.toString() })
+            await emitEventHandler("assignment-canceled", { message: 'Assignment canceled successfully', orderId: order?._id?.toString(), assignmentId: order?.assignment?.toString() })
 
             // Xóa DeliveryAssignment liên quan đến order này
             await DeliveryAssignment.deleteOne({ order: order?._id });

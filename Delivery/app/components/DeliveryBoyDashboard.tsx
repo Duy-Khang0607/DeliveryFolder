@@ -221,14 +221,27 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     useEffect(() => {
         const socket = getSocket()
         socket?.on('assignment-canceled', (data) => {
-            console.log({ data })
+            // chỉ thông báo khi assignment liên quan tới shipper này
             const { message, orderId, assignmentId } = data
-            showToast(message, 'info');
-            setAssignments((prev) => prev?.filter((item: any) =>
-                item?._id?.toString() !== assignmentId?.toString() &&
-                item?.order?._id?.toString() !== orderId?.toString()
-            ))
-        })
+
+            // kiểm tra nếu đơn hàng của mình thì mới show toast
+            // (tức là 1 trong các assignments hiện tại có _id/assignment khớp)
+            setAssignments((prev) => {
+                const exists = prev?.some((item: any) =>
+                    item?._id?.toString() === assignmentId ||
+                    item?.order?._id?.toString() === orderId
+                );
+                // nếu đúng assignment đó đang ở local, thì showToast
+                if (exists) {
+                    showToast(message, 'info');
+                }
+                // Xóa khỏi danh sách
+                return prev?.filter((item: any) =>
+                    item?._id?.toString() !== assignmentId &&
+                    item?.order?._id?.toString() !== orderId
+                );
+            });
+        });
         return () => {
             socket.off('assignment-canceled')
         }
