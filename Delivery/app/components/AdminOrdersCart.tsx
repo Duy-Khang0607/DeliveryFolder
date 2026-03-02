@@ -56,7 +56,6 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
     const statusPayment = ['Out of delivery', 'Pending']
     const [status, setStatus] = useState<string>('Pending')
     const [loading, setLoading] = useState(false)
-    const router = useRouter()
 
 
     const updateOrderStatus = async (orderId: string, status: string) => {

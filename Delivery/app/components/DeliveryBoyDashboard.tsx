@@ -221,6 +221,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     useEffect(() => {
         const socket = getSocket()
         socket?.on('assignment-canceled', (data) => {
+            console.log({data})
             // chỉ thông báo khi assignment liên quan tới shipper này
             const { message, orderId, assignmentId } = data
 
