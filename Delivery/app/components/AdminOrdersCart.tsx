@@ -7,7 +7,6 @@ import PopupImage from '../HOC/PopupImage'
 import axios from 'axios'
 import { IUser } from '../models/user.model'
 import mongoose from "mongoose";
-import { useRouter } from 'next/navigation'
 import { getSocket } from '../lib/socket'
 
 
@@ -78,6 +77,7 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {
+            console.log({ data })
             if (data?.orderId?.toString() === orders?._id.toString()) {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }

@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import LiveMap from './LiveMap';
 import DeliveryChat from './DeliveryChat';
-import { useToast } from './Toast';
+import { ToastProvider, useToast } from './Toast';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface IDeliveryLocation {
@@ -217,44 +217,20 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
-    // Lắng nghe khi đơn hàng đã được hủy phân công
-    useEffect(() => {
-        const socket = getSocket()
-        socket?.on('assignment-canceled', (data) => {
-            console.log({data})
-            // chỉ thông báo khi assignment liên quan tới shipper này
-            const { message, orderId, assignmentId } = data
-
-            // kiểm tra nếu đơn hàng của mình thì mới show toast
-            // (tức là 1 trong các assignments hiện tại có _id/assignment khớp)
-            setAssignments((prev) => {
-                const exists = prev?.some((item: any) =>
-                    item?._id?.toString() === assignmentId ||
-                    item?.order?._id?.toString() === orderId
-                );
-                // nếu đúng assignment đó đang ở local, thì showToast
-                if (exists) {
-                    showToast(message, 'info');
-                }
-                // Xóa khỏi danh sách
-                return prev?.filter((item: any) =>
-                    item?._id?.toString() !== assignmentId &&
-                    item?.order?._id?.toString() !== orderId
-                );
-            });
-        });
-        return () => {
-            socket.off('assignment-canceled')
-        }
-    }, [])
-
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {
-            // Không hiển thị nếu status là "Pending", chỉ hiển thị "Out of delivery"
+            console.log('[DeliveryBoy] order-status-updated received:', data)
+            // Chỉ xử lý khi admin đổi status về "Pending" (hủy giao hàng)
             if (data?.status === 'Pending') {
+                showToast('Assignment canceled successfully', 'info')
                 // Loại bỏ assignment có status là "Pending"
                 setAssignments((prev) => prev?.filter((item: any) => item?.order?._id.toString() !== data?.orderId?.toString()))
+                setCurrentOrder(null)
+                setUserlocation({
+                    latitude: 0,
+                    longitude: 0,
+                })
             }
         })
         return () => {
@@ -317,6 +293,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                         <LiveMap userLocation={userlocation} deliveryLocation={deliverylocation} />
                     </div>
                 </div>
+
                 {/* Delivery */}
                 <DeliveryChat orderId={currentOrder?.order?._id!} deliveryBoyId={userData?._id!} role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
 
