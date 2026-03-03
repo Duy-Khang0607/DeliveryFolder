@@ -49,8 +49,10 @@ export async function POST(req: NextRequest) {
                     "Order Delivered - Delivery App #" + String(order?._id)?.slice(-6),
                     `<h2>Your order has been delivered successfully! 🎉</h2>
                     <p>Order ID: <strong>#${String(order?._id)?.slice(-6)}</strong></p>
-                    <p>Delivered at: <strong>${new Date().toLocaleString()}</strong></p>
-                    <p>Thank you for using our service!</p>`
+                    <p>Delivered at: <strong>${order?.deliveredAt?.toLocaleString("vi-VN", {
+                        hour12: false
+                    })}</strong></p>
+                    <p>Thank you for using our service !</p>`
                 )
             }
         } catch (emailError) {
