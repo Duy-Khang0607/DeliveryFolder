@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Please send all required fields" }, { status: 400 })
         }
 
-        const order = await Orders?.findById(orderId)?.populate('user')
+        const order = await Orders.findById(orderId).populate('user')
 
         if (!order) {
             return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
@@ -33,16 +33,29 @@ export async function POST(req: NextRequest) {
         order.deliveredAt = new Date()
         await order.save()
 
-        await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status, assignment: order?.assignment })
+        await emitEventHandler("order-status-updated", { orderId: order._id, status: order.status, assignment: order.assignment })
 
         await DeliveryAssignment.updateOne(
             { order: orderId },
             { $set: { status: 'completed', assignedTo: null } }
         )
 
-        await emitEventHandler("order-delivered", { orderId: order?._id, success: true, message: "OTP sent successfully" })
+        await emitEventHandler("order-delivered", { orderId: order._id, success: true, message: "Order delivered successfully" })
 
-        await sendEmail(order?.user?.email, "My orders at Delivery App - #" + order?._id?.slice(0, 6), `<h2> Your order has been delivered successfully</h2>`)
+        try {
+            if (order?.user && order?.user?.email) {
+                await sendEmail(
+                    order?.user?.email,
+                    "Order Delivered - Delivery App #" + String(order?._id)?.slice(-6),
+                    `<h2>Your order has been delivered successfully! 🎉</h2>
+                    <p>Order ID: <strong>#${String(order?._id)?.slice(-6)}</strong></p>
+                    <p>Delivered at: <strong>${new Date().toLocaleString()}</strong></p>
+                    <p>Thank you for using our service!</p>`
+                )
+            }
+        } catch (emailError) {
+            console.error('Failed to send delivery notification email:', emailError)
+        }
 
         return NextResponse.json({ success: true, message: "OTP verified successfully" }, { status: 200 })
 
