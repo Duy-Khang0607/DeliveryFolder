@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Please send all required fields" }, { status: 400 })
         }
 
-        const order = await Orders.findById(orderId)
+        const order = await Orders?.findById(orderId)?.populate('user')
 
         if (!order) {
             return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
