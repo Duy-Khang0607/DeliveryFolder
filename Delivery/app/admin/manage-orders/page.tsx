@@ -43,16 +43,37 @@ const ManageOrders = () => {
         // Đơn hàng được phân công cho delivery boy ( khi nhấn Accpect đơn hàng )
         socket?.on('order-assigned', (data) => {
             console.log('[Admin] order-assigned received:', data)
-            const { orderId, assignmentDeliveryBoy } = data
+            const { orderId, assignmentDeliveryBoy, status } = data
 
             setOrders((prevOrders) => {
                 if (!prevOrders) return prevOrders
 
-                return prevOrders.map((order) =>
-                    order?._id.toString() === orderId?.toString()
+                return prevOrders?.map((order: IOrder) =>
+                    order?._id?.toString() === orderId?.toString()
                         ? {
                             ...order,
-                            assignedDeliveryBoy: assignmentDeliveryBoy
+                            assignedDeliveryBoy: assignmentDeliveryBoy,
+                            status: status || 'Out of delivery'
+                        }
+                        : order
+                )
+            })
+        })
+
+        // Đơn hàng cập nhật status (bao gồm reset về Pending)
+        socket?.on('order-status-updated', (data) => {
+            console.log('[Admin] order-status-updated received:', data)
+            const { orderId, status, assignedDeliveryBoy } = data
+
+            setOrders((prevOrders) => {
+                if (!prevOrders) return prevOrders
+
+                return prevOrders?.map((order: IOrder) =>
+                    order?._id?.toString() === orderId?.toString()
+                        ? {
+                            ...order,
+                            status: status,
+                            assignedDeliveryBoy: assignedDeliveryBoy
                         }
                         : order
                 )
@@ -62,6 +83,7 @@ const ManageOrders = () => {
         return () => {
             socket.off('new-order')
             socket.off('order-assigned')
+            socket.off('order-status-updated')
         }
     }, [])
 

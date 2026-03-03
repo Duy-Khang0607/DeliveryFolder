@@ -130,9 +130,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
         if (status === 'Pending' && order?.assignment) {
             // Xóa assignment trong Order
             order.assignment = null;
+            // Xóa assignedDeliveryBoy
+            order.assignedDeliveryBoy = null;
 
             // Xóa DeliveryAssignment liên quan đến order này
             await DeliveryAssignment.deleteOne({ order: order?._id });
+
         }
 
         // Lưu đơn hàng đã cập nhật vào database
@@ -141,7 +144,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
         await order.populate('user');
 
         // Gọi event socket khi cập nhật trạng thái đơn hàng
-        await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status })
+        await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status, assignedDeliveryBoy: order?.assignedDeliveryBoy })
 
         // Trả về response thành công với assignment ID và danh sách shipper khả dụng
         return NextResponse.json({ success: true, assigment: order?.assignment?._id, availableDeliveryBoys: deliveryBoysPayload }, { status: 200 });

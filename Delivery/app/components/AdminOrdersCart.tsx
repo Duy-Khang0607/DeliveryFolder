@@ -72,10 +72,11 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
 
     useEffect(() => {
         setStatus(orders?.status)
-    }, [orders])
+    }, [orders?.status])
 
     useEffect(() => {
         const socket = getSocket()
+        
         socket?.on('order-status-updated', (data) => {
             console.log('[AdminOrdersCart] order-status-updated received:', data)
             if (data?.orderId?.toString() === orders?._id.toString()) {

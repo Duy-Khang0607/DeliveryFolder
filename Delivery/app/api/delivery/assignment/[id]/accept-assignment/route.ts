@@ -48,11 +48,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         order.assignedDeliveryBoy = deliveryBoyId
+        order.status = 'Out of delivery'
         await order.save()
 
         await order.populate('user assignedDeliveryBoy');
         // Gọi event socket khi accpect order
-        await emitEventHandler('order-assigned', { orderId: order?._id, assignmentDeliveryBoy: order?.assignedDeliveryBoy })
+        await emitEventHandler('order-assigned', { orderId: order?._id, assignmentDeliveryBoy: order?.assignedDeliveryBoy, status: order?.status })
 
         // Thông báo tất cả delivery boys khác rằng đơn hàng đã được nhận → xóa khỏi danh sách
         await emitEventHandler('assignment-accepted', { assignmentId: assignment?._id, orderId: order?._id })
