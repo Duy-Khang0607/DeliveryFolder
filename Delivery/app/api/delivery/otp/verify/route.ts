@@ -50,7 +50,14 @@ export async function POST(req: NextRequest) {
                     `<h2>Your order has been delivered successfully! 🎉</h2>
                     <p>Order ID: <strong>#${String(order?._id)?.slice(-6)}</strong></p>
                     <p>Delivered at: <strong>${new Date(order?.deliveredAt)?.toLocaleString("vi-VN", {
-                        hour12: false
+                        timeZone: "Asia/Ho_Chi_Minh",
+                        hour12: false,
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit"
                     })}</strong></p>
                     <p>Thank you for using our service !</p>`
                 )
