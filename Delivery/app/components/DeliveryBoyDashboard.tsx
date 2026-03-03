@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import LiveMap from './LiveMap';
 import DeliveryChat from './DeliveryChat';
-import { ToastProvider, useToast } from './Toast';
+import { useToast } from './Toast';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface IDeliveryLocation {
@@ -229,7 +229,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                 // Chỉ thông báo cho delivery boy đang giao đơn hàng này
                 setCurrentOrder((prev: any) => {
                     if (prev?.order?._id?.toString() === data?.orderId?.toString()) {
-                        showToast('Assignment canceled successfully', 'info')
+                        showToast('Assigment canceled !', 'warning')
                         setUserlocation({ latitude: 0, longitude: 0 })
                         return null
                     }
