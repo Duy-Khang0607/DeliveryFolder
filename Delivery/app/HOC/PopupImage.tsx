@@ -15,7 +15,7 @@ const PopupImage = ({ image, setOpen }: PopupImageProps) => {
             onClick={() => setOpen(false)}
         >
             <motion.div
-                className="relative max-w-[90vw] max-h-[90vh] cursor-pointer"
+                className="relative max-w-[90vw] max-h-[90vh] cursor-pointer overflow-hidden"
                 initial={{ scale: 0.92, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.92, opacity: 0, y: 10 }}
@@ -27,7 +27,7 @@ const PopupImage = ({ image, setOpen }: PopupImageProps) => {
                     alt="full"
                     width={1200}
                     height={800}
-                    className="max-w-[80vw] max-h-[80vh] object-cover rounded-xl"
+                    className="w-full h-full object-contain rounded-2xl border border-gray-100/50"
                 />
             </motion.div>
         </div>

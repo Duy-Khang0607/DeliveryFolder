@@ -1,5 +1,5 @@
 'use client'
-import { BadgePlus, Upload, Loader2 } from 'lucide-react'
+import { BadgePlus, Upload, Loader2, Eye, ArrowLeft, Package } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChangeEvent, useState } from 'react'
 import Image from 'next/image'
@@ -7,58 +7,8 @@ import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
 import ButtonHome from '@/app/components/ButtonHome'
-
-const categories = [
-  "Fresh Food",
-  "Vegetables",
-  "Fruits",
-  "Meat",
-  "Seafood",
-  "Eggs & Dairy",
-  "Frozen Food",
-  "Rice & Noodles",
-  "Cooking Oil & Spices",
-  "Sauces & Condiments",
-  "Canned Food",
-  "Snacks",
-  "Beverages",
-  "Coffee & Tea",
-  "Bakery",
-  "Health & Supplements",
-  "Household Supplies",
-  "Cleaning Products",
-  "Personal Care",
-  "Baby Products",
-  "Pet Supplies"
-]
-
-const units = [
-  "Kilogram (kg)",
-  "Gram (g)",
-  "Milligram (mg)",
-  "Liter (L)",
-  "Milliliter (ml)",
-  "Piece (pcs)",
-  "Pack (pack)",
-  "Box (box)",
-  "Bottle (btl)",
-  "Can (can)",
-  "Bag (bag)",
-  "Tray (tray)",
-  "Bunch (bunch)",
-  "Set (set)",
-  "Dozen (doz)",
-  "Carton (ctn)",
-  "Bundle (bdl)",
-  "Roll (roll)",
-  "Jar (jar)",
-  "Tube (tube)",
-  "Sack (sack)",
-  "Gallon (gal)",
-  "Pound (lb)",
-  "Ounce (oz)"
-]
-
+import { data } from '@/app/data'
+import Link from 'next/link'
 
 const AddGrocery = () => {
   const [name, setName] = useState<string>('')
@@ -121,9 +71,22 @@ const AddGrocery = () => {
 
   return (
     <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
-      {/* <- and Back to home */}
-      <div className='min-h-[40px]'>
-        <ButtonHome />
+      {/* <- and Back to home + View Grocery Link */}
+      <div className='min-h-[40px] flex items-center justify-between'>
+        <div>
+          <ButtonHome />
+        </div>
+
+        <div>
+          {/* View Grocery button/link, beautiful and clear on the right */}
+          <Link
+            href="/admin/view-grocery"
+            className="md:flex hidden items-center gap-1 px-3 py-1.5 rounded-xl bg-green-50 border border-green-200 text-green-800 hover:bg-green-100 transition-all font-semibold shadow hover:shadow-lg text-sm"
+          >
+            <Package className="w-4 h-4" />
+            <span className="hidden md:inline">View Grocery</span>
+          </Link>
+        </div>
       </div>
 
       {/* Form add grocery */}
@@ -137,11 +100,26 @@ const AddGrocery = () => {
           className='w-full md:max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl px-3 py-5 border border-green-200 h-fit'>
 
           <div className='flex flex-col items-center text-center gap-3 mb-8'>
+            {/* Desktop Add Grocery Title */}
             <div className='flex flex-row items-center gap-2 tracking-wide text-xl font-semibold'>
               <BadgePlus className='w-5 h-5 text-green-700' />
               Add Grocery
             </div>
-            <p className='text-sm max-w-sm md:max-w-xl'>Add new grocery item to your store</p>
+
+            {/* Mobile View Grocery Link */}
+            <div className='flex flex-row gap-2 items-center'>
+              <Link
+                href="/admin/view-grocery"
+                className="flex items-center gap-1 px-2 py-1 rounded-md border border-green-100 text-green-700 bg-green-50 hover:bg-green-100 transition-all font-medium text-sm md:hidden"
+              >
+                <Eye className="w-4 h-4" />
+                <span className='text-sm'>View Grocery</span>
+              </Link>
+            </div>
+
+            <p className='text-sm max-w-sm md:max-w-xl text-green-700 font-medium' style={{ textShadow: '1px 1px 20px green-500' }}>
+              Add new grocery item to your store
+            </p>
           </div>
 
           <form className='flex flex-col gap-3' >
@@ -156,7 +134,7 @@ const AddGrocery = () => {
                 <label className='text-base font-semibold'>Category <span className='text-red-500'>*</span></label>
                 <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={category} onChange={(e) => setCategory(e.target.value)} >
                   <option value=''>Select category</option>
-                  {categories?.map((item, index) => (
+                  {data?.categories?.map((item: string, index: number) => (
                     <option key={index} value={item}>{item}</option>
                   ))}
                 </select>
@@ -165,7 +143,7 @@ const AddGrocery = () => {
                 <label className='text-base font-semibold'>Unit <span className='text-red-500'>*</span></label>
                 <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={unit} onChange={(e) => setUnit(e.target.value)} >
                   <option value=''>Select units</option>
-                  {units?.map((item, index) => (
+                  {data?.units?.map((item: string, index: number) => (
                     <option key={index} value={item}>{item}</option>
                   ))}
                 </select>
@@ -220,9 +198,9 @@ const AddGrocery = () => {
 
           </form>
 
-
         </motion.div>
       </div>
+
     </section >
   )
 }

@@ -4,12 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { ArrowLeft, ArrowRight, Box, Edit, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Box, Edit, Plus, Search, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import FormEditGrocery from '@/app/components/FormEditGrocery'
 import ButtonHome from '@/app/components/ButtonHome'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
+import Link from 'next/link'
 
 const ViewGrocery = () => {
   const [groceries, setGrocery] = useState<IGrocery[]>([])
@@ -107,8 +108,22 @@ const ViewGrocery = () => {
         <>
           <motion.div className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
             {/* Back to home */}
-            <div className='min-h-[40px]'>
-              <ButtonHome />
+            <div className='min-h-[40px] flex items-center justify-between'>
+
+              <div>
+                <ButtonHome />
+              </div>
+
+              <div>
+                {/* View Grocery button/link, beautiful and clear on the right */}
+                <Link
+                  href="/admin/add-grocery"
+                  className="md:flex hidden items-center gap-1 px-3 py-1.5 rounded-xl bg-green-50 border border-green-200 text-green-800 hover:bg-green-100 transition-all font-semibold shadow hover:shadow-lg text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden md:inline">Add Grocery</span>
+                </Link>
+              </div>
             </div>
 
             {/* Search */}
