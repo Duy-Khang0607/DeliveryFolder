@@ -31,7 +31,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     });
     const { userData } = useSelector((state: RootState) => state?.user);
 
-
     // Mark as delivered
     const [showOTP, setShowOTP] = useState(false);
     const [loadingMarkAsDelivered, setLoadingMarkAsDelivered] = useState(false);
