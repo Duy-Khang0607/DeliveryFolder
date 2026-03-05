@@ -43,7 +43,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
     const getAssignments = async () => {
         try {
-            setLoading(true);
+            if (assignments?.length === 0) setLoading(true);
             const response = await axios.get('/api/delivery/get-assignments');
             const filterData = response?.data?.assignments?.filter((data: any) => data?.order?.status !== 'Pending');
             setAssignments(filterData);
@@ -67,19 +67,19 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }
 
-    const handleReject = async (orderId: string) => {
-        setLoading(true)
+    const handleReject = async (assignmentId: string) => {
+        setAssignments((prev) => prev.filter((item: any) =>
+            (item?._id?.toString() !== assignmentId?.toString()) &&
+            (item?.assignment?.toString() !== assignmentId?.toString()) &&
+            (item?.order?.assignment?.toString() !== assignmentId?.toString())
+        ))
         try {
-            // const response = await axios.post(`/api/delivery/assignment/${orderId}/reject-assignment`, { status: 'rejected' });
-            // await fetchCurrentOrder();
-            // await getAssignments();
-            // window.scrollTo({ top: 0, behavior: "smooth" });
-            showToast('Feature development in progress', 'info');
+            await axios.post(`/api/delivery/assignment/${assignmentId}/reject-assignment`);
+            showToast('Order rejected', 'success');
         } catch (error) {
             console.error('Error reject assignment:', error);
-            setLoading(false);
-        } finally {
-            setLoading(false);
+            await getAssignments();
+            showToast('Failed to reject order', 'error');
         }
     }
 
@@ -165,9 +165,9 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     useEffect(() => {
         getAssignments();
         fetchCurrentOrder();
-    }, [userData]);
+    }, [userData?._id]);
 
-    // Lắng nghe sự kiện "new-assignment" khi có đơn hàng được phân công
+    // Lắng nghe sự kiện "new-assignment" khi có đơn hàng được phân công cho delivery boy
     useEffect(() => {
         const socket = getSocket()
         socket?.on('new-assignment', (newAssignment) => {
@@ -217,6 +217,22 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
+    // Lắng nghe khi delivery boy này reject đơn hàng (hoặc tất cả đã reject) → xóa assignment khỏi danh sách
+    useEffect(() => {
+        const socket = getSocket()
+        socket?.on('assignment-rejected', (data) => {
+            const { assignmentId, orderId } = data
+            setAssignments((prev) => prev?.filter((item: any) =>
+                item?._id?.toString() !== assignmentId?.toString() &&
+                item?.order?._id?.toString() !== orderId?.toString()
+            ))
+        })
+        return () => {
+            socket.off('assignment-rejected')
+        }
+    }, [])
+
+    // Lắng nghe sự kiện "order-status-updated" khi admin đổi status đơn hàng
     useEffect(() => {
         const socket = getSocket()
         socket?.on('order-status-updated', (data) => {
@@ -351,6 +367,8 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         )
     }
 
+    console.log({ assignments })
+
     return (
         <div className='w-[90%] md:w-[80%] mt-24 mx-auto'>
             <h1 className='text-green-700 font-extrabold text-xl md:text-2xl tracking-wide text-center mb-4'>Delivery Boy Dashboard</h1>
@@ -369,19 +387,19 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                     <Box className='w-25 h-25 md:w-50 md:h-50 text-green-700 mb-5' />
                 </motion.div>
             ) : (
-                <AnimatePresence >
+                <AnimatePresence>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                         {assignments?.length > 0 && assignments?.map((orders, index) => {
-                            const { _id, paymentMethod, createdAt, address, assignment } = orders?.order
+                            const { _id, paymentMethod, createdAt, address } = orders?.order
                             const { fullName, mobile } = orders?.order?.address
-
+                            console.log({ assignments })
 
                             return (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4 }}
-                                    key={index} className='w-full rounded-md shadow-md border border-gray-300 p-4 space-y-3 hover:shadow-lg transition-all duration-300 overflow-hidden h-full'>
+                                    key={_id} className='w-full rounded-md shadow-md border border-gray-300 p-4 space-y-3 hover:shadow-lg transition-all duration-300 overflow-hidden h-full'>
                                     <div className='flex flex-col md:flex-row justify-between md:items-center gap-2 h-auto md:h-[30px] w-full'>
                                         <div className='flex items-center gap-2'>
                                             <User className='w-5 h-5 text-green-700' />

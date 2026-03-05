@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { ReactElement } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 import { getSocket } from "../lib/socket"
+import { useToast } from "./Toast"
 interface propType {
   earning: {
     today: number,
@@ -20,9 +21,19 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
   const [filter, setFilter] = useState<"today" | "sevenDays" | "total">("today")
 
   const [earningState, setEarningState] = useState(earning)
+  const { showToast } = useToast()
 
   const title = filter === "today" ? "Today" : filter === "sevenDays" ? "Last 7 Days" : "Total"
 
+  useEffect(() => {
+    const socket = getSocket()
+    socket?.on('all-rejected', (data) => {
+      showToast(`No delivery boy accepted order #${data?.orderId?.toString()?.slice(-6)}`, 'warning')
+    })
+    return () => {
+      socket.off('all-rejected')
+    }
+  }, [])
 
   useEffect(() => {
     const socket = getSocket()
@@ -66,7 +77,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
           transition={{ duration: 0.4 }}
           className="text-3xl md:text-4xl font-extrabold text-green-700"
         >
-          Admin Dashboard
+          Dashboard
         </motion.h1>
 
         <select required className='w-full sm:w-auto p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={filter} onChange={(e) => setFilter(e.target.value as "today" | "sevenDays" | "total")}>
