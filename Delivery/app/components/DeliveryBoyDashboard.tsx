@@ -216,11 +216,11 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
-    // Lắng nghe khi delivery boy này reject đơn hàng (hoặc tất cả đã reject) → xóa assignment khỏi danh sách
     useEffect(() => {
         const socket = getSocket()
         socket?.on('assignment-rejected', (data) => {
-            const { assignmentId, orderId } = data
+            const { assignmentId, orderId, deliveryBoyId } = data
+            if (deliveryBoyId?.toString() !== userData?._id?.toString()) return
             setAssignments((prev) => prev?.filter((item: any) =>
                 item?._id?.toString() !== assignmentId?.toString() &&
                 item?.order?._id?.toString() !== orderId?.toString()
@@ -229,7 +229,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         return () => {
             socket.off('assignment-rejected')
         }
-    }, [])
+    }, [userData?._id])
 
     // Lắng nghe sự kiện "order-status-updated" khi admin đổi status đơn hàng
     useEffect(() => {
