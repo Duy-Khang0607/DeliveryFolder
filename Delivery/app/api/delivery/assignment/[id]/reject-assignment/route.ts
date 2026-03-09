@@ -3,6 +3,7 @@ import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import DeliveryAssignment from "@/app/models/deliveryAssignment.model";
 import Orders from "@/app/models/orders.model";
+import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -31,7 +32,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
 
         await DeliveryAssignment.findByIdAndUpdate(id, {
-            $pull: { brodcastedTo: deliveryBoyId }
+            $pull: { brodcastedTo: deliveryBoyId },
+            $push: { rejectedBy: deliveryBoyId },
         })
 
         const updatedAssignment = await DeliveryAssignment.findById(id)
@@ -41,21 +43,85 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
 
         if (updatedAssignment.brodcastedTo.length === 0) {
-            updatedAssignment.status = 'rejected'
-            await updatedAssignment.save()
-
             const order = await Orders.findById(updatedAssignment.order)
-            if (order) {
-                order.status = 'Pending'
-                order.assignment = null
-                order.assignedDeliveryBoy = null
-                await order.save()
-            }
 
-            await emitEventHandler('all-rejected', {
-                assignmentId: updatedAssignment._id,
-                orderId: updatedAssignment.order,
-            })
+            if (!order || !order.address?.latitude || !order.address?.longitude) {
+                updatedAssignment.status = 'rejected'
+                await updatedAssignment.save()
+
+                if (order) {
+                    order.status = 'Pending'
+                    order.assignment = null
+                    order.assignedDeliveryBoy = null
+                    await order.save()
+                }
+
+                await emitEventHandler('all-rejected', {
+                    assignmentId: updatedAssignment._id,
+                    orderId: updatedAssignment.order,
+                })
+            } else {
+                const { latitude, longitude } = order.address
+                const rejectedIds = updatedAssignment.rejectedBy.map((id: any) => String(id))
+
+                const nearbyDeliveryBoys = await User.find({
+                    role: 'deliveryBoy',
+                    isOnline: true,
+                    _id: { $nin: updatedAssignment.rejectedBy },
+                    location: {
+                        $near: {
+                            $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
+                            $maxDistance: 10000,
+                        }
+                    }
+                })
+
+                const nearByIds = nearbyDeliveryBoys.map((boy: any) => boy._id)
+
+                const busyIds = await DeliveryAssignment.find({
+                    assignedTo: { $in: nearByIds },
+                    status: 'assigned',
+                }).distinct('assignedTo')
+
+                const busyIdSet = new Set(busyIds.map((id: any) => String(id)))
+
+                const availableDeliveryBoys = nearbyDeliveryBoys.filter(
+                    (boy: any) => !busyIdSet.has(String(boy._id))
+                )
+
+                const candidates = availableDeliveryBoys.map((b: any) => b._id)
+
+                if (candidates.length > 0) {
+                    updatedAssignment.brodcastedTo = candidates
+                    await updatedAssignment.save()
+
+                    await updatedAssignment.populate('order')
+
+                    for (const boyId of candidates) {
+                        const boy = await User.findById(boyId)
+                        if (boy?.socketId) {
+                            await emitEventHandler('new-assignment', {
+                                assignment: updatedAssignment._id,
+                                order: updatedAssignment.order,
+                                socketId: boy.socketId,
+                            })
+                        }
+                    }
+                } else {
+                    updatedAssignment.status = 'rejected'
+                    await updatedAssignment.save()
+
+                    order.status = 'Pending'
+                    order.assignment = null
+                    order.assignedDeliveryBoy = null
+                    await order.save()
+
+                    await emitEventHandler('all-rejected', {
+                        assignmentId: updatedAssignment._id,
+                        orderId: updatedAssignment.order,
+                    })
+                }
+            }
         }
 
         await emitEventHandler('assignment-rejected', {

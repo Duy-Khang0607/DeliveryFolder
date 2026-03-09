@@ -24,7 +24,7 @@ io.on("connection", (socket) => {
   // Socket auto connect khi login vô
   socket.on("identity", async (userId) => {
     try {
-      ({ userId })
+      socket.userId = userId;
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
         userId,
         socketId: socket.id
@@ -65,7 +65,14 @@ io.on("connection", (socket) => {
     io.to(message?.roomId).emit("send-message", message)
   })
 
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", async (reason) => {
+    try {
+      await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
+        userId: socket?.userId
+      })
+    } catch (error) {
+      console.error('❌ Disconnect error:', error.message);
+    }
   });
 
   socket.on("error", (err) => {

@@ -55,12 +55,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             // Tìm các shipper (role = 'delivery') gần vị trí giao hàng
             // Sử dụng $near của MongoDB để tìm theo vị trí địa lý
             const nearbyDeliveryBoys = await User.find({
-                role: 'deliveryBoy', // CHỈ tìm shipper, không phải tất cả users
+                role: 'deliveryBoy',
+                isOnline: true,
                 location: {
                     $near: {
-                        // Tạo điểm địa lý với tọa độ [kinh độ, vĩ độ]
                         $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
-                        // Khoảng cách tối đa 10km (10000 mét)
                         $maxDistance: 10000
                     }
                 }
