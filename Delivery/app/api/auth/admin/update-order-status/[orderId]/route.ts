@@ -57,12 +57,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             const nearbyDeliveryBoys = await User.find({
                 role: 'deliveryBoy',
                 isOnline: true,
-                location: {
-                    $near: {
-                        $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
-                        $maxDistance: 10000
-                    }
-                }
+                // location: {
+                //     $near: {
+                //         $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
+                //         $maxDistance: 10000
+                //     }
+                // }
             })
 
             // Lấy danh sách ID của các shipper gần đó
