@@ -59,8 +59,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 await emitEventHandler('all-rejected', {
                     assignmentId: updatedAssignment._id,
                     orderId: updatedAssignment.order,
-                    message: `OrderId ${updatedAssignment?.order?.toString()?.slice(-6)} has been rejected by all delivery boys`
                 })
+
+                await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status, assignedDeliveryBoy: null as any })
+
             } else {
                 const { latitude, longitude } = order.address
                 const rejectedIds = updatedAssignment.rejectedBy.map((id: any) => String(id))
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
                 const candidates = availableDeliveryBoys.map((b: any) => b._id)
 
-                if (candidates.length > 0) {
+                if (candidates?.length > 0) {
                     updatedAssignment.brodcastedTo = candidates
                     await updatedAssignment.save()
 
@@ -120,7 +122,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                     await emitEventHandler('all-rejected', {
                         assignmentId: updatedAssignment._id,
                         orderId: updatedAssignment.order,
+                        message: `OrderId ${updatedAssignment?.order?.toString()?.slice(-6)} has been rejected by all delivery boys`
                     })
+
+                    await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status, assignedDeliveryBoy: null as any })
                 }
             }
         }
