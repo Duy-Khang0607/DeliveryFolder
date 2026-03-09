@@ -8,12 +8,13 @@ import { motion } from 'framer-motion'
 import AdminOrdersCart from "@/app/components/AdminOrdersCart"
 import { getSocket } from "@/app/lib/socket"
 import ButtonHome from "@/app/components/ButtonHome"
+import { useToast } from "@/app/components/Toast"
 
 
 const ManageOrders = () => {
     const [orders, setOrders] = useState<IOrder[]>([])
     const [loading, setLoading] = useState(false)
-
+    const { showToast } = useToast()
     const fetchOrder = async () => {
         setLoading(true)
         try {
@@ -80,10 +81,19 @@ const ManageOrders = () => {
             })
         })
 
+        // Thông báo Đơn hàng bị tất cả delivery boy từ chối (khi admin đang xem orders)
+        socket?.on('all-rejected', (data) => {
+            console.log({ data })
+            if (data) {
+                showToast(data?.message, 'warning')
+            }
+        })
+
         return () => {
             socket.off('new-order')
             socket.off('order-assigned')
             socket.off('order-status-updated')
+            socket.off('all-rejected')
         }
     }, [])
 

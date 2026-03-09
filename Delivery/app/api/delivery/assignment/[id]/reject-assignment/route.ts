@@ -59,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 await emitEventHandler('all-rejected', {
                     assignmentId: updatedAssignment._id,
                     orderId: updatedAssignment.order,
+                    message: `OrderId ${updatedAssignment?.order?.toString()?.slice(-6)} has been rejected by all delivery boys`
                 })
             } else {
                 const { latitude, longitude } = order.address
