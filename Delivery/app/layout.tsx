@@ -6,7 +6,7 @@ import StoreProvider from "./redux/StoreProvider";
 import InitUser from "./InitUser";
 import "leaflet/dist/leaflet.css";
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+const baseURL = process.env.NEXT_BASE_URL;
 
 
 export const metadata: Metadata = {

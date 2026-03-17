@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+const baseURL = process.env.NEXT_BASE_URL;
 
 // Cho phép Google crawl toàn site, chặn /api/, /admin/, /unauthorized. Trỏ đến sitemap.
 export default function robots(): MetadataRoute.Robots {
