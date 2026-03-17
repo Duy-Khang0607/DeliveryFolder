@@ -65,6 +65,9 @@ export const metadata: Metadata = {
     canonical: baseURL,
   },
   category: "delivery",
+  verification: {
+    google: "svcHymjcxPRrpAMYQyjvOcfTrme3JjEKLYm284IIgjg",
+  },
 };
 
 export const viewport: Viewport = {
