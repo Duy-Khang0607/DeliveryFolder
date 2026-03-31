@@ -143,7 +143,7 @@ const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder)
             {/* Title */}
             <div className='flex flex-row items-center justify-center gap-2'>
                 <ShoppingCart className='w-10 h-10' />
-                <span className='text-2xl md:text-3xl text-green-700 font-extrabold tracking-wide'>Shopping by Category</span>
+                <h2 className='text-2xl md:text-3xl text-green-700 font-extrabold tracking-wide'>Shopping by Category</h2>
             </div>
 
             {/* List cartegory */}

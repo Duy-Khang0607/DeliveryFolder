@@ -84,7 +84,7 @@ const Nav = ({ user }: { user: IUser }) => {
   }, [showUserMenu, showSearchMobile])
 
   return (
-    <section className='max-w-[90%] mx-auto h-16 shadow-md flex items-center justify-between px-4 text-white mt-4 rounded-md bg-green-500 fixed top-0 left-0 right-0 z-99'>
+    <nav className='max-w-[90%] mx-auto h-16 shadow-md flex items-center justify-between px-4 text-white mt-4 rounded-md bg-green-500 fixed top-0 left-0 right-0 z-99'>
       {/* Title */}
       <div className='text-white text-xl font-bold max-w-full'>
         <Link href='/' className='hover:text-gray-300 transition-all duration-300'>Delivery</Link>
@@ -163,13 +163,13 @@ const Nav = ({ user }: { user: IUser }) => {
               className='absolute top-16 right-10 w-48 bg-white rounded-2xl shadow-md p-4'
             >
               {/* Profile */}
-              <Link href='#' className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
+              <div className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
                 <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
                 <div className='flex flex-col gap-1'>
                   <span className='text-black font-bold text-xs'>{user?.name.toUpperCase()}</span>
                   <span className='text-green-400 text-xs w-auto font-semibold tracking-wide'>{user?.role?.toUpperCase()}</span>
                 </div>
-              </Link>
+              </div>
               {user?.role === 'user' && <>
                 <button onClick={() => router.push('/user/my-orders')} className='flex items-center gap-2 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
                   <Package className='w-5 h-5 text-green-500' />
@@ -198,7 +198,7 @@ const Nav = ({ user }: { user: IUser }) => {
 
               <form className='flex items-center gap-2' ref={searchMobileRef} onSubmit={handleSearch}>
                 <Search className='w-5 h-5 text-green-500' />
-                <input type="text" id="search" placeholder='Search for a product' className='w-full outline-none text-white placeholder:text-gray-400 focus:outline-none  focus:ring-green-500' value={search} onChange={(e) => setSearch(e.target.value)} />
+                <input type="text" id="search-mobile" placeholder='Search for a product' className='w-full outline-none text-white placeholder:text-gray-400 focus:outline-none  focus:ring-green-500' value={search} onChange={(e) => setSearch(e.target.value)} />
                 <button type='button'>
                   <CircleX className='w-5 h-5 text-red-500 cursor-pointer' onClick={() => {
                     setSearch('')
@@ -268,7 +268,7 @@ const Nav = ({ user }: { user: IUser }) => {
           </motion.div>
         </>}
       </AnimatePresence>
-    </section >
+    </nav>
   )
 }
 

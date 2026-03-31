@@ -62,7 +62,7 @@ const Cart = () => {
                                 >
                                     {/* Image && Items */}
                                     <div className='flex flex-row items-center gap-4 w-full'>
-                                        <Image src={item?.image[0]} alt='Image' className='object-cover transition-transform duration-500 group-hover:scale-105 rounded cursor-pointer w-[100px] h-[100px]' sizes='(max-width: 768px) 100vw, 25vw' width={100} height={100} />
+                                        <Image src={item?.image[0]} alt={item?.name} className='object-cover transition-transform duration-500 group-hover:scale-105 rounded cursor-pointer w-[100px] h-[100px]' sizes='(max-width: 768px) 100vw, 25vw' width={100} height={100} />
                                         <div className='flex flex-col gap-1'>
                                             <h2 className='text-xl font-semibold'>{item?.name}</h2>
                                             <p className='text-gray-400 text-sm font-medium'>{item?.unit}</p>

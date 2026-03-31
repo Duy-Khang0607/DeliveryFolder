@@ -70,7 +70,7 @@ const HeroSection = () => {
                     className='flex flex-col items-center justify-center gap-4'
                 >
                     <div className='bg-white/10 p-6 rounded-full shadow-lg backdrop-blur-md'>{slides[current]?.icon}</div>
-                    <div className='text-2xl md:text-5xl font-extrabold text-center'>{slides[current]?.title}</div>
+                    <h1 className='text-2xl md:text-5xl font-extrabold text-center'>{slides[current]?.title}</h1>
                     <div className='text-sm md:text-md text-center max-w-2xl'>{slides[current]?.subTitle}</div>
                     <motion.button
                         initial={{ y: 30, opacity: 0 }}
@@ -87,7 +87,7 @@ const HeroSection = () => {
             {/* Dots */}
             <div className='absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2'>
                 {slides?.map((_, index) => (
-                    <button key={index} className={` h-3 rounded-full transition-all duration-300 ${current === index ? 'bg-green-400 w-5' : 'bg-white/50 w-3'}`} onClick={() => setCurrent(index)}></button>
+                    <button key={index} aria-label={`Go to slide ${index + 1}`} className={` h-3 rounded-full transition-all duration-300 ${current === index ? 'bg-green-400 w-5' : 'bg-white/50 w-3'}`} onClick={() => setCurrent(index)}></button>
                 ))}
             </div>
         </div>

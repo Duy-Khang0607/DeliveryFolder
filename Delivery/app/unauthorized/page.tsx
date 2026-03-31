@@ -1,4 +1,10 @@
-import React from 'react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Truy cập bị từ chối",
+  description: "Bạn không có quyền truy cập trang này.",
+  robots: { index: false, follow: false },
+}
 
 const Unauthorized = () => {
   return (

@@ -174,14 +174,13 @@ const ViewGrocery = () => {
                           <Image onClick={() => {
                             setOpen(true)
                             setEditItem(item)
-                          }} src={item?.image[0]} alt='grocery' width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl border border-gray-300 shadow-md shadow-gray-300 cursor-pointer' />
+                          }} src={item?.image[0]} alt={item?.name} width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl border border-gray-300 shadow-md shadow-gray-300 cursor-pointer' />
 
-                          <div className='flex flex-col items-start justify-start gap-2'>
-                            <h1 className='text-sm md:text-xl font-extrabold text-green-700'>{item?.name}</h1>
+                          <div className='flex flex-col items-start gap-2 flex-nowrap w-full'>
+                            <h2 className='text-sm md:text-md xl:text-lg font-extrabold text-green-700 text-left'>{item?.name}</h2>
                             <p className='text-sm md:text-base text-gray-500'>{item?.category}</p>
-                            <p className='text-sm md:text-base text-green-700 font-extrabold'>${item?.price} <span className='text-sm md:text-base text-gray-500'>/{item?.unit}</span></p>
+                            <p className='text-sm md:text-xl text-green-700 font-extrabold'>${item?.price} <span className='text-xs md:text-sm text-gray-500'>/{item?.unit}</span></p>
                           </div>
-
                         </div>
 
                         <div className='flex flex-row items-center gap-2'>
@@ -206,8 +205,6 @@ const ViewGrocery = () => {
                           </motion.button>
                         </div>
                       </motion.div>
-
-
                     )
                   }
                   )}

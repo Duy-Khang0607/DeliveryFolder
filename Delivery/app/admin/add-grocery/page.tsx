@@ -126,7 +126,7 @@ const AddGrocery = () => {
 
             <div className='relative w-full flex flex-col gap-2'>
               <label className='text-base font-semibold'>Grocery Name <span className='text-red-500'>*</span></label>
-              <input required type="email" placeholder='Grocery name' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={name} onChange={(e) => setName(e.target.value)} />
+              <input required type="text" placeholder='Grocery name' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={name} onChange={(e) => setName(e.target.value)} />
             </div>
 
             <div className='relative w-full flex flex-row gap-3 items-center justify-between'>

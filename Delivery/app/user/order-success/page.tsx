@@ -71,18 +71,18 @@ const OrderSuccess = () => {
                 <Box className='w-15 h-15 text-green-700' />
             </motion.div>
 
-            <Link href="/user/my-orders">
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ scale: 0.9 }}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className='text-white bg-green-700 p-2 rounded-lg w-full hover:bg-green-500 transition-all duration-300 cursor-pointer flex flex-row items-center gap-2 justify-center'
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
+                <Link
+                    href="/user/my-orders"
+                    className='text-white bg-green-700 p-2 rounded-lg hover:bg-green-500 transition-all duration-300 cursor-pointer flex flex-row items-center gap-2 justify-center'
                 >
                     Go to My Orders  <MoveRight className='w-5 h-5' />
-                </motion.button>
-            </Link>
+                </Link>
+            </motion.div>
 
         </section>
     )

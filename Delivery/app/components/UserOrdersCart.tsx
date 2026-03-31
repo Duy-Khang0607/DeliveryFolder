@@ -192,7 +192,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                                         width={60}
                                         height={60}
                                         onClick={() => setOpenImage(true)}
-                                        alt="Image upload"
+                                        alt={item?.name}
                                         className="object-cover w-[60px] h-[60px] bg-white border-gray-300 border shadow-2xl rounded-2xl cursor-pointer hover:border-gray-500 transition-all duration-200"
                                     />
                                     {/* Popup image */}
@@ -202,7 +202,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                                         )}
                                     </AnimatePresence>
                                     <div>
-                                        <h1 className='text-md md:text-lg font-semibold'>{item?.name}</h1>
+                                        <h3 className='text-md md:text-lg font-semibold'>{item?.name}</h3>
                                         <p className='text-sm text-gray-500 font-semibold'>{item?.quantity} x {item?.unit}</p>
                                     </div>
                                 </div>

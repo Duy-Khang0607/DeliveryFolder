@@ -226,7 +226,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
                         <div className='w-full border border-gray-300/50'></div>
                         <form className='w-full flex flex-row items-center justify-center gap-2' onSubmit={sendMessage}>
                             <input type="text" placeholder='Your message' className='w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
-                            <button disabled={newMessage.length === 0} className={`w-auto text-white rounded-md p-2 transition-all duration-300 ${newMessage.length > 0 ? 'bg-green-700 hover:bg-green-800 cursor-pointer' : 'bg-gray-500 cursor-not-allowed'}`}>
+                            <button aria-label="Send message" disabled={newMessage.length === 0} className={`w-auto text-white rounded-md p-2 transition-all duration-300 ${newMessage.length > 0 ? 'bg-green-700 hover:bg-green-800 cursor-pointer' : 'bg-gray-500 cursor-not-allowed'}`}>
                                 <Send className='w-5 h-5' />
                             </button>
                         </form>

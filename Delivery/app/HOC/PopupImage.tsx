@@ -24,7 +24,7 @@ const PopupImage = ({ image, setOpen }: PopupImageProps) => {
             >
                 <Image
                     src={image}
-                    alt="full"
+                    alt="Enlarged product image"
                     width={1200}
                     height={800}
                     className="w-full h-full object-contain rounded-2xl border border-gray-100/50"

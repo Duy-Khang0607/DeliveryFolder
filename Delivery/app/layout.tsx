@@ -88,11 +88,22 @@ export default function RootLayout({
       <body
         className="bg-linear-to-b from-green-50 to-white w-full min-h-screen"
       >
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Giao hàng nhanh HCM",
+            "url": baseURL,
+            "description": "Dịch vụ giao hàng nhanh tại TP.HCM 24/7. Ship hỏa tốc nội thành, giao trong ngày.",
+          })}}
+        />
         <Provider>
           <ToastProvider>
             <StoreProvider>
               <InitUser />
-              {children}
+              <main>{children}</main>
             </StoreProvider>
           </ToastProvider>
         </Provider>
