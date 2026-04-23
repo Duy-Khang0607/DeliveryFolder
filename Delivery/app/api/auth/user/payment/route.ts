@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Orders from "@/app/models/orders.model";
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest) {
     try {
         // connect DB
         await connectDB();
+
+        const authSession = await auth()
+        if (!authSession?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
 
         // get body
         const { userId, items, paymentMethod, totalAmount, address } = await req.json();
@@ -46,7 +52,7 @@ export async function POST(req: NextRequest) {
         })
 
         // Stripe
-        const session = await stripe.checkout.sessions.create({
+        const stripeSession = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'payment',
             success_url: `${process.env.NEXT_BASE_URL}/user/order-success`,
@@ -69,7 +75,7 @@ export async function POST(req: NextRequest) {
         // Gọi event socket khi order thanh toán thành công
         await emitEventHandler("new-order", newOrder)
 
-        return NextResponse.json({ url: session?.url }, { status: 200 })
+        return NextResponse.json({ url: stripeSession?.url }, { status: 200 })
 
     } catch (error) {
         console.error("CREATE ORDER ERROR:", error);

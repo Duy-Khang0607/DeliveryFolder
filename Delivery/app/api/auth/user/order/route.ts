@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Orders from "@/app/models/orders.model";
@@ -10,6 +11,11 @@ export async function POST(req: NextRequest) {
     try {
         // connect DB
         await connectDB();
+
+        const session = await auth()
+        if (!session?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
 
         // get body
         const { userId, items, paymentMethod, totalAmount, address } = await req.json();

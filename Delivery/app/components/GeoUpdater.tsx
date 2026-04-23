@@ -6,14 +6,17 @@ import { getSocket } from "../lib/socket"
 
 const GeoUpdater = ({ userId }: { userId: string }) => {
 
-    let socket = getSocket()
-
-    socket.emit('identity', userId)
-
+    useEffect(() => {
+        if (!userId) return
+        const socket = getSocket()
+        socket.emit('identity', userId)
+    }, [userId])
 
     useEffect(() => {
         if (!userId) return
         if (!navigator?.geolocation) return
+
+        const socket = getSocket()
 
         const watcher = navigator.geolocation.watchPosition(
             (pos) => {

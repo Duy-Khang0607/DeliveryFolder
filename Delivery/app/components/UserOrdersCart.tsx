@@ -5,8 +5,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
 import { getSocket } from '../lib/socket'
-import { IUser } from '../models/user.model'
-import mongoose from 'mongoose'
+import { IUserClient } from '../types'
 import { useRouter } from 'next/navigation'
 
 
@@ -15,11 +14,11 @@ interface UserOrderProps {
 }
 
 interface IOrder {
-    _id: mongoose.Types.ObjectId,
-    user: mongoose.Types.ObjectId,
+    _id: string,
+    user: string,
     items: [
         {
-            grocery: mongoose.Types.ObjectId,
+            grocery: string,
             name: string,
             price: string,
             unit: string,
@@ -42,9 +41,9 @@ interface IOrder {
     status: 'Pending' | 'Out of delivery' | 'Delivered',
     createdAt?: Date,
     updatedAt?: Date,
-    isPaid: Boolean,
-    assignedDeliveryBoy?: IUser | null,
-    assignment?: mongoose.Types.ObjectId
+    isPaid: boolean,
+    assignedDeliveryBoy?: IUserClient | null,
+    assignment?: string
     deliveredAt?: Date | null,
     deliveryOTP?: string | null,
     deliveryOTPVerification: boolean,
@@ -58,15 +57,16 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
 
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('order-status-updated', (data) => {
+        const handleStatusUpdate = (data: any) => {
             if (data?.orderId?.toString() === orders?._id.toString()) {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }
-        })
-        return () => {
-            socket.off('order-status-updated')
         }
-    }, [])
+        socket?.on('order-status-updated', handleStatusUpdate)
+        return () => {
+            socket?.off('order-status-updated', handleStatusUpdate)
+        }
+    }, [orders?._id])
 
 
     return (

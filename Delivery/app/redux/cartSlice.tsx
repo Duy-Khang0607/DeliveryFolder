@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { IGrocery } from "../models/grocery.model"
-import mongoose from "mongoose"
 
 export interface ICartSlice {
     cartData: IGrocery[],
@@ -26,24 +25,24 @@ export const cartSlice = createSlice({
             state.cartData.push(action.payload)
             cartSlice.caseReducers.calcTotals(state)
         },
-        increaseQuantity: (state, action: PayloadAction<mongoose.Types.ObjectId>) => {
-            const item = state.cartData.find(item => item?._id === action.payload)
+        increaseQuantity: (state, action: PayloadAction<string>) => {
+            const item = state.cartData.find(item => String(item?._id) === action.payload)
             if (item) {
                 item.quantity = item.quantity + 1;
             }
             cartSlice.caseReducers.calcTotals(state)
         },
-        decreaseQuantity: (state, action: PayloadAction<mongoose.Types.ObjectId>) => {
-            const item = state.cartData.find(item => item?._id === action.payload)
+        decreaseQuantity: (state, action: PayloadAction<string>) => {
+            const item = state.cartData.find(item => String(item?._id) === action.payload)
             if (item?.quantity && item?.quantity > 1) {
                 item.quantity = item.quantity - 1;
             } else {
-                state.cartData = state.cartData?.filter(item => item?._id !== action.payload)
+                state.cartData = state.cartData?.filter(item => String(item?._id) !== action.payload)
             }
             cartSlice.caseReducers.calcTotals(state)
         },
-        removeCart: (state, action: PayloadAction<mongoose.Types.ObjectId>) => {
-            state.cartData = state.cartData.filter(item => item?._id !== action.payload)
+        removeCart: (state, action: PayloadAction<string>) => {
+            state.cartData = state.cartData.filter(item => String(item?._id) !== action.payload)
             cartSlice.caseReducers.calcTotals(state)
         },
         clearCart: (state) => {

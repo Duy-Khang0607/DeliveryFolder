@@ -6,6 +6,8 @@ export async function emitEventHandler(event: string, data: any, socketId?: stri
             event,
             data,
             socketId
+        }, {
+            headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET }
         })
         return response.data
     } catch (error) {

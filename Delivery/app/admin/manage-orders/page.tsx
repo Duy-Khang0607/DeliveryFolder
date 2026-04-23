@@ -45,65 +45,48 @@ const ManageOrders = () => {
     useEffect(() => {
         const socket = getSocket()
 
-        // Đơn hàng mới được tạo
-        socket?.on('new-order', (newOrder) => {
-            console.log('[Admin] new-order received:', newOrder)
+        const handleNewOrder = (newOrder: any) => {
             setOrders((prev) => [newOrder, ...prev!])
-        })
+        }
 
-        // Đơn hàng được phân công cho delivery boy ( khi nhấn Accpect đơn hàng )
-        socket?.on('order-assigned', (data) => {
-            console.log('[Admin] order-assigned received:', data)
+        const handleOrderAssigned = (data: any) => {
             const { orderId, assignmentDeliveryBoy, status } = data
-
             setOrders((prevOrders) => {
                 if (!prevOrders) return prevOrders
-
                 return prevOrders?.map((order: IOrder) =>
                     order?._id?.toString() === orderId?.toString()
-                        ? {
-                            ...order,
-                            assignedDeliveryBoy: assignmentDeliveryBoy,
-                            status: status || 'Out of delivery'
-                        }
+                        ? { ...order, assignedDeliveryBoy: assignmentDeliveryBoy, status: status || 'Out of delivery' }
                         : order
                 )
             })
-        })
+        }
 
-        // Đơn hàng cập nhật status (bao gồm reset về Pending)
-        socket?.on('order-status-updated', (data) => {
-            console.log('[Admin] order-status-updated received:', data)
+        const handleOrderStatusUpdated = (data: any) => {
             const { orderId, status, assignedDeliveryBoy } = data
-
             setOrders((prevOrders) => {
                 if (!prevOrders) return prevOrders
-
                 return prevOrders?.map((order: IOrder) =>
                     order?._id?.toString() === orderId?.toString()
-                        ? {
-                            ...order,
-                            status: status,
-                            assignedDeliveryBoy: assignedDeliveryBoy
-                        }
+                        ? { ...order, status: status, assignedDeliveryBoy: assignedDeliveryBoy }
                         : order
                 )
             })
-        })
+        }
 
-        // Thông báo Đơn hàng bị tất cả delivery boy từ chối (khi admin đang xem orders)
-        socket?.on('all-rejected', (data) => {
-            console.log({ data })
-            if (data) {
-                showToast(data?.message, 'warning')
-            }
-        })
+        const handleAllRejected = (data: any) => {
+            if (data) showToast(data?.message, 'warning')
+        }
+
+        socket?.on('new-order', handleNewOrder)
+        socket?.on('order-assigned', handleOrderAssigned)
+        socket?.on('order-status-updated', handleOrderStatusUpdated)
+        socket?.on('all-rejected', handleAllRejected)
 
         return () => {
-            socket.off('new-order')
-            socket.off('order-assigned')
-            socket.off('order-status-updated')
-            socket.off('all-rejected')
+            socket?.off('new-order', handleNewOrder)
+            socket?.off('order-assigned', handleOrderAssigned)
+            socket?.off('order-status-updated', handleOrderStatusUpdated)
+            socket?.off('all-rejected', handleAllRejected)
         }
     }, [])
 
@@ -208,7 +191,7 @@ const ManageOrders = () => {
                             const filteredOrders = orders?.filter?.((order: IOrder) => !status || order?.status === status)
                             if (filteredOrders?.length > 0) {
                                 return filteredOrders?.map((item: IOrder, index: number) => (
-                                    <AdminOrdersCart key={index} orders={item} />
+                                    <AdminOrdersCart key={index} orders={item as unknown as any} />
                                 ))
                             }
                             return (

@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import Message from "@/app/models/message.model";
 import Orders from "@/app/models/orders.model";
@@ -7,6 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
     try {
         await connectDB();
+
+        const session = await auth()
+        if (!session?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
 
         const { roomId, text, senderId, time } = await req.json();
 

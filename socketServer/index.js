@@ -21,6 +21,8 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
+  const internalHeaders = { headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET } }
+
   // Socket auto connect khi login vô
   socket.on("identity", async (userId) => {
     try {
@@ -28,7 +30,7 @@ io.on("connection", (socket) => {
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
         userId,
         socketId: socket.id
-      })
+      }, internalHeaders)
     } catch (error) {
       console.error('❌ Identity error:', error.response?.data || error.message);
     }
@@ -39,13 +41,13 @@ io.on("connection", (socket) => {
     try {
       const location = {
         type: "Point",
-        coordinates: [long, lat] // ✅ Đúng thứ tự GeoJSON: [longitude, latitude]
+        coordinates: [long, lat]
       }
 
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/update-location`, {
         userId,
         location
-      })
+      }, internalHeaders)
 
       // Cập nhật vị trí deliveryboy
       io.emit("update-deliveryBoy-location", { userId, location });
@@ -61,7 +63,9 @@ io.on("connection", (socket) => {
 
   // Socket send message chat
   socket.on("send-message", async (message) => {
-    axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`, message)
+    axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`, message).catch(err => {
+      console.error('❌ Save message error:', err.message)
+    })
     io.to(message?.roomId).emit("send-message", message)
   })
 
@@ -69,7 +73,7 @@ io.on("connection", (socket) => {
     try {
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
         userId: socket?.userId
-      })
+      }, internalHeaders)
     } catch (error) {
       console.error('❌ Disconnect error:', error.message);
     }
@@ -81,6 +85,10 @@ io.on("connection", (socket) => {
 });
 
 app.post("/notify", async (req, res) => {
+  const secret = req.headers['x-internal-secret']
+  if (secret !== process.env.INTERNAL_API_SECRET) {
+    return res.status(401).json({ message: "Unauthorized" })
+  }
   const { event, data, socketId } = req.body;
   if (socketId) {
     io.to(socketId).emit(event, data);

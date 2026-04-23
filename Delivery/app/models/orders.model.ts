@@ -105,6 +105,10 @@ const orderSchema = new mongoose.Schema<IOrder>({
     },
 }, { timestamps: true });
 
+// Indexes for common query patterns
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1 });
+
 const Orders = mongoose.models.Orders || mongoose.model("Orders", orderSchema);
 
 export default Orders;

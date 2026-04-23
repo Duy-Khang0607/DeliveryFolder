@@ -100,8 +100,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
                     await updatedAssignment.populate('order')
 
-                    for (const boyId of candidates) {
-                        const boy = await User.findById(boyId)
+                    // Batch fetch in one query (eliminates N+1)
+                    const boys = await User.find({ _id: { $in: candidates } }).select('socketId')
+                    for (const boy of boys) {
                         if (boy?.socketId) {
                             await emitEventHandler('new-assignment', {
                                 assignment: updatedAssignment._id,

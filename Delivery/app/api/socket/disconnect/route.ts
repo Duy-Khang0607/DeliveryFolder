@@ -6,6 +6,11 @@ export async function POST(req: NextRequest) {
     try {
         await connectDB()
 
+        const internalSecret = req.headers.get('x-internal-secret')
+        if (internalSecret !== process.env.INTERNAL_API_SECRET) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+
         const { userId } = await req.json()
 
         const user = await User.findByIdAndUpdate(userId, {

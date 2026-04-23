@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth"
 import connectDB from "@/app/lib/db"
 import { sendEmail } from "@/app/lib/mailer"
 import Orders from "@/app/models/orders.model"
@@ -8,11 +9,14 @@ export async function POST(req: NextRequest) {
     try {
         await connectDB()
 
+        const session = await auth()
+        if (!session?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+
         const { orderId } = await req.json()
 
         const order = await Orders.findById(orderId).populate('user assignedDeliveryBoy')
-
-        console.log({order})
 
         if (!order) {
             return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })

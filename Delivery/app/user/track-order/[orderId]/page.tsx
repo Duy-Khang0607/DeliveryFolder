@@ -9,9 +9,11 @@ import { useSelector } from "react-redux"
 import { motion } from "framer-motion"
 import { ArrowLeft, Box, MoveRight, CircleCheckBig, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-import LiveMap from "@/app/components/LiveMap"
+import dynamic from "next/dynamic"
 import { getSocket } from "@/app/lib/socket"
-import DeliveryChat from "@/app/components/DeliveryChat"
+
+const LiveMap = dynamic(() => import("@/app/components/LiveMap"), { ssr: false, loading: () => <div className='w-full h-64 bg-gray-100 animate-pulse rounded-lg' /> })
+const DeliveryChat = dynamic(() => import("@/app/components/DeliveryChat"), { ssr: false })
 
 interface ILocation {
   latitude: number;
@@ -58,23 +60,23 @@ const TrackOrder = () => {
   useEffect(() => {
     const socket = getSocket()
 
-    socket?.on('update-deliveryBoy-location', (data) => {
+    const handleLocationUpdate = (data: any) => {
       setDeliveryBoyLocation({
         latitude: data?.location?.coordinates?.[1],
         longitude: data?.location?.coordinates?.[0],
       })
-    })
+    }
 
-    socket?.on('order-delivered', (data) => {
-      console.log({ data })
-      if (data?.success) {
-        setOrderDelivered(data)
-      }
-    })
+    const handleOrderDelivered = (data: any) => {
+      if (data?.success) setOrderDelivered(data)
+    }
+
+    socket?.on('update-deliveryBoy-location', handleLocationUpdate)
+    socket?.on('order-delivered', handleOrderDelivered)
 
     return () => {
-      socket.off('update-deliveryBoy-location')
-      socket.off('order-delivered')
+      socket?.off('update-deliveryBoy-location', handleLocationUpdate)
+      socket?.off('order-delivered', handleOrderDelivered)
     }
   }, [order])
 
@@ -191,8 +193,8 @@ const TrackOrder = () => {
               {
                 order?._id && userData?._id && (
                   <DeliveryChat
-                    orderId={order._id}
-                    deliveryBoyId={userData._id}
+                    orderId={String(order?._id)}
+                    deliveryBoyId={String(userData?._id)}
                     role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
                 )
               }

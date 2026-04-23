@@ -1,21 +1,17 @@
 'use client'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '../models/grocery.model'
 import CategorySilder from './CategorySilder'
 import GroceryItemCard from './GroceryItemCard'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 const GrocerySection = ({ groceryList }: { groceryList: IGrocery[] }) => {
 
     const [selectedCategory, setSelectedCategory] = useState<string>('')
-    const [filteredGroceryList, setFilteredGroceryList] = useState<IGrocery[]>(groceryList)
 
-    useEffect(() => {
-        if (selectedCategory === '') {
-            setFilteredGroceryList(groceryList)
-        } else {
-            setFilteredGroceryList(groceryList?.filter((item: IGrocery) => item?.category === selectedCategory))
-        }
+    const filteredGroceryList = useMemo(() => {
+        if (!selectedCategory) return groceryList
+        return groceryList?.filter((item: IGrocery) => item?.category === selectedCategory)
     }, [selectedCategory, groceryList])
 
     return (

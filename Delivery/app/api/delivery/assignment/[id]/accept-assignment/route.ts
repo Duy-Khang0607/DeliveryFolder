@@ -20,26 +20,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Delivery boy not found" }, { status: 404 })
         }
 
-        const assignment = await DeliveryAssignment.findById(id)
-
-        if (!assignment) {
-            return NextResponse.json({ success: false, message: "Assignment not found" }, { status: 404 })
-        }
-
-        if (assignment.status !== 'brodcasted') {
-            return NextResponse.json({ success: false, message: "Assignment expired" }, { status: 400 })
-        }
-
-        const alreadyAssigned = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: { $nin: ['brodcasted', 'completed'] } })
+        const alreadyAssigned = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: { $nin: ['brodcasted', 'completed', 'rejected'] } })
 
         if (alreadyAssigned) {
             return NextResponse.json({ success: false, message: "You are already assigned to another assignment" }, { status: 400 })
         }
 
-        assignment.assignedTo = deliveryBoyId
-        assignment.status = 'assigned'
-        assignment.accpectedAt = new Date()
-        await assignment.save()
+        // Atomic update: only succeeds if status is still 'brodcasted'
+        const assignment = await DeliveryAssignment.findOneAndUpdate(
+            { _id: id, status: 'brodcasted' },
+            { assignedTo: deliveryBoyId, status: 'assigned', accpectedAt: new Date() },
+            { new: true }
+        )
+
+        if (!assignment) {
+            return NextResponse.json({ success: false, message: "Assignment is no longer available" }, { status: 400 })
+        }
 
         const order = await Orders.findById(assignment?.order)
 

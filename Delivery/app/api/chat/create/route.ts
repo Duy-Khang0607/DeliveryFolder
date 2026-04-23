@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import ChatRoom from "@/app/models/chatRoom.model";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,6 +7,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
     try {
         await connectDB();
+
+        const session = await auth()
+        if (!session?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
 
         const { userId, deliveryBoyId, orderId } = await req.json();
 

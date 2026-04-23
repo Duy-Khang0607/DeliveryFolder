@@ -45,6 +45,11 @@ const deliverySchema = new mongoose.Schema<IDeliveryAssignment>({
     }
 }, { timestamps: true });
 
+// Indexes for common query patterns
+deliverySchema.index({ assignedTo: 1, status: 1 });
+deliverySchema.index({ order: 1 });
+deliverySchema.index({ brodcastedTo: 1, status: 1 });
+
 const DeliveryAssignment = mongoose.models.DeliveryAssignment || mongoose.model("DeliveryAssignment", deliverySchema);
 
 export default DeliveryAssignment;

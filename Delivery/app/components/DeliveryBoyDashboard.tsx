@@ -6,10 +6,12 @@ import { Box, CardSim, Loader2, LocationEdit, Mail, Phone, Timer, User } from 'l
 import { getSocket } from '../lib/socket';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
-import LiveMap from './LiveMap';
-import DeliveryChat from './DeliveryChat';
+import dynamic from 'next/dynamic';
 import { useToast } from './Toast';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+const LiveMap = dynamic(() => import('./LiveMap'), { ssr: false, loading: () => <div className='w-full h-64 bg-gray-100 animate-pulse rounded-lg' /> });
+const DeliveryChat = dynamic(() => import('./DeliveryChat'), { ssr: false });
 
 interface IDeliveryLocation {
     latitude: number;
@@ -166,12 +168,10 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         fetchCurrentOrder();
     }, [userData?._id]);
 
-    // Lắng nghe sự kiện "new-assignment" khi có đơn hàng được phân công cho delivery boy
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('new-assignment', (newAssignment) => {
+        const handleNewAssignment = (newAssignment: any) => {
             setAssignments((prev) => {
-                // Nếu đã tồn tại order này thì không thêm nữa
                 const alreadyExists = prev.some(
                     (item: any) =>
                         item?._id?.toString() === newAssignment?._id?.toString() ||
@@ -180,68 +180,55 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                 if (alreadyExists) return prev;
                 return [...prev, newAssignment];
             });
-        })
-        return () => {
-            socket.off('new-assignment')
         }
+        socket?.on('new-assignment', handleNewAssignment)
+        return () => { socket?.off('new-assignment', handleNewAssignment) }
     }, [])
 
-    // Lắng nghe sự kiện "update-deliveryBoy-location" khi có đơn hàng được phân công
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('update-deliveryBoy-location', (data) => {
+        const handleLocationUpdate = (data: any) => {
             setDeliverylocation({
                 latitude: data?.location?.coordinates?.[1],
                 longitude: data?.location?.coordinates?.[0],
             })
-        })
-
-        return () => {
-            socket.off('update-deliveryBoy-location')
         }
+        socket?.on('update-deliveryBoy-location', handleLocationUpdate)
+        return () => { socket?.off('update-deliveryBoy-location', handleLocationUpdate) }
     }, [])
 
-    // Lắng nghe khi 1 delivery boy khác đã accept đơn hàng → xóa assignment đó khỏi danh sách
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('assignment-accepted', (data) => {
+        const handleAssignmentAccepted = (data: any) => {
             const { assignmentId, orderId } = data
             setAssignments((prev) => prev?.filter((item: any) =>
                 item?._id?.toString() !== assignmentId?.toString() &&
                 item?.order?._id?.toString() !== orderId?.toString()
             ))
-        })
-        return () => {
-            socket.off('assignment-accepted')
         }
+        socket?.on('assignment-accepted', handleAssignmentAccepted)
+        return () => { socket?.off('assignment-accepted', handleAssignmentAccepted) }
     }, [])
 
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('assignment-rejected', (data) => {
+        const handleAssignmentRejected = (data: any) => {
             const { assignmentId, orderId, deliveryBoyId } = data
             if (deliveryBoyId?.toString() !== userData?._id?.toString()) return
             setAssignments((prev) => prev?.filter((item: any) =>
                 item?._id?.toString() !== assignmentId?.toString() &&
                 item?.order?._id?.toString() !== orderId?.toString()
             ))
-        })
-        return () => {
-            socket.off('assignment-rejected')
         }
+        socket?.on('assignment-rejected', handleAssignmentRejected)
+        return () => { socket?.off('assignment-rejected', handleAssignmentRejected) }
     }, [userData?._id])
 
-    // Lắng nghe sự kiện "order-status-updated" khi admin đổi status đơn hàng
     useEffect(() => {
         const socket = getSocket()
-        socket?.on('order-status-updated', (data) => {
-            console.log('[DeliveryBoy] order-status-updated received:', data)
-            // Chỉ xử lý khi admin đổi status về "Pending" (hủy giao hàng)
+        const handleOrderStatusUpdated = (data: any) => {
             if (data?.status === 'Pending') {
-                // Loại bỏ assignment có status là "Pending"
                 setAssignments((prev) => prev?.filter((item: any) => item?.order?._id.toString() !== data?.orderId?.toString()))
-
-                // Chỉ thông báo cho delivery boy đang giao đơn hàng này
                 setCurrentOrder((prev: any) => {
                     if (prev?.order?._id?.toString() === data?.orderId?.toString()) {
                         showToast('Assigment canceled !', 'warning')
@@ -251,9 +238,10 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                     return prev
                 })
             }
-        })
+        }
+        socket?.on('order-status-updated', handleOrderStatusUpdated)
         return () => {
-            socket.off('order-status-updated')
+            socket?.off('order-status-updated', handleOrderStatusUpdated)
         }
     }, [])
 
@@ -314,7 +302,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                 </div>
 
                 {/* Delivery */}
-                <DeliveryChat orderId={currentOrder?.order?._id!} deliveryBoyId={userData?._id!} role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
+                <DeliveryChat orderId={String(currentOrder?.order?._id)} deliveryBoyId={String(userData?._id)} role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
 
                 {/* OTP */}
                 <motion.div

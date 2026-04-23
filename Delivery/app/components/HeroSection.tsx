@@ -55,7 +55,7 @@ const HeroSection = () => {
                     transition={{ duration: 0.8 }} 
                     className='absolute inset-0'
                 >
-                    <Image src={slides[current]?.bg} alt={slides[current]?.title} fill className='object-cover' />
+                    <Image src={slides[current]?.bg} alt={slides[current]?.title} fill priority sizes="100vw" className='object-cover' />
                     {/* Blur overlay */}
                     <div className='absolute inset-0 bg-black/50 blur-sm'></div>
                 </motion.div>

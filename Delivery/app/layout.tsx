@@ -4,7 +4,6 @@ import Provider from "@/app/provider";
 import { ToastProvider } from "./components/Toast";
 import StoreProvider from "./redux/StoreProvider";
 import InitUser from "./InitUser";
-import "leaflet/dist/leaflet.css";
 
 const baseURL = process.env.NEXT_BASE_URL;
 

@@ -5,9 +5,9 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
 import axios from 'axios'
-import { IUser } from '../models/user.model'
-import mongoose from "mongoose";
+import { IUserClient } from '../types'
 import { getSocket } from '../lib/socket'
+import { IUser } from '../models/user.model'
 
 
 
@@ -16,11 +16,11 @@ interface AdminOrderProps {
 }
 
 interface IOrder {
-    _id: string | mongoose.Types.ObjectId,
-    user: string | mongoose.Types.ObjectId,
+    _id: string,
+    user: string,
     items: [
         {
-            grocery: string | mongoose.Types.ObjectId,
+            grocery: string,
             name: string,
             price: string,
             unit: string,
@@ -43,9 +43,9 @@ interface IOrder {
     status: 'Pending' | 'Out of delivery' | 'Delivered',
     createdAt?: Date,
     updatedAt?: Date,
-    isPaid: Boolean,
-    assignedDeliveryBoy?: IUser | null | mongoose.Types.ObjectId,
-    assignment?: string | mongoose.Types.ObjectId
+    isPaid: boolean,
+    assignedDeliveryBoy?: IUserClient | null,
+    assignment?: string
 }
 
 
@@ -141,8 +141,8 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
                             <div className='flex flex-row  items-center justify-center gap-2'>
                                 <User className='w-5 h-5 text-blue-500' />
                                 <div className='flex flex-col gap-1'>
-                                    <span className='text-sm md:text-lg w-full'>Assigned: <span className='text-sm md:text-lg w-full font-semibold'>{(orders?.assignedDeliveryBoy as IUser)?.name}</span></span>
-                                    <span className='text-sm md:text-md text-gray-500 font-semibold'>📞 {(orders?.assignedDeliveryBoy as IUser)?.mobile}</span>
+                                    <span className='text-sm md:text-lg w-full'>Assigned: <span className='text-sm md:text-lg w-full font-semibold'>{(orders?.assignedDeliveryBoy as IUserClient)?.name}</span></span>
+                                    <span className='text-sm md:text-md text-gray-500 font-semibold'>📞 {(orders?.assignedDeliveryBoy as IUserClient)?.mobile}</span>
                                 </div>
                             </div>
 

@@ -1,16 +1,21 @@
 'use client'
 import { Loader2, MessageSquare, Send } from 'lucide-react';
-import mongoose from 'mongoose';
 import { useEffect, useRef, useState } from 'react';
 import { getSocket } from '../lib/socket';
-import { IMessage } from '../models/message.model';
 import axios from 'axios';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
+interface IMessage {
+    _id?: string;
+    roomId: string;
+    text: string;
+    senderId: string;
+    time: string;
+}
 
 type IProps = {
-    orderId: mongoose.Types.ObjectId;
-    deliveryBoyId: mongoose.Types.ObjectId;
+    orderId: string;
+    deliveryBoyId: string;
     role: 'user' | 'deliveryBoy' | 'admin';
 }
 

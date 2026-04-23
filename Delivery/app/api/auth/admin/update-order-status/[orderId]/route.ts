@@ -1,22 +1,20 @@
-// Import hàm kết nối database từ thư mục lib
+import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
-// Import model DeliveryAssignment - quản lý việc phân công giao hàng
 import DeliveryAssignment from "@/app/models/deliveryAssignment.model";
-// Import model Orders - quản lý đơn hàng
 import Orders from "@/app/models/orders.model";
-// Import model User - quản lý người dùng (bao gồm shipper)
 import User from "@/app/models/user.model";
-// Import các type của Next.js để xử lý request và response
 import { NextRequest, NextResponse } from "next/server";
 
 
-// Hàm xử lý POST request - cập nhật trạng thái đơn hàng
-// req: request từ client, params: chứa orderId từ URL động [orderId]
 export async function POST(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
     try {
-        // Kết nối tới MongoDB database
         await connectDB();
+
+        const session = await auth()
+        if (!session?.user || (session.user as any)?.role !== 'admin') {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
 
         // Lấy orderId từ params (URL parameter)
         const { orderId } = await params
@@ -105,8 +103,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             await deliveryAssignment.populate('order');
 
             // Gọi event socket khi cập nhật trạng thái đơn hàng
-            for (const boyId of candidates) {
-                const boy = await User.findById(boyId);
+            // for (const boyId of candidates) {
+            //     const boy = await User.findById(boyId);
+            //     if (boy?.socketId) {
+            //         await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order, socketId: boy?.socketId })
+            //     }
+            // }
+
+            const boys = await User.find({ _id: { $in: candidates } }).select('socketId')
+            for (const boy of boys) {
                 if (boy?.socketId) {
                     await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order, socketId: boy?.socketId })
                 }

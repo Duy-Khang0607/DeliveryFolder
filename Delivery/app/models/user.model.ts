@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema<IUser>({
 });
 
 userSchema.index({ location: "2dsphere" })
+userSchema.index({ role: 1, isOnline: 1 })
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
