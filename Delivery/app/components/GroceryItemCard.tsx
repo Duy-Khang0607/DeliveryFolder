@@ -59,9 +59,9 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
             className='w-full bg-gray-200 rounded-2xl cursor-pointer gap-2 py-1.5 mt-3 border border-green-500 text-green-500'>
             <div className='flex flex-row items-center justify-center gap-2'>
-              <CircleMinus onClick={() => dispatch(decreaseQuantity(groceries?._id))} className='w-5 h-5 hover:text-green-700' />
+              <CircleMinus onClick={() => dispatch(decreaseQuantity(groceries?._id.toString()))} className='w-5 h-5 hover:text-green-700' />
               <span>{cartItem?.quantity}</span>
-              <CirclePlus onClick={() => dispatch(increaseQuantity(groceries?._id))} className='w-5 h-5 hover:text-green-700' />
+              <CirclePlus onClick={() => dispatch(increaseQuantity(groceries?._id.toString()))} className='w-5 h-5 hover:text-green-700' />
             </div>
           </motion.div>
         ) : (
