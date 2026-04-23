@@ -73,15 +73,15 @@ const Cart = () => {
                                     {/* Quantity && Delete*/}
                                     <div className='flex flex-row items-center gap-4 w-full md:justify-end mt-3'>
                                         <div className='bg-gray-100 py-2 px-4 rounded-2xl flex flex-row items-center gap-4 w-full md:w-auto justify-center'>
-                                            <motion.button onClick={() => dispatch(decreaseQuantity(item?._id))} whileTap={{ scale: 0.96 }} className='text-green-700 rounded-2xl cursor-pointer hover:text-green-500 transition-all duration-300'>
+                                            <motion.button onClick={() => dispatch(decreaseQuantity(item?._id.toString()))} whileTap={{ scale: 0.96 }} className='text-green-700 rounded-2xl cursor-pointer hover:text-green-500 transition-all duration-300'>
                                                 <CircleMinus className='w-5 h-5' />
                                             </motion.button>
                                             <span className='text-md font-semibold'>{item?.quantity}</span>
-                                            <motion.button onClick={() => dispatch(increaseQuantity(item?._id))} whileTap={{ scale: 0.96 }} className='text-green-700 rounded-2xl cursor-pointer hover:text-green-500 transition-all duration-300'>
+                                            <motion.button onClick={() => dispatch(increaseQuantity(item?._id.toString()))} whileTap={{ scale: 0.96 }} className='text-green-700 rounded-2xl cursor-pointer hover:text-green-500 transition-all duration-300'>
                                                 <CirclePlus className='w-5 h-5' />
                                             </motion.button>
                                         </div>
-                                        <motion.button whileTap={{ scale: 0.96 }} className='text-red-700 rounded-2xl cursor-pointer hover:text-red-500 transition-all duration-300 bg-gray-100  py-2 px-2 flex justify-center text-center items-center' onClick={() => dispatch(removeCart(item?._id))}>
+                                        <motion.button whileTap={{ scale: 0.96 }} className='text-red-700 rounded-2xl cursor-pointer hover:text-red-500 transition-all duration-300 bg-gray-100  py-2 px-2 flex justify-center text-center items-center' onClick={() => dispatch(removeCart(item?._id.toString()))}>
                                             <Trash className='w-5 h-5' />
                                         </motion.button>
                                     </div>
