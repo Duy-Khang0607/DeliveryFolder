@@ -11,6 +11,7 @@ interface IMessage {
     text: string;
     senderId: string;
     time: string;
+    messageId?: string;
 }
 
 type IProps = {
@@ -54,6 +55,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
                     month: '2-digit',
                     year: 'numeric',
                 }),
+                messageId: crypto.randomUUID(),
             }
 
             // CHỈ EMIT message, KHÔNG listen ở đây

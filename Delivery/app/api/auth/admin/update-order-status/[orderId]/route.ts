@@ -113,7 +113,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             const boys = await User.find({ _id: { $in: candidates } }).select('socketId')
             for (const boy of boys) {
                 if (boy?.socketId) {
-                    await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order, socketId: boy?.socketId })
+                    await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order }, boy?.socketId)
                 }
             }
 

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
         }
 
         // get body
-        const { userId, items, paymentMethod, totalAmount, address } = await req.json();
+        const { userId, items, paymentMethod, totalAmount, address, idempotencyKey } = await req.json();
 
         // Check req
         if (!userId || !Array.isArray(items) || items?.length === 0 || !paymentMethod || totalAmount == null || !address) {
@@ -42,13 +42,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
         }
 
+        // Lớp 1: Kiểm tra order đã tồn tại
+        if (idempotencyKey) {
+            const existingOrder = await Orders.findOne({ idempotencyKey });
+            if (existingOrder?.stripeSessionUrl) {
+                return NextResponse.json({ url: existingOrder.stripeSessionUrl }, { status: 200 });
+            }
+        }
+
         // Create order
         const newOrder = await Orders.create({
             user: userId,
             items,
             paymentMethod,
             totalAmount,
-            address
+            address,
+            idempotencyKey: idempotencyKey || null
         })
 
         // Stripe
@@ -69,8 +78,14 @@ export async function POST(req: NextRequest) {
                     quantity: 1,
                 },
             ],
-            metadata: { orderId: newOrder._id.toString() }
-        });
+            metadata: { orderId: newOrder._id.toString() },
+        }, {
+            idempotencyKey: idempotencyKey  // Stripe tự dedup nếu key trùng
+        }
+        );
+
+        // Lưu stripeSessionUrl để idempotency: retry trả về URL cũ thay vì tạo session mới
+        await Orders.findByIdAndUpdate(newOrder._id, { stripeSessionUrl: stripeSession.url });
 
         // Gọi event socket khi order thanh toán thành công
         await emitEventHandler("new-order", newOrder)

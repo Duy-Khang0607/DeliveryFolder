@@ -11,6 +11,7 @@ import ButtonHome from '@/app/components/ButtonHome'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
 import Link from 'next/link'
+import Pagination from '@/app/components/Pagination'
 
 const ViewGrocery = () => {
   const [groceries, setGrocery] = useState<IGrocery[]>([])
@@ -34,14 +35,11 @@ const ViewGrocery = () => {
       if (res?.data?.success) {
         setGrocery(res?.data?.groceries)
         setFilter(res?.data?.groceries)
-        setCurrentPage(res?.data?.pagination?.currentPage)
         setTotalPages(res?.data?.pagination?.totalPages)
         setTotalItems(res?.data?.pagination?.totalItems || 0)
       }
-      setLoading(false)
-    } catch (error) {
-      console.error({ error })
-      setLoading(false)
+    } catch (error:any) {
+      showToast(`${error?.response?.data?.message || 'System error !'}`, "error");
     } finally {
       setLoading(false)
     }
@@ -49,19 +47,15 @@ const ViewGrocery = () => {
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      fetchGrocery(currentPage - 1)
+      setCurrentPage(prev => prev - 1)
     }
   }
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      fetchGrocery(currentPage + 1)
+      setCurrentPage(prev => prev + 1)
     }
   }
-
-  useEffect(() => {
-    fetchGrocery(currentPage)
-  }, [itemsPerPage, currentPage])
 
   const handleSearchGrocery = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -74,7 +68,6 @@ const ViewGrocery = () => {
     if (!confirm('Are you sure you want to delete this grocery?')) return
     try {
       const res = await axios.delete(`/api/auth/admin/delete-grocery`, { data: { id: id } })
-      console.log({ res })
       if (res?.data?.success) {
         showToast(res?.data?.message, "success");
         await fetchGrocery()
@@ -87,6 +80,9 @@ const ViewGrocery = () => {
     }
   }
 
+  useEffect(() => {
+    fetchGrocery(currentPage)
+  }, [currentPage])
 
   return (
     <>
@@ -109,7 +105,6 @@ const ViewGrocery = () => {
           <motion.div className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
             {/* Back to home */}
             <div className='min-h-[40px] flex items-center justify-between'>
-
               <div>
                 <ButtonHome />
               </div>
@@ -236,87 +231,7 @@ const ViewGrocery = () => {
 
           {/* Pagination */}
           {totalItems > 0 && (
-            <div className='fixed left-1/2 -translate-x-1/2 bottom-2 md:bottom-0 flex flex-row justify-center items-center z-50 bg-white/50 backdrop-blur-sm rounded-full p-2 border border-gray-300'>
-              {/* Prev Page */}
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                whileHover={{ scale: 1.06 }}
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-                className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === 1 ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
-              >
-                <ArrowLeft className='w-5 h-5' />
-              </motion.button>
-              {/* Show pages 1, 2, 3, 4, 5 */}
-              {totalPages > 5 ? (
-                <>
-                  {currentPage !== totalPages && (
-                    <>
-                      <motion.button
-                        key={currentPage}
-                        whileTap={{ scale: 0.97 }}
-                        whileHover={{ scale: 1.06 }}
-                        onClick={() => {
-                          if (1 !== currentPage) fetchGrocery(1)
-                        }}
-                        className={`
-                      bg-green-700 text-white rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
-                      >
-                        <span className='text-sm md:text-base w-full text-center'>{currentPage}</span>
-                      </motion.button>
-
-                      <span className="mx-1 text-gray-500 text-base font-bold select-none">...</span>
-                    </>
-                  )}
-
-
-                  <motion.button
-                    key={totalPages}
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ scale: 1.06 }}
-                    onClick={() => {
-                      if (totalPages !== currentPage) fetchGrocery(totalPages)
-                    }}
-                    className={`${currentPage === totalPages
-                      ? 'bg-green-700 text-white'
-                      : 'bg-white text-green-700 border border-green-700'
-                      } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
-                  >
-                    <span className='text-sm md:text-base w-full text-center'>{totalPages}</span>
-                  </motion.button>
-                </>
-              ) : (
-                Array.from({ length: totalPages }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <motion.button
-                      key={pageNum}
-                      whileTap={{ scale: 0.97 }}
-                      whileHover={{ scale: 1.06 }}
-                      onClick={() => {
-                        if (pageNum !== currentPage) fetchGrocery(pageNum)
-                      }}
-                      className={`${pageNum === currentPage
-                        ? 'bg-green-700 text-white'
-                        : 'bg-white text-green-700 border border-green-700'
-                        } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
-                    >
-                      <span className='text-sm md:text-base w-full text-center'>{pageNum}</span>
-                    </motion.button>
-                  );
-                })
-              )}
-              {/* Next Page */}
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                whileHover={{ scale: 1.06 }}
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === totalPages ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
-              >
-                <ArrowRight className='w-5 h-5' />
-              </motion.button>
-            </div>
+            <Pagination totalPages={totalPages} handlePrevPage={handlePrevPage} handleNextPage={handleNextPage} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
           )}
 
           {/* Edit Grocery */}

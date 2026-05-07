@@ -9,12 +9,22 @@ export async function POST(req: NextRequest) {
     try {
         await connectDB();
 
-        const session = await auth()
-        if (!session?.user) {
-            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        const internalSecret = req.headers.get('x-internal-secret')
+        const isInternalCall = internalSecret === process.env.INTERNAL_API_SECRET
+
+        if (!isInternalCall) {
+            const session = await auth()
+            if (!session?.user) {
+                return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+            }
         }
 
-        const { roomId, text, senderId, time } = await req.json();
+        // const session = await auth()
+        // if (!session?.user) {
+        //     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        // }
+
+        const { roomId, text, senderId, time, messageId } = await req.json();
 
         const room = await Orders.findById(roomId);
 
@@ -22,7 +32,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Room not found" }, { status: 400 });
         }
 
-        const messages = await Message.create({ roomId, text, senderId, time })
+        // Kiểm tra message đã lưu chưa
+        if (messageId) {
+            const existingMsg = await Message.findOne({ messageId });
+            if (existingMsg) {
+                return NextResponse.json({ success: true, message: "Already saved", messages: existingMsg }, { status: 200 });
+            }
+        }
+
+        const messages = await Message.create({ roomId, text, senderId, time, messageId })
 
         return NextResponse.json({ success: true, message: "Chat message saved successfully", messages }, { status: 200 });
 

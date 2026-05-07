@@ -30,9 +30,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 })
         }
 
+        // Kiểm tra order đã được xác thực hoặc đã được giao thành công
+        if (order?.deliveryOTPVerification || order?.status === 'Delivered') {
+            return NextResponse.json({ success: false, message: "Order already delivered" }, { status: 200 });
+        }
+
         if (order.deliveryOTP !== otp) {
             return NextResponse.json({ success: false, message: "Incorrect OTP or expired" }, { status: 400 })
         }
+
 
         order.status = 'Delivered'
         order.deliveryOTPVerification = true

@@ -25,11 +25,16 @@ export async function POST(req: NextRequest) {
         const file = formData.get('image') as Blob | null;
 
         let imageUrls;
-        if(file){
+        if (file) {
             imageUrls = await uploadOnCloudinary(file);
-            if(!imageUrls){
+            if (!imageUrls) {
                 return NextResponse.json({ success: false, message: 'Failed to upload image' }, { status: 400 });
             }
+        }
+
+        const existingGrocery = await Grocery.findOne({ name });
+        if (existingGrocery) {
+            return NextResponse.json({ success: false, message: 'Grocery with this name already exists' }, { status: 400 });
         }
 
         // Create grocery

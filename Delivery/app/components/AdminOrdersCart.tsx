@@ -7,12 +7,12 @@ import PopupImage from '../HOC/PopupImage'
 import axios from 'axios'
 import { IUserClient } from '../types'
 import { getSocket } from '../lib/socket'
-import { IUser } from '../models/user.model'
-
+import { useToast } from "@/app/components/Toast"
 
 
 interface AdminOrderProps {
     orders: IOrder
+    handleStatusChange: (orderId: string, newStatus: string) => void
 }
 
 interface IOrder {
@@ -49,26 +49,34 @@ interface IOrder {
 }
 
 
-const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
+const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
     const [expand, setExpand] = useState(false)
     const [isOpenImage, setOpenImage] = useState(false)
     const statusPayment = ['Out of delivery', 'Pending']
     const [status, setStatus] = useState<string>('Pending')
     const [loading, setLoading] = useState(false)
-
+    const { showToast } = useToast()
 
     const updateOrderStatus = async (orderId: string, status: string) => {
         setLoading(true)
         try {
             await axios.post(`/api/auth/admin/update-order-status/${orderId}`, { status })
             setStatus(status)
+            handleStatusChange?.(orderId, status)
+            if (status === 'Out of delivery') {
+                showToast('Order is out of delivery', 'success')
+            } else {
+                showToast('Order is pending !', 'warning')
+            }
         } catch (error) {
             console.error({ error })
             setLoading(false)
+            showToast('Order status update failed', 'error')
         } finally {
             setLoading(false)
         }
     }
+
 
     useEffect(() => {
         setStatus(orders?.status)
@@ -78,7 +86,6 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
         const socket = getSocket()
 
         socket?.on('order-status-updated', (data) => {
-            console.log('[AdminOrdersCart] order-status-updated received:', data)
             if (data?.orderId?.toString() === orders?._id.toString()) {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }
@@ -94,6 +101,7 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className='w-full h-full rounded-md shadow-md transition-all flex flex-col gap-2 hover:shadow-xl border border-gray-300'>
+            {/* Order details */}
             <div className='flex flex-row justify-between items-center bg-green-100 p-4'>
                 {/* Order ID */}
                 <div className='flex flex-col gap-2'>
@@ -106,6 +114,7 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
                     <p className='text-xs md:text-lg text-gray-500'>{new Date(orders?.createdAt!).toLocaleString()}</p>
                 </div>
 
+                {/* Update order status */}
                 <div className='flex items-center gap-2 font-semibold text-sm md:text-sm'>
                     {status !== 'Delivered' && (
                         <select required disabled={loading} className='p-1 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer' value={status} onChange={(e) => updateOrderStatus(String(orders?._id), e.target.value)}>
@@ -119,6 +128,7 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
                 </div>
             </div>
 
+            {/* User details */}
             <div className='p-4 space-y-5'>
                 <div className='flex items-center gap-2'>
                     <User className='w-5 h-5 text-green-700' />
@@ -243,7 +253,6 @@ const AdminOrdersCart = ({ orders }: AdminOrderProps) => {
                                     <p className='text-green-700 font-semibold'>${item?.price}</p>
                                 </div>
                             </motion.div>
-
                         ))
                     )}
                 </AnimatePresence>

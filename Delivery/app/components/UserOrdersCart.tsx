@@ -74,7 +74,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className='w-full h-full rounded-md shadow-md transition-all flex flex-col gap-2 hover:shadow-xl border border-gray-300'>
+            className='w-full h-full rounded-md shadow-md transition-all flex flex-col gap-2 hover:shadow-xl border border-gray-300 mt-10'>
             <div className='flex flex-row justify-between items-center bg-green-100 p-4'>
                 {/* Order ID */}
                 <div className='flex flex-col gap-2'>

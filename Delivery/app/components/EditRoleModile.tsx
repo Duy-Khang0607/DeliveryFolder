@@ -40,10 +40,11 @@ const EditRoleModile = () => {
                 role: selectedRole,
                 mobile
             });
-            if(response?.data?.success){
-                await update({ role: selectedRole });
+            if (response?.data?.success) {
+                const session = await update({ role: selectedRole });
                 showToast(response?.data?.message, "success");
                 router.push('/');
+
             }
             setLoading(false);
         } catch (error) {
@@ -57,7 +58,6 @@ const EditRoleModile = () => {
     const checkForAdmin = async () => {
         try {
             const response = await axios.get('/api/check-for-admin');
-            console.log({response})
             if (response?.data?.adminExists) {
                 setRoles(prev => prev?.filter(role => role?.id !== 'admin'));
                 // setSelectedRole('admin');
@@ -68,7 +68,6 @@ const EditRoleModile = () => {
     }
 
     useEffect(() => {
-        console.log('check')
         checkForAdmin();
     }, []);
 

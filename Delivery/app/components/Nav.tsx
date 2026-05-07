@@ -1,5 +1,5 @@
 'use client'
-import { CircleX, ListOrdered, LogOut, Menu, Package, PackagePlus, Plus, Search, ShoppingCart, User, View, X } from 'lucide-react'
+import { CircleX, LogOut, Menu, Package, PackagePlus, Plus, Search, ShoppingCart, User, UserCog, Users, X } from 'lucide-react'
 import { IUser } from '../models/user.model'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,9 +9,9 @@ import { signOut } from 'next-auth/react'
 import { useSelector } from 'react-redux'
 import { RootState } from '../redux/store'
 import { useRouter } from 'next/navigation'
-import { IOrder } from '../models/orders.model'
 import axios from 'axios'
 import profileImage from '../assets/profile.jpg'
+import { useToast } from './Toast'
 
 const Nav = ({ user }: { user: IUser }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -23,9 +23,9 @@ const Nav = ({ user }: { user: IUser }) => {
   const searchMobileRef = useRef<HTMLFormElement>(null)
   const [sideBar, setSideBar] = useState(false)
   const router = useRouter()
-  const [orders, setOrders] = useState<IOrder[] | undefined>([])
+  const [orders, setOrders] = useState<number | undefined>(0)
   const { cartData } = useSelector((state: RootState) => state.cart)
-
+  const { showToast } = useToast()
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -46,10 +46,10 @@ const Nav = ({ user }: { user: IUser }) => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('/api/auth/user/my-orders');
-      setOrders(res?.data)
-    } catch (error) {
-      console.error('Error fetching orders:', error);
+      const res = await axios.get('/api/auth/user/my-orders?page=1&limit=10');
+      setOrders(res?.data?.pagination?.totalItems || 0)
+    } catch (error: any) {
+      showToast(error?.response?.data?.message, 'error')
     }
   }
 
@@ -142,13 +142,25 @@ const Nav = ({ user }: { user: IUser }) => {
               <Package className='w-5 h-5 text-green-500' />
               Manager orders
             </Link>
+            {/* Manager Users */}
+            <Link href='admin/manage-users' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 min-w-[100px] text-sm'>
+              <Users className='w-5 h-5 text-green-500' />
+              Manager users
+            </Link>
           </div>
         )}
 
         {/* User Image */}
-        <div ref={avatarRef} className='relative min-w-[30px]' onClick={() => setShowUserMenu(prev => !prev)}>
-          <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer'
-          />
+        <div ref={avatarRef} className='relative bg-white rounded-full p-2 h-full flex items-center justify-center' onClick={() => setShowUserMenu(prev => !prev)}>
+          {user?.role === 'admin' ? (
+            user?.image
+              ? <Image src={user?.image as string || profileImage} alt='admin' width={20} height={20} className='w-5 h-5 rounded-full' />
+              : <UserCog className='w-5 h-5 text-green-500' />
+          ) : (
+            (user?.role === 'user' || user?.role === 'deliveryBoy') && user?.image
+              ? <Image src={user?.image as string || profileImage} alt='user' width={20} height={20} className='w-5 h-5 rounded-full' />
+              : <User className='w-5 h-5 text-green-500' />
+          )}
         </div>
 
         {/* Dropdown Profile */}
@@ -164,7 +176,15 @@ const Nav = ({ user }: { user: IUser }) => {
             >
               {/* Profile */}
               <div className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
-                <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
+                {user?.role === 'admin' ? (
+                  user?.image
+                    ? <Image src={user?.image as string || profileImage} alt='admin' width={20} height={20} className='w-5 h-5 rounded-full' />
+                    : <UserCog className='w-5 h-5 text-green-500' />
+                ) : (
+                  (user?.role === 'user' || user?.role === 'deliveryBoy') && user?.image
+                    ? <Image src={user?.image as string || profileImage} alt='user' width={20} height={20} className='w-5 h-5 rounded-full' />
+                    : <User className='w-5 h-5 text-green-500' />
+                )}
                 <div className='flex flex-col gap-1'>
                   <span className='text-black font-bold text-xs'>{user?.name.toUpperCase()}</span>
                   <span className='text-green-400 text-xs w-auto font-semibold tracking-wide'>{user?.role?.toUpperCase()}</span>
@@ -173,7 +193,7 @@ const Nav = ({ user }: { user: IUser }) => {
               {user?.role === 'user' && <>
                 <button onClick={() => router.push('/user/my-orders')} className='flex items-center gap-2 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
                   <Package className='w-5 h-5 text-green-500' />
-                  <span className='text-black text-sm md:text-md relative'>My Orders <span className='absolute top-0 -right-8 text-white font-bold text-xs flex items-center justify-center w-6 h-6 bg-red-500 rounded-full'>{orders?.length && orders?.length > 0 ? orders?.length : 0}</span></span>
+                  <span className='text-black text-sm md:text-md relative'>My Orders <span className='absolute top-0 -right-8 text-white font-bold text-xs flex items-center justify-center w-6 h-6 bg-red-500 rounded-full'>{orders ? orders : 0}</span></span>
                 </button>
               </>}
               <hr className='border-gray-200' />
@@ -228,8 +248,9 @@ const Nav = ({ user }: { user: IUser }) => {
             </div>
 
             {/* Profile */}
-            <div className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center gap-2 p-2 mt-5 shadow-md shadow-white/50 border-white border-1 '>
-              <Image src={user?.image || profileImage} alt='User' width={32} height={32} className='w-8 h-8 rounded-full cursor-pointer' />
+            <div className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center gap-2 p-2 mt-5 shadow-md shadow-white/50 border-white border w-full'>
+              {(user?.role === 'user' || user?.role === 'deliveryBoy') && <User className='w-5 h-5 text-green-500' />}
+              {user?.role === 'admin' && <UserCog className='w-5 h-5 text-green-500' />}
               <div className='flex flex-col gap-1'>
                 <span className='text-white font-bold text-sm'>{user?.name.toUpperCase()}</span>
                 <span className='text-green-400 text-xs w-auto font-bold tracking-wide'>{user?.role?.toUpperCase()}</span>
@@ -250,10 +271,16 @@ const Nav = ({ user }: { user: IUser }) => {
                 View category
               </Link>
 
-              {/* Manager */}
+              {/* Manager Orders */}
               <Link href='admin/manage-orders' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <Package className='text-white w-5 h-5' />
                 Manager Orders
+              </Link>
+
+               {/* Manager */}
+               <Link href='admin/manage-users' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
+                <Users className='text-white w-5 h-5' />
+                Manager Users
               </Link>
 
               {/* Border */}

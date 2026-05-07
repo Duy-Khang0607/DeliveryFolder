@@ -26,9 +26,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "No delivery boy assigned to this order" }, { status: 400 })
         }
 
+        // Kiểm tra OTP đã được gửi trong vòng 60 giây, không gửi lại
+        if (order?.otpSentAt && (Date.now() - new Date(order?.otpSentAt).getTime()) < 60_000) {
+            return NextResponse.json({ success: false, message: 'Please wait 60 seconds before resending.' }, { status: 429 });
+        }
+
         const otp = Math.floor(100000 + Math.random() * 900000)
 
         order.deliveryOTP = otp.toString()
+        order.otpSentAt = new Date();
         await order.save()
 
         await sendEmail(order.assignedDeliveryBoy.email, "Your delivery OTP", `<h2> Your delivery OTP is <strong>${otp}</strong></h2>`)

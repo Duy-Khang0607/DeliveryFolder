@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         }
 
         // get body
-        const { userId, items, paymentMethod, totalAmount, address } = await req.json();
+        const { userId, items, paymentMethod, totalAmount, address, idempotencyKey } = await req.json();
 
         // Check req
         if (!userId || !Array.isArray(items) || items?.length === 0 || !paymentMethod || totalAmount == null || !address) {
@@ -40,13 +40,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
         }
 
+        // Kiểm tra đơn hàng đã tồn tại chưa
+        if (idempotencyKey) {
+            const existingOrder = await Orders.findOne({ idempotencyKey });
+            if (existingOrder) {
+                return NextResponse.json({ success: true, message: 'Order already created', newOrder: existingOrder }, { status: 200 });
+            }
+        }
+
         // Create order
         const newOrder = await Orders.create({
             user: userId,
             items,
             paymentMethod,
             totalAmount,
-            address
+            address,
+            idempotencyKey: idempotencyKey || null
         })
 
         // Gọi event socket khi order thanh toán thành công

@@ -6,6 +6,7 @@ export interface IMessage {
     time: string,
     createdAt?: Date,
     updatedAt?: Date,
+    messageId: string,
 }
 
 const messageSchema = new mongoose.Schema<IMessage>({
@@ -19,6 +20,12 @@ const messageSchema = new mongoose.Schema<IMessage>({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
+    messageId: {
+        type: String,
+        default: null,
+        unique: true,
+        sparse: true
+    }
 }, { timestamps: true });
 
 messageSchema.index({ roomId: 1, createdAt: 1 });

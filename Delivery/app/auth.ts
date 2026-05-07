@@ -24,9 +24,11 @@ import connectDB from "./lib/db";
 import bcrypt from "bcryptjs";
 import User from "./models/user.model";
 import Google from "next-auth/providers/google";
-
+import { authConfig } from "./auth.config";
 // Cấu hình NextAuth với các hàm handlers, signIn, signOut, auth
 export const { handlers, signIn, signOut, auth } = NextAuth({
+
+    ...authConfig,
     // PROVIDERS: Định nghĩa các phương thức đăng nhập (Google, Facebook, Credentials...)
     providers: [
         // Credentials Provider: Đăng nhập bằng email/password tự quản lý
@@ -84,60 +86,70 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         })
     ],
+
     // CALLBACKS: Các hàm được gọi tự động tại các thời điểm khác nhau trong quá trình authentication
-    callbacks: {
-        // Signin
-        async signIn({ user, account }) {
-            if (account?.provider == 'google') {
-                // Connect DB
-                await connectDB();
-                // find email in database
-                let dbUser = await User.findOne({ email: user.email });
-                if (!dbUser) {
-                    // create user
-                    dbUser = await User.create({ email: user.email, name: user.name, image: user.image });
-                }
+    // callbacks: {
+    //     // Signin
+    //     async signIn({ user, account }) {
+    //         if (account?.provider == 'google') {
+    //             // Connect DB
+    //             await connectDB();
+    //             // find email in database
+    //             let dbUser = await User.findOne({ email: user.email });
+    //             if (!dbUser) {
+    //                 // create user
+    //                 dbUser = await User.create({ email: user.email, name: user.name, image: user.image });
+    //             }
 
-                user.id = dbUser._id.toString();
-                user.role = dbUser.role;
-            }
-            return true;
-        },
+    //             user.id = dbUser._id.toString();
+    //             user.role = dbUser.role;
+    //         }
+    //         return true;
+    //     },
 
-        // jwt callback: Được gọi KHI TẠO hoặc CẬP NHẬT JWT token
-        // - Chạy ngay sau khi user đăng nhập thành công (authorize return user)
-        // - Mục đích: Thêm thông tin custom vào JWT token (id, role, ...)
-        // - Token này được mã hóa và lưu trên client (cookie)
-        jwt: ({ token, user }) => {
-            // Chỉ khi đăng nhập lần đầu (user có giá trị)
-            if (user) {
-                token.id = user.id as string;
-                token.name = user.name as string;
-                token.email = user.email as string;
-                token.role = user.role as string; // Thêm role để phân quyền
-            }
-            return token;
-        },
+    //     // jwt callback: Được gọi KHI TẠO hoặc CẬP NHẬT JWT token
+    //     // - Chạy ngay sau khi user đăng nhập thành công (authorize return user)
+    //     // - Mục đích: Thêm thông tin custom vào JWT token (id, role, ...)
+    //     // - Token này được mã hóa và lưu trên client (cookie)
+    //     jwt: ({ token, user, trigger, session }) => {
+    //         // Chỉ khi đăng nhập lần đầu (user có giá trị)
+    //         if (user) {
+    //             token.id = user.id as string;
+    //             token.name = user.name as string;
+    //             token.email = user.email as string;
+    //             token.role = user.role as string; // Thêm role để phân quyền
+    //         }
 
-        // session callback: Được gọi KHI LẤY SESSION từ client
-        // - Chạy mỗi khi gọi useSession() hoặc getSession()
-        // - Mục đích: Đưa data từ JWT token vào session object
-        // - Session này được trả về cho client để sử dụng trong components
-        session: ({ session, token }) => {
-            if (session.user) {
-                session.user.id = token.id as string;
-                session.user.name = token.name as string;
-                session.user.email = token.email as string;
-                session.user.role = token.role as string; // Client có thể truy cập session.user.role
-            }
-            return session;
-        }
-    },
+    //         // Khi client gọi update({ role: '...' })
+    //         if (trigger === 'update' && session?.role) {
+    //             token.role = session.role;
+    //         }
+
+    //         return token;
+    //     },
+
+
+
+    //     // session callback: Được gọi KHI LẤY SESSION từ client
+    //     // - Chạy mỗi khi gọi useSession() hoặc getSession()
+    //     // - Mục đích: Đưa data từ JWT token vào session object
+    //     // - Session này được trả về cho client để sử dụng trong components
+    //     session: ({ session, token }) => {
+    //         if (session.user) {
+    //             session.user.id = token.id as string;
+    //             session.user.name = token.name as string;
+    //             session.user.email = token.email as string;
+    //             session.user.role = token.role as string; // Client có thể truy cập session.user.role
+    //         }
+    //         return session;
+    //     }
+    // },
+
     // PAGES: Custom URL cho các trang authentication
-    pages: {
-        signIn: "/login",  // Redirect đến trang /login khi cần đăng nhập
-        error: "/login"    // Redirect đến trang /login khi có lỗi xảy ra
-    },
+    // pages: {
+    //     signIn: "/login",  // Redirect đến trang /login khi cần đăng nhập
+    //     error: "/login"    // Redirect đến trang /login khi có lỗi xảy ra
+    // },
 
     // SESSION: Cấu hình session
     session: {

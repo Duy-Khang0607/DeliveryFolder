@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Box, CardSim, Loader2, LocationEdit, Mail, Phone, Timer, User } from 'lucide-react';
 import { getSocket } from '../lib/socket';
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
 import dynamic from 'next/dynamic';
 import { useToast } from './Toast';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -31,7 +30,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         latitude: 0,
         longitude: 0,
     });
-    const { userData } = useSelector((state: RootState) => state?.user);
+    const { userData } = useSelector((state: any) => state?.user);
 
     // Mark as delivered
     const [showOTP, setShowOTP] = useState(false);
@@ -102,13 +101,14 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         try {
             await axios.post(`/api/delivery/otp/send`, { orderId });
             setShowOTP(true);
+            showToast('OTP sent successfully', 'success');
         } catch (error) {
-            console.error('Error sending OTP:', error);
             setShowOTP(false);
             setLoadingMarkAsDelivered(false);
+            showToast((error as any)?.message || 'Failed to send OTP', 'error');
         } finally {
             setLoadingMarkAsDelivered(false);
-
+            setShowOTP(false);
         }
     }
 
@@ -172,10 +172,18 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         const socket = getSocket()
         const handleNewAssignment = (newAssignment: any) => {
             setAssignments((prev) => {
+
+                // Normalize: socket item có `assignment`, API item có `_id`
+                // Unify thành `_id` để nhất quán
+                const normalized = {
+                    ...newAssignment,
+                    _id: newAssignment._id || newAssignment.assignment,
+                }
+
                 const alreadyExists = prev.some(
                     (item: any) =>
-                        item?._id?.toString() === newAssignment?._id?.toString() ||
-                        item?.order?._id?.toString() === newAssignment?.order?._id?.toString()
+                        item?._id?.toString() === normalized?._id?.toString() ||
+                        item?.order?._id?.toString() === normalized?.order?._id?.toString()
                 );
                 if (alreadyExists) return prev;
                 return [...prev, newAssignment];
@@ -304,6 +312,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                 {/* Delivery */}
                 <DeliveryChat orderId={String(currentOrder?.order?._id)} deliveryBoyId={String(userData?._id)} role={userData?.role as 'user' | 'deliveryBoy' | 'admin'} />
 
+
                 {/* OTP */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -354,8 +363,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         )
     }
 
-    console.log({ assignments })
-
     return (
         <div className='w-[90%] md:w-[80%] mt-24 mx-auto'>
             <h1 className='text-green-700 font-extrabold text-xl md:text-2xl tracking-wide text-center mb-4'>Delivery Boy Dashboard</h1>
@@ -379,8 +386,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                         {assignments?.length > 0 && assignments?.map((orders, index) => {
                             const { _id, paymentMethod, createdAt, address } = orders?.order
                             const { fullName, mobile } = orders?.order?.address
-                            console.log({ assignments })
-
                             return (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}

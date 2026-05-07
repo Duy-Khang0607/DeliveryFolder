@@ -49,7 +49,7 @@ const Home = async (props: { searchParams: Promise<{ q: string }> }) => {
   return (
     <>
       <Nav user={JsonUser} />
-      <GeoUpdater userId={JsonUser?._id} />
+      <GeoUpdater userId={JsonUser?._id?.toString()} />
       {JsonUser?.role === 'user' ? <UserDashboard groceryList={groceryList} /> : JsonUser?.role === 'admin' ? <AdminDashboard /> : <DeliveryBoy />}
     </>
   )

@@ -9,9 +9,9 @@ export async function emitEventHandler(event: string, data: any, socketId?: stri
         }, {
             headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET }
         })
-        return response.data
+        return response?.data
     } catch (error) {
-        console.error({ error })
+        console.error('❌ Socket error:', error)
         return null
     }
 

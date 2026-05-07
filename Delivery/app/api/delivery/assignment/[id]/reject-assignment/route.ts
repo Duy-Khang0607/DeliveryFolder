@@ -71,16 +71,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                     role: 'deliveryBoy',
                     isOnline: true,
                     _id: { $nin: updatedAssignment.rejectedBy },
-                    location: {
-                        $near: {
-                            $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
-                            $maxDistance: 10000,
-                        }
-                    }
+                    // location: {
+                    //     $near: {
+                    //         $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
+                    //         $maxDistance: 10000,
+                    //     }
+                    // }
                 })
 
+                
                 const nearByIds = nearbyDeliveryBoys.map((boy: any) => boy._id)
-
+                
                 const busyIds = await DeliveryAssignment.find({
                     assignedTo: { $in: nearByIds },
                     status: 'assigned',

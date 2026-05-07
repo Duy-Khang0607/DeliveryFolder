@@ -1,6 +1,6 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
-import Orders from "@/app/models/orders.model";
+import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -14,17 +14,17 @@ export async function GET(req: NextRequest) {
 
         const skip = (page - 1) * limit;
 
-        const totalItems = await Orders?.countDocuments({});
+        const totalItems = await User?.countDocuments({});
 
         const session = await auth()
         if (!session?.user || (session.user as any)?.role !== 'admin') {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
 
-        const orders = await Orders.find({}).populate('user assignedDeliveryBoy').sort({ createdAt: -1 }).lean().skip(skip).limit(limit);
+        const users = await User?.find({}).lean().skip(skip).limit(limit);
 
-        if (!orders) {
-            return NextResponse.json({ success: false, message: 'Not found orders items' }, { status: 400 });
+        if (!users) {
+            return NextResponse.json({ success: false, message: 'Not found users !' }, { status: 400 });
         }
         return NextResponse.json({
             success: true, pagination: {
@@ -32,9 +32,9 @@ export async function GET(req: NextRequest) {
                 totalPages: Math.ceil(totalItems / limit),
                 totalItems: totalItems,
                 itemsPerPage: limit,
-            }, orders
+            }, users
         }, { status: 200 })
     } catch (error) {
-        return NextResponse.json({ success: false, message: 'Get failed order items' }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'Get failed users !' }, { status: 500 });
     }
 }

@@ -7,6 +7,8 @@ import { useSelector } from 'react-redux'
 import { RootState } from '@/app/redux/store'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useToast } from '@/app/components/Toast'
+import { generateIdempotencyKey } from '@/app/lib/generateIdempotencyKey'
 
 // Dynamic import để tránh lỗi SSR với leaflet
 const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
@@ -46,6 +48,10 @@ const Checkout = () => {
     const [paymentMethod, setPaymentMethod] = useState<string>('')
 
     const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state.cart)
+
+    const toast = useToast()
+
+    const [idempotencyKeyState] = useState(() => generateIdempotencyKey())
 
     // Tìm kiếm địa chỉ trên map
     const handleSearchMap = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -118,13 +124,14 @@ const Checkout = () => {
                     fullAddress: info?.fullAddress,
                     latitude: position[0],
                     longitude: position[1]
-                }
+                },
+                idempotencyKey: idempotencyKeyState
             });
             if (res?.data?.success) router.push('/user/order-success')
             setPay(false)
         } catch (error) {
             setPay(false)
-            console.error({ error })
+            toast.showToast('Order failed !', 'error')
         } finally {
             setPay(false)
         }
@@ -134,7 +141,7 @@ const Checkout = () => {
     const handleOnline = async () => {
         if (!position) return
 
-    setPay(true)
+        setPay(true)
         try {
             const res = await axios.post('/api/auth/user/payment ', {
                 userId: userData?._id,
@@ -157,7 +164,8 @@ const Checkout = () => {
                     fullAddress: info?.fullAddress,
                     latitude: position[0],
                     longitude: position[1]
-                }
+                },
+                idempotencyKey: idempotencyKeyState
             });
             setPay(false)
             window.location.href = res?.data.url
@@ -200,7 +208,6 @@ const Checkout = () => {
                 const res = await axios.get(
                     `/api/geocode/reverse?lat=${position[0]}&lon=${position[1]}`
                 )
-                console.log({res: res?.data})
                 setInfo(prev => ({
                     ...prev,
                     city: res?.data?.address?.city,
@@ -373,12 +380,14 @@ const Checkout = () => {
                         )}
 
                         {/* Current location */}
-                        <motion.button whileTap={{ scale: 0.9 }} whileHover={{ scale: 0.95 }}
-                            onClick={handleCurrentLocation}
-                            className='absolute bottom-3 right-3 bg-green-700 p-2 rounded-full text-white text-center w-10 h-10 flex items-center justify-center cursor-pointer hover:bg-green-600 shadow-md shadow-green-700 z-10'
-                        >
-                            <LocateFixed className='w-5 h-5' />
-                        </motion.button>
+                        {position && (
+                            <motion.button whileTap={{ scale: 0.9 }} whileHover={{ scale: 0.95 }}
+                                onClick={handleCurrentLocation}
+                                className='absolute bottom-3 right-3 bg-green-700 p-2 rounded-full text-white text-center w-10 h-10 flex items-center justify-center cursor-pointer hover:bg-green-600 shadow-md shadow-green-700 z-10'
+                            >
+                                <LocateFixed className='w-5 h-5' />
+                            </motion.button>
+                        )}
                     </div>
                 </motion.div>
 

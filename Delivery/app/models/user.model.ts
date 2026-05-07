@@ -9,19 +9,23 @@ export interface IUser {
     mobile?: string;
     role?: "user" | "admin" | 'deliveryBoy';
     image?: string;
+    // location?: {
+    //     type: {
+    //         type: StringConstructor;
+    //         enum: string[];
+    //         default: string;
+    //     };
+    //     coordinates: {
+    //         type: NumberConstructor[];
+    //         default: number[]
+    //     }
+    // };
     location?: {
-        type: {
-            type: StringConstructor;
-            enum: string[];
-            default: string;
-        };
-        coordinates: {
-            type: NumberConstructor[];
-            default: number[]
-        }
+        type: string;
+        coordinates: number[];
     };
     socketId: string | null;
-    isOnline: Boolean
+    isOnline: boolean
 }
 
 

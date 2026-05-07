@@ -1,7 +1,7 @@
 'use client'
 import React, { ChangeEvent, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BadgePlus, Edit, Loader2, Upload } from 'lucide-react'
+import { BadgePlus, Box, Camera, DollarSign, Edit, Loader2, Truck, Shield, Upload, User } from 'lucide-react'
 import { useToast } from './Toast'
 import axios from 'axios'
 import Image from 'next/image'
@@ -129,114 +129,157 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
         }
     }
 
-    
-
+    const avatarSrc = preview || (typeof editItem?.image?.[0] === 'string' ? editItem?.image?.[0] : '')
+    const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
+    const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm placeholder:text-gray-400'
 
     return (
         <div
-            className="fixed inset-0 z-999 flex items-center justify-center bg-black/70 "
+            className="fixed inset-0 z-999 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={() => setEdit(false)}
         >
             <motion.div
-                className="relative w-full md:max-w-[60vw] h-fit cursor-pointer rounded-2xl bg-white shadow-2xl p-5 border border-green-200"
-                initial={{ scale: 0.92, opacity: 0, y: 10 }}
+                className="relative w-full md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-gray-100 py-5"
+                initial={{ scale: 0.94, opacity: 0, y: 16 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.92, opacity: 0, y: 10 }}
+                exit={{ scale: 0.94, opacity: 0, y: 16 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 onClick={(e) => e.stopPropagation()}
             >
 
-                {/* Form */}
-                <form className='flex flex-col gap-3' >
+                {/* Title && Description */}
+                <div className='flex flex-col items-center justify-center gap-2 tracking-wide text-xl font-semibold px-6'>
+                    <span className='flex flex-row items-center gap-2 justify-center'>
+                        {isEdit ? <Edit className='w-5 h-5 text-green-700' /> : <BadgePlus className='w-5 h-5 text-green-700' />}
+                        {title}
+                    </span>
+                    <p className='text-sm max-w-sm md:max-w-xl'>{description}</p>
+                </div>
 
-                    <div className='flex flex-col items-center text-center gap-3 mb-8'>
-                        <div className='flex flex-row items-center gap-2 tracking-wide text-xl font-semibold'>
-                            {isEdit ? <Edit className='w-5 h-5 text-green-700' /> : <BadgePlus className='w-5 h-5 text-green-700' />}
-                            {title}
-                        </div>
-                        <p className='text-sm max-w-sm md:max-w-xl'>{description}</p>
-                    </div>
-
-                    {/* Grocry name */}
-                    <div className='relative w-full flex flex-col gap-2'>
-                        <label className='text-base font-semibold'>Grocery Name <span className='text-red-500'>*</span></label>
-                        <input required type="email" placeholder='Grocery name' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={name} onChange={(e) => setName(e.target.value)} />
-                    </div>
-
-                    {/* Category - Unit */}
-                    <div className='relative w-full flex flex-row gap-3 items-center justify-between'>
-                        {/* Category */}
-                        <div className='w-full flex flex-col gap-2'>
-                            <label className='text-base font-semibold'>Category <span className='text-red-500'>*</span></label>
-                            <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={category} onChange={(e) => setCategory(e.target.value)} >
-                                <option value=''>Select category</option>
-                                {categories?.map((item, index) => (
-                                    <option key={index} value={item}>{item}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {/* Unit */}
-                        <div className='w-full flex flex-col gap-2'>
-                            <label className='text-base font-semibold'>Unit <span className='text-red-500'>*</span></label>
-                            <select required className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={unit} onChange={(e) => setUnit(e.target.value)} >
-                                <option value=''>Select units</option>
-                                {units?.map((item, index) => (
-                                    <option key={index} value={item}>{item}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className='relative w-full flex flex-col gap-2'>
-                        <label className='text-base font-semibold'>Price <span className='text-red-500'>*</span></label>
-                        <input required type="number" placeholder='$' className='w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={price} onChange={(e) => setPrice(e.target.value)} />
-                    </div>
-
-                    {/* Button upload image */}
-                    <div className='relative w-full md:max-w-[160px] flex flex-row gap-3 text-green-700 items-center'>
-                        <Upload className='w-5 h-5 absolute top-10 left-2.5' />
-                        <label
-                            htmlFor="file-upload"
-                            className="w-[160px] shrink-0 flex-none p-3 h-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 pl-10 transition-all duration-300 cursor-pointer" onClick={(e) => e.stopPropagation()}
-                        >
-                            Upload image
-                        </label>
-                        <input
-                            type="file"
-                            id="file-upload"
-                            className="hidden"
-                            onChange={handleFileChange}
-                            accept='image/*'
-                        />
-                        {editItem?.image?.[0] || preview ? (
-                            loadingImage ? (
-                                <div className='w-full'>
-                                    <Loader2 className='w-20 h-10 animate-spin' />
+                {/* Avatar overlap */}
+                <div className='relative -mt-10 px-6 mb-4 flex items-end gap-4'>
+                    <div className='relative shrink-0'>
+                        <div className='w-20 h-20 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gray-100'>
+                            {loadingImage ? (
+                                <div className='w-full h-full flex items-center justify-center'>
+                                    <Loader2 className='w-6 h-6 animate-spin text-green-600' />
                                 </div>
-                            ) : (
+                            ) : avatarSrc ? (
                                 <Image
                                     onClick={() => setOpen(true)}
-                                    src={preview ? preview : editItem?.image?.[0] || ''}
-                                    width={100}
-                                    height={100}
-                                    alt="Image upload"
-                                    className="object-cover bg-white border-gray-300 border shadow-2xl rounded-2xl cursor-pointer hover:border-gray-500 transition-all duration-200 w-[100px] h-[100px]"
+                                    src={avatarSrc}
+                                    width={80}
+                                    height={80}
+                                    alt="Avatar"
+                                    className="object-cover w-full h-full cursor-pointer"
                                 />
-                            )
-                        ) : null}
-
-                        {/* Popup image */}
-                        <AnimatePresence>
-                            {open && (editItem?.image?.[0] || preview) && (
-                                <PopupImage image={preview ? preview : editItem?.image?.[0] || ''} setOpen={setOpen} />
+                            ) : (
+                                <div className='w-full h-full flex items-center justify-center bg-linear-to-br from-green-100 to-emerald-200'>
+                                    <User className='w-8 h-8 text-green-600' />
+                                </div>
                             )}
-                        </AnimatePresence>
+                        </div>
+                        <label
+                            htmlFor="file-upload"
+                            className='absolute top-0 right-0 bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 cursor-pointer shadow-md transition-all'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Camera className='w-5 h-5' />
+                        </label>
+                        <input type="file" id="file-upload" className="hidden" onChange={handleFileChange} accept='image/*' />
                     </div>
 
-                    {/* Button Add grocery */}
-                    <motion.button disabled={!disableAdd || loading} onClick={handleUpdate} type="submit" className={`${disableAdd ? 'bg-green-500 hover:bg-green-400' : 'bg-gray-300'} rounded-md mt-5  cursor-pointer transition-all text-center p-2 text-white flex justify-center`}>{loading ? <Loader2 className='w-5 h-5 animate-spin' /> : 'Update Grocery'}</motion.button>
+                    <AnimatePresence>
+                        {open && avatarSrc && (
+                            <PopupImage image={avatarSrc} setOpen={setOpen} />
+                        )}
+                    </AnimatePresence>
+                </div>
 
+                {/* Form body */}
+                <form className='px-6 pb-6 flex flex-col gap-4'>
+                    {/* Section: Personal Info */}
+                    <div className='bg-gray-50 rounded-2xl p-4 flex flex-col gap-3 border border-gray-100'>
+                        <p className='text-xs font-bold text-gray-400 uppercase tracking-widest'>Grocery Info</p>
+
+                        {/* Grocry name */}
+                        <div>
+                            <label className={labelClass}>
+                                <User className='w-3.5 h-3.5' /> Grocery Name
+                            </label>
+                            <input
+                                required
+                                type="text"
+                                placeholder='Enter full name'
+                                className={inputClass}
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Category - Unit */}
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                            <div>
+                                <label className={labelClass}>
+                                    <Box className='w-3.5 h-3.5' /> Category
+                                </label>
+                                <select required className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} >
+                                    <option value=''>Select category</option>
+                                    {categories?.map((item, index) => (
+                                        <option key={index} value={item}>{item}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className={labelClass}>
+                                    <Box className='w-3.5 h-3.5' /> Unit
+                                </label>
+                                <select required className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} >
+                                    <option value=''>Select units</option>
+                                    {units?.map((item, index) => (
+                                        <option key={index} value={item}>{item}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Price */}
+                        <div>
+                            <label className={labelClass}>
+                                <DollarSign className='w-3.5 h-3.5' /> Price
+                            </label>
+                            <div className='relative'>
+                                <input
+                                    type="number"
+                                    placeholder='Enter price'
+                                    className={`${inputClass} pr-10`}
+                                    value={price} onChange={(e) => setPrice(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Submit */}
+                    <motion.button
+                        disabled={!disableAdd || loading}
+                        onClick={handleUpdate}
+                        type="submit"
+                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.01 }}
+                        className={`w-full py-3 rounded-2xl font-bold text-black text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 shadow-lg ${disableAdd && !loading ? 'bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-200 cursor-pointer bg-green-400' : 'bg-gray-300 cursor-not-allowed shadow-none'}`}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                Updating...
+                            </>
+                        ) : (
+                            <>
+                                <Edit className='w-4 h-4' />
+                                Save Changes
+                            </>
+                        )}
+                    </motion.button>
                 </form>
             </motion.div>
         </div>

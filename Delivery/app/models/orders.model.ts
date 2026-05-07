@@ -34,7 +34,9 @@ export interface IOrder {
     deliveryOTP?: string | null,
     deliveryOTPVerification: boolean,
     deliveredAt?: Date | null,
-
+    otpSentAt?: Date | null,
+    idempotencyKey?: string | null,
+    stripeSessionUrl?: string | null
 }
 
 const orderSchema = new mongoose.Schema<IOrder>({
@@ -99,10 +101,24 @@ const orderSchema = new mongoose.Schema<IOrder>({
         type: Date,
         default: null
     },
+    otpSentAt: {
+        type: Date,
+        default: null
+    },
     deliveryOTPVerification: {
         type: Boolean,
         default: false
     },
+    idempotencyKey: {
+        type: String,
+        default: null,
+        unique: true,
+        sparse: true
+    },
+    stripeSessionUrl: {
+        type: String,
+        default: null
+    }
 }, { timestamps: true });
 
 // Indexes for common query patterns

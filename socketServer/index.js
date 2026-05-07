@@ -63,7 +63,7 @@ io.on("connection", (socket) => {
 
   // Socket send message chat
   socket.on("send-message", async (message) => {
-    axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`, message).catch(err => {
+    axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`, message, internalHeaders).catch(err => {
       console.error('❌ Save message error:', err.message)
     })
     io.to(message?.roomId).emit("send-message", message)
@@ -82,6 +82,7 @@ io.on("connection", (socket) => {
   socket.on("error", (err) => {
     console.error("⚠️ Socket error:", socket.id, err);
   });
+
 });
 
 app.post("/notify", async (req, res) => {

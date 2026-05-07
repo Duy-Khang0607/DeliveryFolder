@@ -35,7 +35,6 @@ interface ICategorySilder {
 
 
 const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder) => {
-    console.log({ selectedCategory })
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [showLeft, setShowLeft] = useState(false);
     const [showRight, setShowRight] = useState(true);
