@@ -3,6 +3,7 @@ import uploadOnCloudinary from "@/app/lib/cloudinary";
 import connectDB from "@/app/lib/db";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest) {
     try {
@@ -38,6 +39,18 @@ export async function PUT(req: NextRequest) {
             }
             updateData.image = imageUrl;
         }
+
+        const existingUser = await User.findOne({ email: getString('email'), _id: { $ne: _id } });
+        if (existingUser) {
+            return NextResponse.json({ success: false, message: 'User with this email already exists' }, { status: 400 });
+        }
+
+        const rawPassword = getString('password');
+        if (rawPassword?.length < 6) {
+            return NextResponse.json({ success: false, message: 'Password must be at least 6 characters long' }, { status: 400 });
+        }
+
+        updateData.password = await bcrypt.hash(rawPassword, 10);
 
         const user = await User.findByIdAndUpdate(_id, updateData, { new: true });
         if (!user) {

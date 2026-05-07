@@ -108,7 +108,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
             showToast((error as any)?.message || 'Failed to send OTP', 'error');
         } finally {
             setLoadingMarkAsDelivered(false);
-            setShowOTP(false);
         }
     }
 
@@ -428,10 +427,8 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                                             whileHover={{ scale: 1.03 }}
                                             onClick={async () => {
                                                 try {
-                                                    // orders._id: từ API (get-assignments), orders.assignment: từ socket (new-assignment)
                                                     const assignmentId = orders?._id || orders?.assignment || orders?.order?.assignment;
                                                     await handleAccept(assignmentId);
-                                                    // Ngay sau khi accept, cập nhật ngay currentOrder và userlocation trên UI
                                                     setCurrentOrder(orders);
                                                     setUserlocation({
                                                         latitude: orders?.order?.address?.latitude,
@@ -449,7 +446,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                                             whileTap={{ scale: 0.93 }}
                                             whileHover={{ scale: 1.03 }}
                                             onClick={() => handleReject(orders?._id || orders?.assignment || orders?.order?.assignment)}
-                                            className='bg-red-500 text-white px-2 py-1 md:px-4 md:py-2s rounded-md w-full cursor-pointer hover:bg-red-600 transition-all duration-300'>Reject</motion.button>
+                                            className='bg-red-500 text-white px-2 py-1 md:px-4 md:py-2 rounded-md w-full cursor-pointer hover:bg-red-600 transition-all duration-300'>Reject</motion.button>
                                     </motion.div>
                                 </motion.div>
                             )
