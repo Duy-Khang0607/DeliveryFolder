@@ -12,6 +12,8 @@ import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import profileImage from '../assets/profile.jpg'
 import { useToast } from './Toast'
+import FormEditUser from './FormEditUser'
+import { disconnectSocket } from '../lib/socket'
 
 const Nav = ({ user }: { user: IUser }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -26,6 +28,8 @@ const Nav = ({ user }: { user: IUser }) => {
   const [orders, setOrders] = useState<number | undefined>(0)
   const { cartData } = useSelector((state: RootState) => state.cart)
   const { showToast } = useToast()
+  const [isEdit, setEdit] = useState<boolean>(false)
+  const [editItem, setEditItem] = useState<IUser | null>(null)
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -51,6 +55,15 @@ const Nav = ({ user }: { user: IUser }) => {
     } catch (error: any) {
       showToast(error?.response?.data?.message, 'error')
     }
+  }
+
+  const fetchUsers = () => {
+    router.refresh()
+  }
+
+  const handleEditUser = () => {
+    setEditItem(user)
+    setEdit(true)
   }
 
   useEffect(() => {
@@ -123,35 +136,29 @@ const Nav = ({ user }: { user: IUser }) => {
           </div>
         )}
 
-
         {/* Menu admin  */}
         {user?.role === 'admin' && (
           <div className='hidden md:flex flex-row gap-4 items-center w-full'>
-            {/* Add Category */}
-            <Link href='admin/add-grocery' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 min-w-[100px] text-sm'>
-              <Plus className='w-5 h-5 text-green-500' />
-              Add category
-            </Link>
             {/* View Category */}
-            <Link href='admin/view-grocery' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 min-w-[100px] text-sm'>
+            <Link href='admin/view-grocery' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
               <PackagePlus className='w-5 h-5 text-green-500' />
-              View category
+              Categories
             </Link>
             {/* Manager Orders */}
-            <Link href='admin/manage-orders' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 min-w-[100px] text-sm'>
+            <Link href='admin/manage-orders' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
               <Package className='w-5 h-5 text-green-500' />
-              Manager orders
+              Orders
             </Link>
             {/* Manager Users */}
-            <Link href='admin/manage-users' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 min-w-[100px] text-sm'>
+            <Link href='admin/manage-users' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
               <Users className='w-5 h-5 text-green-500' />
-              Manager users
+              Users
             </Link>
           </div>
         )}
 
         {/* User Image */}
-        <div ref={avatarRef} className='relative bg-white rounded-full p-2 h-full flex items-center justify-center' onClick={() => setShowUserMenu(prev => !prev)}>
+        <div ref={avatarRef} className='relative bg-white rounded-full p-2 h-full flex items-center justify-center cursor-pointer' onClick={() => setShowUserMenu(prev => !prev)}>
           {user?.role === 'admin' ? (
             user?.image
               ? <Image src={user?.image as string || profileImage} alt='admin' width={20} height={20} className='w-5 h-5 rounded-full' />
@@ -175,7 +182,7 @@ const Nav = ({ user }: { user: IUser }) => {
               className='absolute top-16 right-10 w-48 bg-white rounded-2xl shadow-md p-4'
             >
               {/* Profile */}
-              <div className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
+              <div className='flex items-center gap-2.5 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200' onClick={handleEditUser}>
                 {user?.role === 'admin' ? (
                   user?.image
                     ? <Image src={user?.image as string || profileImage} alt='admin' width={20} height={20} className='w-5 h-5 rounded-full' />
@@ -197,7 +204,10 @@ const Nav = ({ user }: { user: IUser }) => {
                 </button>
               </>}
               <hr className='border-gray-200' />
-              <button ref={profileDropDown} className='flex items-center gap-2 p-2 rounded-md w-full hover:bg-red-200 transition-all duration-300 cursor-pointer mt-1.5' onClick={() => signOut({ callbackUrl: '/login' })}>
+              <button ref={profileDropDown} className='flex items-center gap-2 p-2 rounded-md w-full hover:bg-red-200 transition-all duration-300 cursor-pointer mt-1.5' onClick={() => {
+                disconnectSocket()
+                signOut({ callbackUrl: '/login' })
+              }}>
                 <LogOut className='w-5 h-5 text-red-500' />
                 <span className='text-black text-xs md:text-sm'>Logout</span>
               </button>
@@ -241,7 +251,7 @@ const Nav = ({ user }: { user: IUser }) => {
             transition={{ type: "spring", stiffness: 100, damping: 14 }}
             className='fixed top-0 left-0 text-white h-full w-[50%] mx-auto shadow-xl shadow-black px-4 py-2 z-9999 bg-linear-to-b from-green-800/90 via-green-700/80 to-green-900-90 backdrop-blur-sm flex flex-col'
           >
-            {/* Admin Panal */}
+            {/* Admin Panel */}
             <div className='flex flex-row justify-between items-center'>
               <h1 className='font-extrabold'>Admin Panel</h1>
               <X className='w-5 h-5 text-red-500 cursor-pointer hover:text-red-200 transition-all' onClick={() => setSideBar(false)} />
@@ -259,28 +269,22 @@ const Nav = ({ user }: { user: IUser }) => {
 
             {/* Items */}
             <div className='flex flex-col gap-3 mt-4'>
-              {/* Add */}
-              <Link href='admin/add-grocery' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
-                <Plus className='text-white w-5 h-5' />
-                Add category
-              </Link>
-
-              {/* View */}
+              {/* Manage categories */}
               <Link href='admin/view-grocery' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <PackagePlus className='text-white w-5 h-5' />
-                View category
+                Categories
               </Link>
 
               {/* Manager Orders */}
               <Link href='admin/manage-orders' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <Package className='text-white w-5 h-5' />
-                Manager Orders
+                Orders
               </Link>
 
-               {/* Manager */}
-               <Link href='admin/manage-users' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
+              {/* Manager */}
+              <Link href='admin/manage-users' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <Users className='text-white w-5 h-5' />
-                Manager Users
+                Users
               </Link>
 
               {/* Border */}
@@ -289,11 +293,18 @@ const Nav = ({ user }: { user: IUser }) => {
             </div>
 
             {/* Logout */}
-            <div onClick={() => signOut({ callbackUrl: '/login' })} className="flex bg-red-200/50 px-2 py-1 mt-auto text-red-400 font-semibold hover:bg-red-500/20 rounded-lg transition-all">
+            <div onClick={() => { disconnectSocket(); signOut({ callbackUrl: '/login' }) }} className="flex bg-red-200/50 px-2 py-1 mt-auto text-red-400 font-semibold hover:bg-red-500/20 rounded-lg transition-all">
               Logout
             </div>
           </motion.div>
         </>}
+      </AnimatePresence>
+
+      {/* Edit User */}
+      <AnimatePresence mode='wait' onExitComplete={() => setEdit(false)}>
+        {isEdit && (
+          <FormEditUser isEdit={isEdit} title="Edit User" description="Edit a user in your system." setEdit={setEdit} editItem={editItem} fetchUsers={fetchUsers} />
+        )}
       </AnimatePresence>
     </nav>
   )

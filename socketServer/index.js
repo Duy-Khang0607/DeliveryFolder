@@ -25,6 +25,8 @@ io.on("connection", (socket) => {
 
   // Socket auto connect khi login vô
   socket.on("identity", async (userId) => {
+    // ✅ THÊM: broadcast cho tất cả client
+    io.emit('user-status-updated', { userId, isOnline: true })
     try {
       socket.userId = userId;
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
@@ -74,8 +76,14 @@ io.on("connection", (socket) => {
       await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
         userId: socket?.userId
       }, internalHeaders)
+
+      // ✅ THÊM: broadcast cho tất cả client
+      if (socket.userId) {
+        io.emit('user-status-updated', { userId: socket.userId, isOnline: false })
+      }
     } catch (error) {
       console.error('❌ Disconnect error:', error.message);
+
     }
   });
 
@@ -99,6 +107,14 @@ app.post("/notify", async (req, res) => {
   res.status(200).json({ message: "Notify true" });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+  try {
+    await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/reset-all`, {}, {
+      headers: { 'x-internal-secret': process.env.INTERNAL_API_SECRET }
+    })
+    console.log('✅ Reset all users to offline on server start');
+  } catch (error) {
+    console.error('❌ Reset all users failed:', error.message);
+  }
 });

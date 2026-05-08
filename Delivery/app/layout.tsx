@@ -4,6 +4,10 @@ import Provider from "@/app/provider";
 import { ToastProvider } from "./components/Toast";
 import StoreProvider from "./redux/StoreProvider";
 import InitUser from "./InitUser";
+import GeoUpdater from "./components/GeoUpdater";
+import { auth } from "./auth";
+import User from "./models/user.model";
+import connectDB from "./lib/db";
 
 const baseURL = process.env.NEXT_BASE_URL;
 
@@ -77,11 +81,17 @@ export const viewport: Viewport = {
   viewportFit: "cover", // Phù hợp mọi thiết bị
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  await connectDB();
+  const user = await User?.findById(session?.user?.id);
+  const JsonUser = JSON.parse(JSON.stringify(user));
+
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <body
@@ -90,18 +100,21 @@ export default function RootLayout({
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "Giao hàng nhanh HCM",
-            "url": baseURL,
-            "description": "Dịch vụ giao hàng nhanh tại TP.HCM 24/7. Ship hỏa tốc nội thành, giao trong ngày.",
-          })}}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Giao hàng nhanh HCM",
+              "url": baseURL,
+              "description": "Dịch vụ giao hàng nhanh tại TP.HCM 24/7. Ship hỏa tốc nội thành, giao trong ngày.",
+            })
+          }}
         />
         <Provider>
           <ToastProvider>
             <StoreProvider>
               <InitUser />
+              <GeoUpdater userId={JsonUser?._id?.toString()} />
               <main>{children}</main>
             </StoreProvider>
           </ToastProvider>

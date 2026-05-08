@@ -5,11 +5,24 @@ import { getSocket } from "../lib/socket"
 
 
 const GeoUpdater = ({ userId }: { userId: string }) => {
-
     useEffect(() => {
         if (!userId) return
+
         const socket = getSocket()
-        socket.emit('identity', userId)
+
+        const emitIdentity = () => socket.emit('identity', userId)
+
+        // Emit ngay nếu đã connected
+        if (socket.connected) {
+            console.log('Socket connected, emit identity')
+            emitIdentity()
+        }
+        // Lắng nghe TẤT CẢ lần connect (kể cả reconnect)
+        socket.on('connect', emitIdentity)
+
+        return () => {
+            socket.off('connect', emitIdentity)// cleanup
+        }
     }, [userId])
 
     useEffect(() => {

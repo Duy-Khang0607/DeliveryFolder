@@ -149,7 +149,7 @@ const ManageOrders = () => {
                                 </motion.button>
 
                                 <motion.h1 className='font-bold text-lg md:text-2xl'>
-                                    My Orders
+                                    Manage Orders
                                 </motion.h1>
 
                                 {orders?.length > 0 && (

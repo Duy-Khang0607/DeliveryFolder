@@ -97,84 +97,106 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className='w-full h-full rounded-md shadow-md transition-all flex flex-col gap-2 hover:shadow-xl border border-gray-300'>
-            {/* Order details */}
-            <div className='flex flex-row justify-between items-center bg-green-100 p-4'>
-                {/* Order ID */}
-                <div className='flex flex-col gap-2'>
-                    <h2 className='text-md md:text-2xl font-bold'>Order <span className='text-green-700 text-sm md:text-lg'>#{String(orders?._id).slice(-6)}</span></h2>
-                    {status !== 'Delivered' && (
-                        <div className={`rounded-2xl transition-all duration-200 p-2 cursor-pointer ${orders?.isPaid ? 'bg-green-500 text-white hover:bg-green-400' : 'bg-red-200 text-red-700 hover:bg-red-400'} w-fit`}>
-                            {orders?.isPaid ? 'Paid' : 'Unpaid'}
-                        </div>
-                    )}
-                    <p className='text-xs md:text-lg text-gray-500'>{new Date(orders?.createdAt!).toLocaleString()}</p>
+            transition={{ duration: 0.35 }}
+            className='w-full rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col bg-white'
+        >
+            {/* Top accent bar — color by status */}
+            <div className={`h-1 w-full ${status === 'Delivered' ? 'bg-linear-to-r from-green-400 to-green-600' : status === 'Out of delivery' ? 'bg-linear-to-r from-yellow-400 to-orange-400' : 'bg-linear-to-r from-gray-300 to-gray-400'}`} />
+
+            {/* Header */}
+            <div className='p-4 flex flex-row justify-between items-start gap-3 border-b border-dashed border-gray-100'>
+                <div className='flex flex-col gap-1'>
+                    <h2 className='font-bold text-gray-800 text-sm md:text-base'>
+                        Order <span className='text-green-700 font-mono'>#{String(orders?._id).slice(-6)}</span>
+                    </h2>
+                    <p className='text-[11px] text-gray-400'>{new Date(orders?.createdAt!).toLocaleString()}</p>
                 </div>
 
-                {/* Update order status */}
-                <div className='flex items-center gap-2 font-semibold text-sm md:text-sm'>
+                <div className='flex flex-row items-center gap-2 flex-wrap justify-end'>
                     {status !== 'Delivered' && (
-                        <select required disabled={loading} className='p-1 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer' value={status} onChange={(e) => updateOrderStatus(String(orders?._id), e.target.value)}>
-                            <option value='' disabled className='bg-gray-300'>Select Status</option>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${orders?.isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                            {orders?.isPaid ? 'Paid' : 'Unpaid'}
+                        </span>
+                    )}
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' : status === 'Out of delivery' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                        {loading ? <Loader2 className='w-3 h-3 animate-spin' /> : status}
+                    </span>
+                    {status !== 'Delivered' && (
+                        <select
+                            required
+                            disabled={loading}
+                            className='text-xs rounded-lg border border-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all cursor-pointer bg-white'
+                            value={status}
+                            onChange={(e) => updateOrderStatus(String(orders?._id), e.target.value)}
+                        >
+                            <option value='' disabled>Change status</option>
                             {statusPayment?.map((item, index) => (
                                 <option key={index} value={item}>{item}</option>
                             ))}
                         </select>
                     )}
-                    <span className={`rounded-2xl transition-all duration-200 p-2 cursor-pointer ${status === 'Delivered' ? 'bg-green-200 text-green-700 hover:bg-green-400' : status === 'Out of delivery' ? 'bg-yellow-200 text-yellow-700 hover:bg-yellow-400' : 'bg-gray-200 text-gray-700 hover:bg-gray-400'}`}>{loading ? <Loader2 className='w-5 h-5 text-green-700 animate-spin' /> : status}</span>
                 </div>
             </div>
 
-            {/* User details */}
-            <div className='p-4 space-y-5'>
-                <div className='flex items-center gap-2'>
-                    <User className='w-5 h-5 text-green-700' />
-                    <span className='text-sm md:text-lg w-full'>{orders?.address?.fullName}</span>
+            {/* Body */}
+            <div className='p-4 flex flex-col gap-3 flex-1'>
+                {/* Customer info */}
+                <div className='flex flex-col gap-2'>
+                    <div className='flex items-center gap-2'>
+                        <User className='w-4 h-4 text-gray-400 shrink-0' />
+                        <span className='text-sm text-gray-700 font-medium'>{orders?.address?.fullName}</span>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                        <Phone className='w-4 h-4 text-gray-400 shrink-0' />
+                        <span className='text-sm text-gray-700'>{orders?.address?.mobile}</span>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                        <CardSim className='w-4 h-4 text-gray-400 shrink-0' />
+                        <span className='text-sm text-gray-700'>{orders?.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}</span>
+                    </div>
+                    <div className='flex items-start gap-2'>
+                        <LocationEdit className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />
+                        <span className='text-sm text-gray-700 leading-relaxed'>{orders?.address?.fullAddress}</span>
+                    </div>
                 </div>
 
-                <div className='flex items-center gap-2'>
-                    <Phone className='w-5 h-5 text-green-700' />
-                    <span className='text-sm md:text-lg w-full'>{orders?.address?.mobile}</span>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                    <CardSim className='w-5 h-5 text-green-700' />
-                    <span className='text-sm md:text-lg w-full'>{orders?.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}</span>
-                </div>
-
+                {/* Assigned delivery boy */}
                 {orders?.assignedDeliveryBoy && (
                     <>
-                        <div className='flex flex-row items-center justify-between gap-2 border bg-blue-100 rounded-2xl p-2 border-blue-200 shadow-md hover:shadow-xl transition-all duration-300'>
-                            <div className='flex flex-row  items-center justify-center gap-2'>
-                                <User className='w-5 h-5 text-blue-500' />
-                                <div className='flex flex-col gap-1'>
-                                    <span className='text-sm md:text-lg w-full'>Assigned: <span className='text-sm md:text-lg w-full font-semibold'>{(orders?.assignedDeliveryBoy as IUserClient)?.name}</span></span>
-                                    <span className='text-sm md:text-md text-gray-500 font-semibold'>📞 {(orders?.assignedDeliveryBoy as IUserClient)?.mobile}</span>
+                        <div className='border-t border-dashed border-gray-100' />
+                        <div className='flex flex-row items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3'>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0'>
+                                    <User className='w-4 h-4 text-blue-500' />
+                                </div>
+                                <div className='flex flex-col gap-0.5'>
+                                    <span className='text-xs font-semibold text-gray-700'>{(orders?.assignedDeliveryBoy as IUserClient)?.name}</span>
+                                    <span className='text-xs text-gray-500'>{(orders?.assignedDeliveryBoy as IUserClient)?.mobile}</span>
                                 </div>
                             </div>
-
-                            <p className='w-auto h-full bg-blue-200 rounded-2xl p-2 transition-all duration-300 hover:bg-blue-400 cursor-pointer'><a href="tel:+4733378901"><Phone className='w-5 h-5 text-blue-500 hover:text-white' /></a></p>
+                            <a
+                                href={`tel:${(orders?.assignedDeliveryBoy as IUserClient)?.mobile}`}
+                                className='bg-blue-100 hover:bg-blue-500 text-blue-500 hover:text-white rounded-lg p-1.5 transition-all duration-200 border border-blue-200 hover:border-transparent'
+                            >
+                                <Phone className='w-4 h-4' />
+                            </a>
                         </div>
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className='flex flex-row justify-center items-center gap-2 bg-green-600 text-white rounded-2xl p-2 border border-green-200 shadow-md hover:shadow-xl transition-all duration-300 w-full cursor-pointer text-sm md:text-lg'>
-
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            className='flex flex-row justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 shadow-sm transition-all duration-200 w-full cursor-pointer text-sm font-semibold'
+                        >
                             {status === 'Delivered' ? (
                                 <>
                                     <motion.span
                                         initial={{ opacity: 0, scale: 0.2 }}
                                         animate={{ opacity: [0.3, 0, 0.9], scale: [1, 0.5, 1] }}
-                                        transition={{
-                                            repeat: Infinity,
-                                            duration: 2,
-                                            ease: "easeIn"
-                                        }}
-                                        className='inline-block' >
-                                        <CheckCircle className='w-5 h-5' />
+                                        transition={{ repeat: Infinity, duration: 2, ease: "easeIn" }}
+                                        className='inline-block'
+                                    >
+                                        <CheckCircle className='w-4 h-4' />
                                     </motion.span>
                                     Order Delivered
                                 </>
@@ -182,11 +204,11 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                                 <>
                                     <motion.span
                                         initial={{ x: 0 }}
-                                        animate={{ x: [0, 10, 0] }}
+                                        animate={{ x: [0, 8, 0] }}
                                         transition={{ duration: 1, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
                                         className='inline-block'
                                     >
-                                        <Truck className='w-5 h-5' />
+                                        <Truck className='w-4 h-4' />
                                     </motion.span>
                                     Tracking my orders
                                 </>
@@ -195,27 +217,22 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                     </>
                 )}
 
-                <div className='flex items-center gap-2'>
-                    <LocationEdit className='w-5 h-5 text-green-700' />
-                    <span className='text-sm md:text-lg w-full'>{orders?.address?.fullAddress}</span>
-                </div>
-
-                <div className='border-b border-gray-200'></div>
-
-
-                <div className='flex items-center justify-between gap-2 border-b border-gray-100 cursor-pointer' onClick={() => setExpand(!expand)}>
+                {/* Items accordion */}
+                <div className='border-t border-dashed border-gray-100' />
+                <div
+                    className='flex items-center justify-between cursor-pointer select-none'
+                    onClick={() => setExpand(!expand)}
+                >
                     <div className='flex items-center gap-2'>
-                        <Box className='w-5 h-5 text-green-700' />
-                        <span className='font-medium text-md md:text-lg'>{expand ? 'Hide order items' : `Items (${orders?.items.length})`}</span>
+                        <Box className='w-4 h-4 text-green-700' />
+                        <span className='font-semibold text-sm text-gray-700'>
+                            {expand ? 'Hide items' : `Items (${orders?.items.length})`}
+                        </span>
                     </div>
-
-                    <div className='cursor-pointer transition-all duration-200'>
-                        {expand ? (
-                            <ChevronDown className='w-5 h-5 text-green-700' />
-                        ) : (
-                            <ChevronUp className='w-5 h-5 text-green-700' />
-                        )}
-                    </div>
+                    {expand
+                        ? <ChevronDown className='w-4 h-4 text-gray-400' />
+                        : <ChevronUp className='w-4 h-4 text-gray-400' />
+                    }
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -223,52 +240,49 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                         orders?.items?.map((item, index) => (
                             <motion.div
                                 key={index}
-                                initial={{ opacity: 0, y: -20 }}
+                                initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.6 }}
-                                className='flex justify-between h-auto items-center gap-3 px-4 py-2 bg-gray-100 rounded-2xl shadow-md  transition-all duration-300 border border-gray-200'>
-                                <div className='flex items-center gap-2'>
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                                className='flex justify-between items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100'
+                            >
+                                <div className='flex items-center gap-3'>
                                     <Image
                                         src={item?.image[0]}
-                                        width={60}
-                                        height={60}
+                                        width={52}
+                                        height={52}
                                         onClick={() => setOpenImage(true)}
                                         alt={item?.name}
-                                        className="object-cover w-[60px] h-[60px] bg-white border-gray-300 border shadow-2xl rounded-2xl cursor-pointer hover:border-gray-500 transition-all duration-200"
+                                        className="object-cover w-[52px] h-[52px] rounded-xl border border-gray-200 cursor-pointer hover:scale-105 transition-transform duration-200"
                                     />
-                                    {/* Popup image */}
                                     <AnimatePresence>
                                         {isOpenImage && item?.image[0] && (
                                             <PopupImage image={item?.image[0]} setOpen={setOpenImage} />
                                         )}
                                     </AnimatePresence>
                                     <div>
-                                        <h3 className='text-md md:text-lg font-semibold'>{item?.name}</h3>
-                                        <p className='text-sm text-gray-500 font-semibold'>{item?.quantity} x {item?.unit}</p>
+                                        <h3 className='text-sm font-semibold text-gray-800 leading-tight'>{item?.name}</h3>
+                                        <p className='text-xs text-gray-400 mt-0.5'>{item?.quantity} × {item?.unit}</p>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <p className='text-green-700 font-semibold'>${item?.price}</p>
-                                </div>
+                                <p className='text-sm font-bold text-green-700 shrink-0'>${item?.price}</p>
                             </motion.div>
                         ))
                     )}
                 </AnimatePresence>
+            </div>
 
-                <div className='border-b border-black'></div>
-
-                <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-2'>
-                        <Truck className='w-5 h-5 text-green-700' />
-                        <span className='font-medium text-md md:text-lg'>Delivery: <strong className='text-green-700'>{status}</strong></span>
-                    </div>
-
-                    <div>
-                        <p className='font-bold text-md md:text-xl'>Total: <span className='text-green-700 font-bold text-md md:text-xl'>${orders?.totalAmount}</span></p>
-                    </div>
+            {/* Footer */}
+            <div className='px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-2'>
+                <div className='flex items-center gap-1.5'>
+                    <Truck className='w-4 h-4 text-green-700' />
+                    <span className='text-xs text-gray-500 font-medium'>
+                        Delivery: <strong className='text-green-700'>{status}</strong>
+                    </span>
                 </div>
+                <p className='font-extrabold text-sm md:text-base text-gray-800'>
+                    Total: <span className='text-green-700'>${orders?.totalAmount}</span>
+                </p>
             </div>
         </motion.div>
     )

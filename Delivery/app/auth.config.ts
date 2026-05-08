@@ -24,6 +24,7 @@ export const authConfig = {
             }
             return session
         }
+
     },
     providers: []  // Không import bcrypt/mongoose ở đây
 } satisfies NextAuthConfig

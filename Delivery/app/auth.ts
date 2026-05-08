@@ -88,24 +88,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
 
     // CALLBACKS: Các hàm được gọi tự động tại các thời điểm khác nhau trong quá trình authentication
-    // callbacks: {
-    //     // Signin
-    //     async signIn({ user, account }) {
-    //         if (account?.provider == 'google') {
-    //             // Connect DB
-    //             await connectDB();
-    //             // find email in database
-    //             let dbUser = await User.findOne({ email: user.email });
-    //             if (!dbUser) {
-    //                 // create user
-    //                 dbUser = await User.create({ email: user.email, name: user.name, image: user.image });
-    //             }
+    callbacks: {
+        ...authConfig.callbacks, // sử dụng các callbacks từ auth.config.ts
+        // Signin
+        async signIn({ user, account }) {
+            if (account?.provider == 'google') {
+                // Connect DB
+                await connectDB();
+                // find email in database
+                let dbUser = await User.findOne({ email: user.email });
+                if (!dbUser) {
+                    // create user
+                    dbUser = await User.create({ email: user.email, name: user.name, image: user.image });
+                }
 
-    //             user.id = dbUser._id.toString();
-    //             user.role = dbUser.role;
-    //         }
-    //         return true;
-    //     },
+                user.id = dbUser._id.toString();
+                user.role = dbUser.role;
+            }
+            return true;
+        },
+    },
+
+    // SESSION: Cấu hình session
+    session: {
+        strategy: "jwt",  // Sử dụng JWT thay vì database sessions (nhẹ hơn, không cần query DB)
+        maxAge: 30 * 24 * 60 * 60, // Thời gian sống của session: 30 ngày (tính bằng giây)
+    },
+
+    // SECRET: Key bí mật để mã hóa JWT token (BẮT BUỘC phải có trong .env)
+    secret: process.env.NEXTAUTH_SECRET,
 
     //     // jwt callback: Được gọi KHI TẠO hoặc CẬP NHẬT JWT token
     //     // - Chạy ngay sau khi user đăng nhập thành công (authorize return user)
@@ -150,13 +161,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     //     signIn: "/login",  // Redirect đến trang /login khi cần đăng nhập
     //     error: "/login"    // Redirect đến trang /login khi có lỗi xảy ra
     // },
-
-    // SESSION: Cấu hình session
-    session: {
-        strategy: "jwt",  // Sử dụng JWT thay vì database sessions (nhẹ hơn, không cần query DB)
-        maxAge: 30 * 24 * 60 * 60, // Thời gian sống của session: 30 ngày (tính bằng giây)
-    },
-
-    // SECRET: Key bí mật để mã hóa JWT token (BẮT BUỘC phải có trong .env)
-    secret: process.env.NEXTAUTH_SECRET,
 }) 

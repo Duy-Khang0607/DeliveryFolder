@@ -7,7 +7,6 @@ import Nav from './components/Nav';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import DeliveryBoy from './components/DeliveryBoy';
-import GeoUpdater from './components/GeoUpdater';
 import Grocery, { IGrocery } from './models/grocery.model';
 
 const Home = async (props: { searchParams: Promise<{ q: string }> }) => {
@@ -49,7 +48,6 @@ const Home = async (props: { searchParams: Promise<{ q: string }> }) => {
   return (
     <>
       <Nav user={JsonUser} />
-      <GeoUpdater userId={JsonUser?._id?.toString()} />
       {JsonUser?.role === 'user' ? <UserDashboard groceryList={groceryList} /> : JsonUser?.role === 'admin' ? <AdminDashboard /> : <DeliveryBoy />}
     </>
   )

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { ArrowLeft, ArrowRight, Box, Edit, Plus, Search, Trash2 } from 'lucide-react'
+import { Box, DollarSign, Edit, Package, Plus, Search, Tag, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import FormEditGrocery from '@/app/components/FormEditGrocery'
 import ButtonHome from '@/app/components/ButtonHome'
@@ -38,7 +38,7 @@ const ViewGrocery = () => {
         setTotalPages(res?.data?.pagination?.totalPages)
         setTotalItems(res?.data?.pagination?.totalItems || 0)
       }
-    } catch (error:any) {
+    } catch (error: any) {
       showToast(`${error?.response?.data?.message || 'System error !'}`, "error");
     } finally {
       setLoading(false)
@@ -155,54 +155,91 @@ const ViewGrocery = () => {
             {/* Grocery items */}
             {filter?.length > 0 ? (
               <>
-                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 py-5 w-full'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
                   {filter?.map((item: IGrocery, index: number) => {
                     return (
                       <motion.div
                         key={index}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className='w-full h-full flex flex-row justify-between items-center px-4 py-5 rounded-2xl shadow-xl border border-gray-200 bg-white gap-4 hover:shadow-2xl transition-all duration-200 cursor-pointer'
+                        transition={{ duration: 0.35, delay: index * 0.04 }}
+                        className='group relative bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col'
                       >
-                        <div className='flex flex-row items-center gap-4 w-full'>
-                          <Image onClick={() => {
-                            setOpen(true)
-                            setEditItem(item)
-                          }} src={item?.image[0]} alt={item?.name} width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl border border-gray-300 shadow-md shadow-gray-300 cursor-pointer' />
+                        {/* Top accent bar */}
+                        <div className='h-1 w-full bg-linear-to-r from-green-400 to-green-700' />
 
-                          <div className='flex flex-col items-start gap-2 flex-nowrap w-full'>
-                            <h2 className='text-sm md:text-md xl:text-lg font-extrabold text-green-700 text-left'>{item?.name}</h2>
-                            <p className='text-sm md:text-base text-gray-500'>{item?.category}</p>
-                            <p className='text-sm md:text-xl text-green-700 font-extrabold'>${item?.price} <span className='text-xs md:text-sm text-gray-500'>/{item?.unit}</span></p>
+                        {/* Form details */}
+                        <div className='p-4 flex flex-col gap-3 flex-1'>
+                          {/* Header: image + name + category */}
+                          <div className='flex flex-row gap-3 items-start'>
+                            {/* Product image */}
+                            <div className='relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer'
+                              onClick={() => { setOpen(true); setEditItem(item) }}
+                            >
+                              <Image
+                                src={item?.image[0]}
+                                alt={item?.name}
+                                fill
+                                className='object-cover group-hover:scale-110 transition-transform duration-300'
+                              />
+                            </div>
+
+                            {/* Name + category badge */}
+                            <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
+                              <span className='flex items-center gap-1 w-fit px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold tracking-widest uppercase'>
+                                <Tag className='w-3 h-3' />
+                                {item?.category}
+                              </span>
+                              <h2 className='font-bold text-gray-800 text-sm leading-tight line-clamp-2'>
+                                {item?.name}
+                              </h2>
+                            </div>
+                          </div>
+
+                          {/* Divider */}
+                          <div className='border-t border-dashed border-gray-100' />
+
+                          {/* Details */}
+                          <div className='flex flex-col gap-2'>
+                            <div className='flex items-center gap-2'>
+                              <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
+                              <p className='text-sm font-extrabold text-green-700'>
+                                ${item?.price}
+                                <span className='text-xs font-medium text-gray-400 ml-1'>/ {item?.unit || '—'}</span>
+                              </p>
+                            </div>
+                            <div className='flex items-center gap-2'>
+                              <Package className='w-4 h-4 text-gray-400 shrink-0' />
+                              <p className='text-xs text-gray-500'>Unit: <span className='font-semibold text-gray-700'>{item?.unit || '—'}</span></p>
+                            </div>
                           </div>
                         </div>
 
-                        <div className='flex flex-row items-center gap-2'>
-                          <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            whileHover={{ scale: 1.06 }}
-                            className='bg-green-700 text-white rounded-md p-2 hover:bg-green-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                            onClick={() => {
-                              setEdit(true)
-                              setEditItem(item)
-                            }}
-                          >
-                            <Edit className='w-5 h-5' />
-                          </motion.button>
-                          <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            whileHover={{ scale: 1.06 }}
-                            onClick={() => handleDelete(item?._id?.toString() || '')}
-                            className='bg-red-500 text-white rounded-md p-2 hover:bg-red-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                          >
-                            <Trash2 className='w-5 h-5' />
-                          </motion.button>
+                        {/* Footer actions */}
+                        <div className='px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-row items-center justify-between gap-2'>
+                          <span className='text-xs text-gray-400 font-mono'>#{item?._id?.toString().slice(-6)}</span>
+                          <div className='flex items-center gap-2'>
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              whileHover={{ scale: 1.08 }}
+                              className='bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 transition-all cursor-pointer'
+                              onClick={() => { setEdit(true); setEditItem(item) }}
+                            >
+                              <Edit className='w-4 h-4' />
+                            </motion.button>
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              whileHover={{ scale: 1.08 }}
+                              onClick={() => handleDelete(item?._id?.toString() || '')}
+                              className='bg-red-500 hover:bg-red-600 text-white rounded-lg p-1.5 transition-all cursor-pointer'
+                            >
+                              <Trash2 className='w-4 h-4' />
+                            </motion.button>
+                          </div>
                         </div>
                       </motion.div>
                     )
-                  }
-                  )}
+                  })}
                 </div>
 
                 {/* Total items */}
@@ -210,10 +247,10 @@ const ViewGrocery = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className='w-full h-full flex flex-row justify-between items-center gap-2 ml-2'
+                  className='w-full flex flex-row items-center gap-2 ml-2 pb-20'
                 >
-                  <span className='text-sm md:text-base text-gray-500 font-bold'>Pages of items: {" "}
-                    <span className='text-sm md:text-base text-green-700 font-extrabold'>{currentPage} of {totalItems}</span>
+                  <span className='text-sm text-gray-400 font-semibold'>
+                    Page <span className='text-green-700 font-extrabold'>{currentPage}</span> · <span className='text-green-700 font-extrabold'>{totalItems}</span> items total
                   </span>
                 </motion.div>
               </>
@@ -222,16 +259,17 @@ const ViewGrocery = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className='w-full h-full flex flex-col items-center justify-center'
+                className='w-full flex flex-col items-center justify-center py-20 gap-3'
               >
-                <p className='text-lg md:text-2xl font-extrabold text-gray-500'>No groceries items found</p>
+                <Box className='w-14 h-14 text-gray-300' />
+                <p className='text-base md:text-lg font-bold text-gray-400'>No grocery items found</p>
               </motion.div>
             )}
           </motion.div>
 
           {/* Pagination */}
           {totalItems > 0 && (
-            <Pagination totalPages={totalPages} handlePrevPage={handlePrevPage} handleNextPage={handleNextPage} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
+            <Pagination totalPages={totalPages} handlePrevPage={handlePrevPage} handleNextPage={handleNextPage} currentPage={currentPage} setCurrentPage={setCurrentPage} />
           )}
 
           {/* Edit Grocery */}

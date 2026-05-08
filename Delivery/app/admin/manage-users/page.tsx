@@ -1,9 +1,9 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import axios from 'axios'
-import { Box, Edit, MailIcon, Phone, Search, Trash2, UserPlus } from 'lucide-react'
+import { Box, Edit, MailIcon, Phone, Search, Shield, Trash2, Truck, User, UserPlus, Wifi, WifiOff } from 'lucide-react'
 import Image from 'next/image'
 import ButtonHome from '@/app/components/ButtonHome'
 import { useToast } from '@/app/components/Toast'
@@ -13,6 +13,13 @@ import { IUser } from '@/app/models/user.model'
 import profileImage from '@/app/assets/profile.jpg'
 import FormEditUser from '@/app/components/FormEditUser'
 import Pagination from '@/app/components/Pagination'
+import { getSocket } from '@/app/lib/socket'
+
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    user: { label: 'User', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <User className='w-3 h-3' /> },
+    admin: { label: 'Admin', color: 'bg-purple-50 text-purple-700 border border-purple-200', icon: <Shield className='w-3 h-3' /> },
+    deliveryBoy: { label: 'Delivery', color: 'bg-orange-50 text-orange-700 border border-orange-200', icon: <Truck className='w-3 h-3' /> },
+}
 
 const ManageUsers = () => {
     const [loading, setLoading] = useState(false)
@@ -79,7 +86,29 @@ const ManageUsers = () => {
         }
     }
 
+    const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean }) => {
+        const { userId, isOnline } = data
+
+        const idUser = userId.toString().slice(-6)
+
+        const update = (users: IUser[]) =>
+            users?.map(u => u._id?.toString() === userId.toString() ? { ...u, isOnline } : u)
+
+        setUsers(prev => update(prev))
+        setFilter(prev => update(prev))
+
+        showToast(`User ${idUser} ${isOnline ? 'Online' : 'Offline'}`, isOnline ? 'success' : 'warning')
+    }
+
     useEffect(() => {
+        // Lắng nghe socket khi user offline
+        const socket = getSocket()
+        socket.on('user-status-updated', handleUserStatusUpdated)
+        return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
+    }, [])
+
+    useEffect(() => {
+        // Fetch data user
         fetchUsers(currentPage)
     }, [currentPage])
 
@@ -153,67 +182,93 @@ const ManageUsers = () => {
                         {/* Users */}
                         {filter?.length > 0 ? (
                             <>
-                                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 py-5 w-full'>
+                                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
                                     {filter?.map((item: IUser, index: number) => {
+                                        const roleConfig = ROLE_CONFIG[item?.role || 'user']
                                         return (
                                             <motion.div
                                                 key={index}
-                                                initial={{ opacity: 0, y: 10 }}
+                                                initial={{ opacity: 0, y: 12 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.4 }}
-                                                className='w-full h-full flex flex-row flex-wrap justify-between items-center px-4 py-5 rounded-2xl shadow-xl border border-gray-200 bg-white gap-4 hover:shadow-2xl transition-all duration-200 cursor-pointer overflow-hidden relative'
+                                                transition={{ duration: 0.35, delay: index * 0.04 }}
+                                                className='group relative bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col'
                                             >
-                                                <div className='flex flex-row gap-4 items-center w-full'>
-                                                    {/* Image && Online*/}
-                                                    <div className='flex flex-col gap-2 items-center justify-center'>
-                                                        <Image onClick={() => {
-                                                            setOpen(true)
-                                                            setEditItem(item)
-                                                        }} src={item?.image || profileImage} alt={item?.name} width={100} height={100} className='w-20 h-[100px] object-cover rounded-xl border border-gray-300 shadow-md shadow-gray-300 cursor-pointer' />
-                                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`${item?.isOnline ? 'bg-green-500 text-white' : 'bg-red-500 text-white'} px-2 py-1 rounded-md`}>{item?.isOnline ? "Online" : "Offline"}</motion.button>
+                                                {/* Top accent bar theo role */}
+                                                <div className={`h-1 w-full ${item?.role === 'admin' ? 'bg-purple-400' : item?.role === 'deliveryBoy' ? 'bg-orange-400' : 'bg-blue-400'}`} />
+
+                                                <div className='p-4 flex flex-col gap-3 flex-1'>
+                                                    {/* Header: avatar + info */}
+                                                    <div className='flex flex-row gap-3 items-start'>
+                                                        {/* Avatar + online dot */}
+                                                        <div className='relative shrink-0'>
+                                                            <Image
+                                                                onClick={() => { setOpen(true); setEditItem(item) }}
+                                                                src={item?.image || profileImage}
+                                                                alt={item?.name}
+                                                                width={64}
+                                                                height={64}
+                                                                className='w-16 h-16 object-cover rounded-xl border-2 border-gray-100 shadow cursor-pointer'
+                                                            />
+                                                            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${item?.isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                        </div>
+
+                                                        {/* Name + role + status */}
+                                                        <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
+                                                            <div className='flex items-center gap-2 flex-wrap'>
+                                                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleConfig?.color}`}>
+                                                                    {roleConfig?.icon}
+                                                                    {roleConfig?.label}
+                                                                </span>
+                                                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${item?.isOnline ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                                                    {item?.isOnline ? <Wifi className='w-3 h-3' /> : <WifiOff className='w-3 h-3' />}
+                                                                    {item?.isOnline ? 'Online' : 'Offline'}
+                                                                </span>
+                                                            </div>
+                                                            <h2 className='font-bold text-gray-800 text-sm leading-tight truncate'>{item?.name}</h2>
+                                                        </div>
                                                     </div>
 
-                                                    <div className='flex flex-col items-start gap-2'>
-                                                        <div className={`${item?.role === 'admin' ? 'bg-purple-100 text-purple-700 border-purple-300' : item?.role === 'deliveryBoy' ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-blue-100 text-blue-700 border-blue-300'} px-2 py-1 rounded-md text-sm font-bold`}>
-                                                            <p>{item?.role?.toUpperCase()}</p>
+                                                    {/* Divider */}
+                                                    <div className='border-t border-dashed border-gray-100' />
+
+                                                    {/* Contact info */}
+                                                    <div className='flex flex-col gap-2'>
+                                                        <div className='flex items-start gap-2 min-w-0'>
+                                                            <MailIcon className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />
+                                                            <p className='text-xs text-gray-500 break-all leading-relaxed'>{item?.email}</p>
                                                         </div>
-                                                        <h2 className='text-sm md:text-md xl:text-lg font-extrabold text-green-700'>{item?.name}</h2>
-                                                        <div className='flex flex-row items-center gap-2 w-full'>
-                                                            <MailIcon className='w-5 h-5 text-gray-500' />
-                                                            <p className='text-sm md:text-base text-gray-500'>{item?.email}</p>
-                                                        </div>
-                                                        <div className='flex flex-row items-center gap-2'>
-                                                            <Phone className='w-5 h-5 text-gray-500' />
-                                                            <p className='text-sm md:text-base text-gray-500'>{item?.mobile}</p>
+                                                        <div className='flex items-center gap-2'>
+                                                            <Phone className='w-4 h-4 text-gray-400 shrink-0' />
+                                                            <p className='text-xs text-gray-500'>{item?.mobile || '—'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className='flex flex-col md:flex-row items-center gap-2 w-auto'>
-                                                    <motion.button
-                                                        whileTap={{ scale: 0.97 }}
-                                                        whileHover={{ scale: 1.06 }}
-                                                        className='bg-green-700 text-white rounded-md p-2 hover:bg-green-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                                                        onClick={() => {
-                                                            setEdit(true)
-                                                            setEditItem(item)
-                                                        }}
-                                                    >
-                                                        <Edit className='w-5 h-5' />
-                                                    </motion.button>
-                                                    <motion.button
-                                                        whileTap={{ scale: 0.97 }}
-                                                        whileHover={{ scale: 1.06 }}
-                                                        onClick={() => handleDelete(item?._id?.toString() || '')}
-                                                        className='bg-red-500 text-white rounded-md p-2 hover:bg-red-800 cursor-pointer transition-all duration-200 w-auto h-auto'
-                                                    >
-                                                        <Trash2 className='w-5 h-5' />
-                                                    </motion.button>
+                                                {/* Footer actions */}
+                                                <div className='px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-row items-center justify-between gap-2'>
+                                                    <span className='text-xs text-gray-400 font-mono'>#{item?._id?.toString().slice(-6)}</span>
+                                                    <div className='flex items-center gap-2'>
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.95 }}
+                                                            whileHover={{ scale: 1.08 }}
+                                                            className='bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 transition-all'
+                                                            onClick={() => { setEdit(true); setEditItem(item) }}
+                                                        >
+                                                            <Edit className='w-4 h-4' />
+                                                        </motion.button>
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.95 }}
+                                                            whileHover={{ scale: 1.08 }}
+                                                            onClick={() => handleDelete(item?._id?.toString() || '')}
+                                                            className='bg-red-500 hover:bg-red-600 text-white rounded-lg p-1.5 transition-all'
+                                                        >
+                                                            <Trash2 className='w-4 h-4' />
+                                                        </motion.button>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )
-                                    }
-                                    )}
+                                    })}
                                 </div>
 
                                 {/* Total items */}
@@ -221,10 +276,10 @@ const ManageUsers = () => {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4 }}
-                                    className='w-full h-full flex flex-row justify-between items-center gap-2 ml-2'
+                                    className='w-full flex flex-row justify-between items-center gap-2 ml-2 pb-20'
                                 >
-                                    <span className='text-sm md:text-base text-gray-500 font-bold'>Pages of items: {" "}
-                                        <span className='text-sm md:text-base text-green-700 font-extrabold'>{currentPage} of {totalItems}</span>
+                                    <span className='text-sm text-gray-400 font-semibold'>
+                                        Page <span className='text-green-700 font-extrabold'>{currentPage}</span> · <span className='text-green-700 font-extrabold'>{totalItems}</span> users total
                                     </span>
                                 </motion.div>
                             </>
@@ -233,9 +288,10 @@ const ManageUsers = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className='w-full h-full flex flex-col items-center justify-center'
+                                className='w-full h-full flex flex-col items-center justify-center py-20 gap-2'
                             >
-                                <p className='text-lg md:text-2xl font-extrabold text-gray-500'>No users found</p>
+                                <User className='w-12 h-12 text-gray-300' />
+                                <p className='text-lg font-bold text-gray-400'>No users found</p>
                             </motion.div>
                         )}
                     </motion.div>

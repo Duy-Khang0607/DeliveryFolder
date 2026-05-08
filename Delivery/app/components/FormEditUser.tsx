@@ -1,5 +1,5 @@
 'use client'
-import React, { ChangeEvent, useState } from 'react'
+import React, { ChangeEvent, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BadgePlus, Camera, Edit, Eye, EyeOff, Loader2, Mail, MapPin, Phone, Shield, Truck, User, Wifi, WifiOff } from 'lucide-react'
 import { useToast } from './Toast'
@@ -44,6 +44,20 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
     const [isOnline] = useState<boolean>(editItem?.isOnline || false)
     const [location, setLocation] = useState<{ type: string, coordinates: number[] }>(editItem?.location || { type: 'Point', coordinates: [0, 0] })
     const [showPassword, setShowPassword] = useState(false);
+    const isAdmin = editItem?.role === 'admin'
+    const endpoint = isAdmin
+        ? '/api/auth/admin/update-user'
+        : '/api/auth/user/update-profile'
+
+    useEffect(() => {
+        if (!editItem) return
+        setName(editItem.name || '')
+        setEmail(editItem.email || '')
+        setMobile(editItem.mobile || '')
+        setRole(editItem.role || '')
+        setPassword(editItem.password || '')
+        setLocation(editItem.location || { type: 'Point', coordinates: [0, 0] })
+    }, [editItem])
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         e.preventDefault()
@@ -79,7 +93,9 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
             formData.append('isOnline', isOnline.toString() || 'false')
             formData.append('location', JSON.stringify(location))
             if (backendImage) formData.append('image', backendImage)
-            const response: any = await axios.put('/api/auth/admin/update-user', formData)
+
+            const response: any = await axios.put(endpoint, formData)
+
             if (response?.data?.success) {
                 showToast(response?.data?.message, "success");
                 setEdit(false)
@@ -117,7 +133,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Title && Description */}
-                <div className='flex flex-col items-center justify-center gap-2 tracking-wide text-xl font-semibold px-6'>
+                <div className='flex flex-col items-center justify-center gap-2 tracking-wide text-xl font-semibold px-6 text-black'>
                     <span className='flex flex-row items-center gap-2 justify-center'>
                         {isEdit ? <Edit className='w-5 h-5 text-green-700' /> : <BadgePlus className='w-5 h-5 text-green-700' />}
                         {title}
@@ -182,7 +198,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                 </div>
 
                 {/* Form body */}
-                <form className='px-6 pb-6 flex flex-col gap-4'>
+                <form className='px-6 pb-6 flex flex-col gap-4 text-black'>
 
                     {/* Section: Personal Info */}
                     <div className='bg-gray-50 rounded-2xl p-4 flex flex-col gap-3 border border-gray-100'>
@@ -268,6 +284,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                                     <Truck className='w-3.5 h-3.5' /> Role
                                 </label>
                                 <select
+                                    disabled={editItem?.role !== 'admin'}
                                     required
                                     className={inputClass}
                                     value={role}

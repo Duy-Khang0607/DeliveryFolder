@@ -17,7 +17,6 @@ const useGetMe = () => {
             const user = await axios.get('/api/me');
             dispatch(setUserData(user?.data?.user))
         } catch (error) {
-            console.error({ error })
             // Chỉ hiện toast nếu user đang có session (không hiện khi logout)
             if (session?.user) {
                 showToast('Get infomation user failed !', "error");

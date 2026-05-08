@@ -27,7 +27,9 @@ const LoginForm = () => {
         try {
             setLoading(true);
             const res = await signIn('credentials', { email, password, redirect: false });
+            console.log({ res })
             if (!res?.error) {
+                await router.refresh() // dùng cho socket khi login vô 
                 showToast("Login successfully", "success");
                 router.push('/');
             } else {
