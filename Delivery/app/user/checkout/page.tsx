@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import { generateIdempotencyKey } from '@/app/lib/generateIdempotencyKey'
+import ButtonHome from '@/app/components/ButtonHome'
 
 // Dynamic import để tránh lỗi SSR với leaflet
 const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
@@ -239,15 +240,9 @@ const Checkout = () => {
 
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto py-10 relative'>
-            {/* Back to cart */}
-            <motion.button
-                onClick={() => router.push('/user/cart')}
-                whileTap={{ scale: 0.97 }}
-                whileHover={{ scale: 1.06 }}
-                className='absolute left-0 top-2 flex items-center gap-2 text-green-700 hover:text-green-800 font-semibold cursor-pointer bg-white shadow-lg p-2 rounded-xl'>
-                <ArrowLeft className='w-5 h-5' />
-                <span className='hidden md:flex font-semibold tracking-wide'>Back to home</span>
-            </motion.button>
+            <div className='min-h-[40px]'>
+                <ButtonHome />
+            </div>
 
             {/* Title */}
             <motion.h1

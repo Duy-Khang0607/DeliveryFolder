@@ -54,30 +54,57 @@ const AdminDashboard = async () => {
     { title: "Total Revenue", value: totalRevenue, icon: <DollarSign className='w-5 h-5 text-green-700' /> },
   ]
 
-  const chartData = []
   const formatOrdersData = JSON.parse(JSON.stringify(orders))
+  const now = new Date()
 
-
-  for (let i = 6; i >= 0; i--) {
-    const day = new Date()
-    day.setDate(day.getDate() - i)
-    day.setHours(0, 0, 0, 0)
-
-    const nextDay = new Date(day)
-    nextDay.setDate(nextDay.getDate() + 1)
-
-
+  // ── TODAY: nhóm theo giờ (0h → 23h) ──────────────────────────────
+  const chartDataToday = Array.from({ length: 24 }, (_, hour) => {
     const ordersCount = formatOrdersData?.filter((o: IOrder) => {
-      const createdAt = new Date(o?.createdAt?.toString() || '');
-      return createdAt >= day && createdAt < nextDay;
-    })?.length || 0
+      const createdAt = new Date(o?.createdAt?.toString() || '')
+      return (
+        createdAt.getFullYear() === now.getFullYear() &&
+        createdAt.getMonth() === now.getMonth() &&
+        createdAt.getDate() === now.getDate() &&
+        createdAt.getHours() === hour
+      )
+    }).length
+    return {
+      day: `${hour.toString().padStart(2, '0')}:00`,
+      orders: ordersCount,
+    }
+  })
 
-    chartData.push({
-      day: day?.toLocaleDateString('en-US', { weekday: 'short' }),
-      orders: ordersCount
-    })
-  }
-  
+  // ── LAST 7 DAYS: nhóm theo ngày ──────────────────────────────────
+  const chartDataSevenDays = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(now)
+    day.setDate(now.getDate() - (6 - i))
+    day.setHours(0, 0, 0, 0)
+    const nextDay = new Date(day)
+    nextDay.setDate(day.getDate() + 1)
+    const ordersCount = formatOrdersData?.filter((o: IOrder) => {
+      const createdAt = new Date(o?.createdAt?.toString() || '')
+      return createdAt >= day && createdAt < nextDay
+    }).length
+    return {
+      day: day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      orders: ordersCount,
+    }
+  })
+
+  // ── ALL TIME: nhóm theo tháng (12 tháng gần nhất) ─────────────────
+  const chartDataAllTime = Array.from({ length: 12 }, (_, i) => {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
+    const nextMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)
+    const ordersCount = formatOrdersData?.filter((o: IOrder) => {
+      const createdAt = new Date(o?.createdAt?.toString() || '')
+      return createdAt >= monthDate && createdAt < nextMonth
+    }).length
+    return {
+      day: monthDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+      orders: ordersCount,
+    }
+  })
+
   return (
     <>
       <AdminDashboardClient
@@ -89,7 +116,11 @@ const AdminDashboard = async () => {
           }
         }
         stats={stats}
-        chartData={chartData}
+        chartData={{
+          today: chartDataToday,
+          sevenDays: chartDataSevenDays,
+          allTime: chartDataAllTime,
+        }}
       />
     </>
   )

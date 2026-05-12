@@ -78,8 +78,7 @@ const Cart = () => {
                                     <div className="relative p-[2px] rounded-2xl overflow-hidden group/card">
                                         {/* Lớp gradient xoay - ẩn mặc định, hiện khi hover */}
                                         <div
-                                            className="absolute inset-0 opacity-0 group-hover/card:opacity-100 
-               transition-opacity duration-300"
+                                            className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
                                             style={{
                                                 background: 'conic-gradient(from 0deg, transparent 0%, transparent 40%, #16a34a 55%, #4ade80 65%, transparent 75%)',
                                                 animation: 'border-spin 4s linear infinite',

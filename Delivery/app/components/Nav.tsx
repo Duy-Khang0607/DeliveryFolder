@@ -11,6 +11,7 @@ import { RootState } from '../redux/store'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import profileImage from '../assets/profile.jpg'
+import deliveryBoyImage from '../assets/deliveryBoy.png'
 import { useToast } from './Toast'
 import FormEditUser from './FormEditUser'
 import { disconnectSocket } from '../lib/socket'
@@ -100,7 +101,9 @@ const Nav = ({ user }: { user: IUser }) => {
     <nav className='max-w-[90%] mx-auto h-16 shadow-md flex items-center justify-between px-4 text-white mt-4 rounded-md bg-green-500 fixed top-0 left-0 right-0 z-99'>
       {/* Title */}
       <div className='text-white text-xl font-bold max-w-full'>
-        <Link href='/' className='hover:text-gray-300 transition-all duration-300'>Delivery</Link>
+        <Link href='/' className='hover:text-gray-300 transition-all duration-300'>
+          <Image src={deliveryBoyImage} alt='Delivery' width={50} height={50} className='object-cover rounded-full' />
+        </Link>
       </div>
 
       {/* Search */}

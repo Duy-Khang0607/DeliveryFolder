@@ -14,7 +14,6 @@ const GeoUpdater = ({ userId }: { userId: string }) => {
 
         // Emit ngay nếu đã connected
         if (socket.connected) {
-            console.log('Socket connected, emit identity')
             emitIdentity()
         }
         // Lắng nghe TẤT CẢ lần connect (kể cả reconnect)

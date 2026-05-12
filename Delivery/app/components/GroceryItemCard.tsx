@@ -39,52 +39,53 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
       <div className='h-1 w-full bg-linear-to-r from-green-400 to-green-700' />
 
       {/* Body */}
-      <Link href={`/user/item-detail/${groceries?._id?.toString()}`}>
-        <div className='p-4 flex flex-col gap-3 flex-1 min-h-[200px]'>
-          {/* Header: image + category badge + name (giống avatar block của manage-users) */}
-          <div className='flex flex-row gap-3 items-start w-full justify-center min-h-[80px]'>
-            {/* Product image */}
-            <div
-              className='relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer'
-              onClick={() => setOpen(true)}
-            >
-              <Image
-                src={groceries?.image[0]}
-                alt={groceries?.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className='object-cover group-hover:scale-110 transition-transform duration-300'
-              />
-            </div>  
 
-            {/* Category badge + name */}
-            <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
-              <span className='inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold tracking-widest uppercase'>
-                <Tag className='w-3 h-3 shrink-0' />
-                {groceries?.category}
-              </span>
-              <span className='text-gray-800 text-sm font-semibold leading-snug line-clamp-2' title={groceries?.name}>
+      <div className='p-4 flex flex-col gap-3 flex-1 min-h-[200px]'>
+        {/* Header: image + category badge + name (giống avatar block của manage-users) */}
+        <div className='flex flex-row gap-3 items-start w-full justify-center min-h-[80px]'>
+          {/* Product image */}
+          <div
+            className='relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer'
+            onClick={() => setOpen(true)}
+          >
+            <Image
+              src={groceries?.image[0]}
+              alt={groceries?.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className='object-cover group-hover:scale-110 transition-transform duration-300'
+            />
+          </div>
+
+          {/* Category badge + name */}
+          <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
+            <span className='inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold tracking-widest uppercase'>
+              <Tag className='w-3 h-3 shrink-0' />
+              {groceries?.category}
+            </span>
+            <Link href={`/user/item-detail/${groceries?._id?.toString()}`}>
+              <span className='text-gray-800 text-sm font-semibold leading-snug line-clamp-2 hover:underline transition-all duration-400 cursor-pointer' title={groceries?.name}>
                 {groceries?.name}
               </span>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className='border-t border-dashed border-gray-200' />
-
-          {/* Details */}
-          <div className='flex flex-col gap-2'>
-            <div className='flex items-center gap-2'>
-              <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
-              <p className='text-sm font-extrabold text-green-700'>${groceries?.price}</p>
-            </div>
-            <div className='flex items-center gap-2'>
-              <Package className='w-4 h-4 text-gray-400 shrink-0' />
-              <p className='text-xs text-gray-500'>Unit: <span className='font-semibold text-gray-700'>{groceries?.unit || '—'}</span></p>
-            </div>
+            </Link>
           </div>
         </div>
-      </Link>
+
+        {/* Divider */}
+        <div className='border-t border-dashed border-gray-200' />
+
+        {/* Details */}
+        <div className='flex flex-col gap-2'>
+          <div className='flex items-center gap-2'>
+            <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
+            <p className='text-sm font-extrabold text-green-700'>${groceries?.price}</p>
+          </div>
+          <div className='flex items-center gap-2'>
+            <Package className='w-4 h-4 text-gray-400 shrink-0' />
+            <p className='text-xs text-gray-500'>Unit: <span className='font-semibold text-gray-700'>{groceries?.unit || '—'}</span></p>
+          </div>
+        </div>
+      </div>
 
       {/* Footer: Add to Cart / Quantity control */}
       <div className='px-4 pyư-3 bg-gray-50 border-t border-gray-100'>
@@ -128,7 +129,7 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
           <PopupImage image={groceries?.image[0]} setOpen={setOpen} />
         )}
       </AnimatePresence>
-    </motion.div>
+    </motion.div >
   )
 }
 

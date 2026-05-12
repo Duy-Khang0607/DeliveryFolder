@@ -125,7 +125,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
             onClick={() => setEdit(false)}
         >
             <motion.div
-                className="relative w-full md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-gray-100 py-5"
+                className="relative min-w-xs md:max-w-2xl max-h-[70vh] overflow-y-auto md:h-fit md:max-h-[90vh] md:overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-100 py-5"
                 initial={{ scale: 0.94, opacity: 0, y: 16 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.94, opacity: 0, y: 16 }}
@@ -133,16 +133,17 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Title && Description */}
-                <div className='flex flex-col items-center justify-center gap-2 tracking-wide text-xl font-semibold px-6 text-black'>
+                <div className='flex flex-col items-center justify-center gap-2 tracking-wide text-xl font-semibold px-6 text-black pb-10'>
                     <span className='flex flex-row items-center gap-2 justify-center'>
                         {isEdit ? <Edit className='w-5 h-5 text-green-700' /> : <BadgePlus className='w-5 h-5 text-green-700' />}
                         {title}
                     </span>
-                    <p className='text-sm max-w-sm md:max-w-xl'>{description}</p>
+                    <p className='text-sm max-w-sm md:max-w-xl hidden md:block'>{description}</p>
                 </div>
 
                 {/* Avatar overlap */}
                 <div className='relative -mt-10 px-6 mb-4 flex items-end gap-4'>
+                    {/* Avatar */}
                     <div className='relative shrink-0'>
                         <div className='w-20 h-20 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gray-100'>
                             {loadingImage ? (
@@ -173,7 +174,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                         </label>
                         <input type="file" id="file-upload" className="hidden" onChange={handleFileChange} accept='image/*' />
                     </div>
-
+                    {/* Name & Role */}
                     <div className='flex flex-col gap-2'>
                         <p className='font-bold text-gray-800 text-base leading-tight'>{name || 'User Name'}</p>
                         <div className='flex items-center gap-1.5 mt-1'>
