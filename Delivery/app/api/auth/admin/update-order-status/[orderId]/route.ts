@@ -82,58 +82,56 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             // Lấy danh sách ID của shipper khả dụng
             const candidates = availableDeliveryBoys?.map(b => b?._id)
 
-            // ĐÃ SỬA: Nếu KHÔNG có shipper khả dụng thì return thông báo
+            // Nếu không có shipper online: tạo assignment với status 'pending'
+            // để shipper thấy đơn khi họ online sau
             if (!candidates || candidates.length === 0) {
-                await order.save();
+                const deliveryAssignment = await DeliveryAssignment.create({
+                    order: order?._id,
+                    brodcastedTo: [],
+                    status: 'pending',
+                });
 
-                // Gọi event socket khi cập nhật trạng thái đơn hàng
-                await emitEventHandler("order-status-updated", { orderId: order?._id, status: order?.status })
+                order.assignment = deliveryAssignment?._id;
+            } else {
+                // Tạo bản ghi DeliveryAssignment mới - phân công giao hàng
+                const deliveryAssignment = await DeliveryAssignment.create({
+                    order: order?._id,
+                    brodcastedTo: candidates,
+                    status: 'brodcasted',
+                });
 
-                return NextResponse.json({ success: true, message: 'There is no available delivery boys!' }, { status: 200 });
-            }
+                // Populate thông tin order vào deliveryAssignment
+                await deliveryAssignment.populate('order');
 
-            // Tạo bản ghi DeliveryAssignment mới - phân công giao hàng
-            const deliveryAssignment = await DeliveryAssignment.create({
-                order: order?._id,                    // ID đơn hàng
-                brodcastedTo: candidates,          // Danh sách shipper được broadcast
-                status: 'brodcasted',              // Trạng thái: đã broadcast
-            });
-
-            // Populate thông tin order vào deliveryAssignment
-            await deliveryAssignment.populate('order');
-
-            // Gọi event socket khi cập nhật trạng thái đơn hàng
-            // for (const boyId of candidates) {
-            //     const boy = await User.findById(boyId);
-            //     if (boy?.socketId) {
-            //         await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order, socketId: boy?.socketId })
-            //     }
-            // }
-
-            const boys = await User.find({ _id: { $in: candidates } }).select('socketId')
-            for (const boy of boys) {
-                if (boy?.socketId) {
-                    await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order }, boy?.socketId)
+                const boys = await User.find({ _id: { $in: candidates } }).select('socketId')
+                for (const boy of boys) {
+                    if (boy?.socketId) {
+                        await emitEventHandler("new-assignment", { assignment: deliveryAssignment?._id, order: deliveryAssignment?.order }, boy?.socketId)
+                    }
                 }
+
+                // Gán assignment ID vào đơn hàng
+                order.assignment = deliveryAssignment?._id;
+
+                // Tạo payload chứa thông tin shipper để trả về client
+                deliveryBoysPayload = availableDeliveryBoys?.map(b => ({
+                    id: b?._id,
+                    name: b?.name,
+                    mobile: b?.mobile,
+                    latitude: b?.location?.coordinates[1],
+                    longitude: b?.location?.coordinates[0],
+                }))
             }
-
-            // Gán assignment ID vào đơn hàng
-            order.assignment = deliveryAssignment?._id;
-
-            // Tạo payload chứa thông tin shipper để trả về client
-            deliveryBoysPayload = availableDeliveryBoys?.map(b => ({
-                id: b?._id,                              // ID shipper
-                name: b?.name,                           // Tên shipper
-                mobile: b?.mobile,                       // Số điện thoại
-                latitude: b?.location?.coordinates[1],   // Vĩ độ (index 1)
-                longitude: b?.location?.coordinates[0],  // Kinh độ (index 0)
-            }))
 
         }
 
         if (status === 'Pending' && order?.assignment) {
             // Xóa assignment trong Order
             order.assignment = null;
+            order.deliveryOTP = null;
+            order.deliveredAt = null;
+            order.otpSentAt = null;
+            order.deliveryOTPVerification = false;
             // Xóa assignedDeliveryBoy
             order.assignedDeliveryBoy = null;
 

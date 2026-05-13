@@ -28,13 +28,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         // Atomic update: only succeeds if status is still 'brodcasted'
         const assignment = await DeliveryAssignment.findOneAndUpdate(
-            { _id: id, status: 'brodcasted' },
+            { _id: id, status: { $in: ['brodcasted', 'pending'] } },
             { assignedTo: deliveryBoyId, status: 'assigned', accpectedAt: new Date() },
             { new: true }
         )
 
         if (!assignment) {
-            return NextResponse.json({ success: false, message: "Assignment is no longer available" }, { status: 400 })
+            return NextResponse.json({ success: false, message: "Assignment is no longer available !" }, { status: 400 })
         }
 
         const order = await Orders.findById(assignment?.order)

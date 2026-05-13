@@ -71,8 +71,8 @@ const Checkout = () => {
                 setPosition([results[0]?.y, results[0]?.x] as [number, number])
             }
 
-        } catch (error) {
-            console.error({ error })
+        } catch (error: any) {
+            toast.showToast(error?.response?.data?.message || 'Failed to search map !', 'error');
         }
     }
 
@@ -170,8 +170,8 @@ const Checkout = () => {
             });
             setPay(false)
             window.location.href = res?.data.url
-        } catch (error) {
-            console.error({ error })
+        } catch (error:any) {
+            toast.showToast(error?.response?.data?.message || 'Failed to pay online !', 'error');
         } finally {
             setPay(false)
         }
@@ -218,8 +218,8 @@ const Checkout = () => {
                 }))
                 setSearchLoading(false)
             } catch (error: any) {
-                console.error({ error })
                 setSearchLoading(false)
+                toast.showToast(error?.response?.data?.message || 'Failed to get address !', 'error');
             } finally {
                 setSearchLoading(false)
             }

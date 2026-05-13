@@ -95,7 +95,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
             setPreview(URL.createObjectURL(filterFile))
             setLoadingImage(false)
         } catch (error) {
-            console.error({ error })
+            showToast('Failed to upload image !', 'error');
             setLoadingImage(false)
         }
     }
@@ -122,9 +122,8 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
             }
             setLoading(false)
         } catch (error) {
-            console.error({ error })
             setLoading(false)
-            showToast('System error', "error");
+            showToast('Failed to update grocery !', 'error');
             setEdit(false)
         }
     }

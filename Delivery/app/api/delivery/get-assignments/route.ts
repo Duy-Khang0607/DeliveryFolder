@@ -14,9 +14,13 @@ export async function GET() {
             return NextResponse.json({ success: false, message: 'User is not authenticated' }, { status: 400 });
         }
 
-        const assignments = await DeliveryAssignment.find({ 
-            brodcastedTo: session?.user?.id, 
-            status: 'brodcasted' 
+        const assignments = await DeliveryAssignment.find({
+            $or: [
+                // Đơn đã broadcast trực tiếp cho shipper này
+                { brodcastedTo: session?.user?.id, status: 'brodcasted' },
+                // Đơn đang chờ (không có shipper nào online khi admin tạo)
+                { status: 'pending' }
+            ]
         }).populate({
             path: 'order',
             model: Orders

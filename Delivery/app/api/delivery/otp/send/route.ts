@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         // Kiểm tra OTP đã được gửi trong vòng 60 giây, không gửi lại
         if (order?.otpSentAt && (Date.now() - new Date(order?.otpSentAt).getTime()) < 60_000) {
-            return NextResponse.json({ success: false, message: 'Please wait 60 seconds before resending.' }, { status: 429 });
+            return NextResponse.json({ success: false, message: 'Please wait 60 seconds before resending !' }, { status: 429 });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000)

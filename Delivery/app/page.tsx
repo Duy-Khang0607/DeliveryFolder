@@ -44,7 +44,6 @@ const Home = async (props: { searchParams: Promise<{ q: string }> }) => {
     }
   }
 
-
   return (
     <>
       <Nav user={JsonUser} />

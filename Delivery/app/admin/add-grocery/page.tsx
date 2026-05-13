@@ -34,7 +34,7 @@ const AddGrocery = () => {
       setPreview(URL.createObjectURL(filterFile))
       setLoadingImage(false)
     } catch (error) {
-      console.error({ error })
+      showToast('Upload image failed !', "error");
       setLoadingImage(false)
     }
   }
@@ -63,16 +63,17 @@ const AddGrocery = () => {
       }
       setLoading(false)
     } catch (error) {
-      console.error({ error })
       setLoading(false)
-      showToast('System error', "error");
+      showToast('Add grocery failed !', "error");
+    } finally {
+      setLoading(false)
     }
   }
 
   const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
   const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm placeholder:text-gray-400'
   const avatarSrc = preview || (typeof backendImage === 'string' ? backendImage : '')
-  
+
   return (
     <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
       {/* <- and Back to home + View Grocery Link */}

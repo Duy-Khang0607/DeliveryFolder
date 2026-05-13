@@ -69,14 +69,12 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                 showToast('Order is pending !', 'warning')
             }
         } catch (error) {
-            console.error({ error })
             setLoading(false)
             showToast('Order status update failed', 'error')
         } finally {
             setLoading(false)
         }
     }
-
 
     useEffect(() => {
         setStatus(orders?.status)
@@ -85,13 +83,16 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
     useEffect(() => {
         const socket = getSocket()
 
-        socket?.on('order-status-updated', (data) => {
+        const handleOrderStatusUpdated = (data: any) => {
             if (data?.orderId?.toString() === orders?._id.toString()) {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }
-        })
+        }
+
+        socket?.on('order-status-updated', handleOrderStatusUpdated)
+
         return () => {
-            socket.off('order-status-updated')
+            socket.off('order-status-updated', handleOrderStatusUpdated)
         }
     }, [])
 

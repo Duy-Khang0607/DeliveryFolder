@@ -12,6 +12,7 @@ import axios from 'axios'
 import { IGrocery } from '@/app/models/grocery.model'
 import { use } from 'react'
 import PopupImage from '@/app/HOC/PopupImage'
+import { useToast } from '@/app/components/Toast'
 
 const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
     const { id } = use(params)
@@ -21,7 +22,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
 
     const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state?.cart as ICartSlice)
     const dispatch = useDispatch()
-
+    const { showToast } = useToast()
     const cartItem = cartData?.find(ci => ci?._id?.toString() === id)
 
 
@@ -34,8 +35,8 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                     const found = res?.data?.groceries?.find((g: IGrocery) => g?._id?.toString() === id)
                     setItem(found || null)
                 }
-            } catch (error) {
-                console.error(error)
+            } catch (error: any) {
+                showToast(error?.response?.data?.message || 'Failed to get item !', 'error');
             } finally {
                 setLoading(false)
             }

@@ -125,7 +125,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
             onClick={() => setEdit(false)}
         >
             <motion.div
-                className="relative min-w-xs md:max-w-2xl max-h-[70vh] overflow-y-auto md:h-fit md:max-h-[90vh] md:overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-100 py-5"
+                className="relative min-w-xs md:max-w-2xl max-h-[70vh] overflow-y-auto md:max-h-none md:overflow-visible rounded-3xl bg-white shadow-2xl border border-gray-100 py-5"
                 initial={{ scale: 0.94, opacity: 0, y: 16 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.94, opacity: 0, y: 16 }}

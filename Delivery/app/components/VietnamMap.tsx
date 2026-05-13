@@ -7,6 +7,7 @@ import type { Control } from 'leaflet'
 import { LocateFixed, MapPin } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-geosearch/dist/geosearch.css'
+import { useToast } from './Toast';
 
 // Custom marker icon
 const customIcon = new Icon({
@@ -61,7 +62,7 @@ function MapClickHandler({
 function SearchControl({ onLocationSelect }: { onLocationSelect?: (lat: number, lng: number, address: string) => void }) {
     const map = useMap()
     const searchControlRef = useRef<any>(null)
-
+    const { showToast } = useToast();
     useEffect(() => {
         if (!map) {
             return
@@ -108,8 +109,8 @@ function SearchControl({ onLocationSelect }: { onLocationSelect?: (lat: number, 
                 }
 
                 map.on('geosearch/showlocation', handleSearchResult)
-            } catch (error) {
-                console.error('Error initializing search control:', error)
+            } catch (error: any) {
+                showToast(error?.response?.data?.message || 'Failed to initialize search control !', 'error');
             }
         }
 
@@ -134,8 +135,8 @@ function SearchControl({ onLocationSelect }: { onLocationSelect?: (lat: number, 
                     if (handleSearchResult) {
                         map.off('geosearch/showlocation', handleSearchResult)
                     }
-                } catch (error) {
-                    console.error('Error removing search control:', error)
+                } catch (error: any) {
+                    showToast(error?.response?.data?.message || 'Failed to remove search control !', 'error');
                 }
             }
         }
@@ -148,10 +149,10 @@ function SearchControl({ onLocationSelect }: { onLocationSelect?: (lat: number, 
 function CurrentLocationButton({ onLocationSelect }: { onLocationSelect?: (lat: number, lng: number) => void }) {
     const map = useMap()
     const [isLoading, setIsLoading] = useState(false)
-
+    const { showToast } = useToast();
     const getCurrentLocation = () => {
         if (!navigator.geolocation) {
-            alert('Trình duyệt của bạn không hỗ trợ định vị')
+            showToast('Browser does not support location !', 'error');
             return
         }
 
@@ -163,9 +164,8 @@ function CurrentLocationButton({ onLocationSelect }: { onLocationSelect?: (lat: 
                 onLocationSelect?.(latitude, longitude)
                 setIsLoading(false)
             },
-            (error) => {
-                console.error('Error getting location:', error)
-                alert('Không thể lấy vị trí hiện tại. Vui lòng kiểm tra quyền truy cập vị trí.')
+            (error: any) => {
+                showToast(error?.response?.data?.message || 'Failed to get location !', 'error');
                 setIsLoading(false)
             }
         )

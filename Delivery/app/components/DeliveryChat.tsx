@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getSocket } from '../lib/socket';
 import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useToast } from './Toast';
 
 interface IMessage {
     _id?: string;
@@ -28,6 +29,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const messagesRef = useRef<HTMLDivElement>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
+    const { showToast } = useToast();
 
     useEffect(() => {
         if (messagesRef.current && !loading) {
@@ -61,8 +63,8 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
             // CHỈ EMIT message, KHÔNG listen ở đây
             socket?.emit("send-message", messageData)
             setNewMessage('')
-        } catch (error) {
-            console.error('Error sending message:', error)
+        } catch (error: any) {
+            showToast(error?.response?.data?.message || 'Failed to send message !', 'error');
             setLoading(false);
         } finally {
             setLoading(false);
@@ -79,7 +81,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
                 setMessage(res?.data?.messages)
             }
         } catch (error: any) {
-            console.error('Error fetching messages:', error?.response?.data?.message || error?.message || 'Unknown error')
+            showToast(error?.response?.data?.message || 'Failed to fetch messages !', 'error');
             setLoading(false);
         } finally {
             setLoading(false);
@@ -93,8 +95,8 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
             if (res?.data?.success) {
                 setSuggestions(res?.data?.suggestions || [])
             }
-        } catch (error) {
-            console.error('Error fetching AI suggestions:', error)
+        } catch (error: any) {
+            showToast(error?.response?.data?.message || 'Failed to fetch AI suggestions !', 'error');
             setLoadingSuggestions(false);
         } finally {
             setLoadingSuggestions(false);

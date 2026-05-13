@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { IOrder } from "@/app/models/orders.model"
 import { useEffect, useState } from 'react'
 import Pagination from '@/app/components/Pagination'
+import { useToast } from '@/app/components/Toast'
 
 const MyOrders = () => {
   const router = useRouter()
@@ -19,6 +20,7 @@ const MyOrders = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10
+  const { showToast } = useToast()
 
 
 
@@ -31,7 +33,7 @@ const MyOrders = () => {
       setTotalPages(res?.data?.pagination?.totalPages)
       setTotalItems(res?.data?.pagination?.totalItems || 0)
     } catch (error: any) {
-      console.error({ error: error?.response?.data })
+      showToast(error?.response?.data?.message || 'Failed to get orders !', 'error');
       setLoading(false)
     } finally {
       setLoading(false);

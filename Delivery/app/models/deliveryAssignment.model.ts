@@ -6,7 +6,7 @@ export interface IDeliveryAssignment {
     brodcastedTo: mongoose.Types.ObjectId[],
     rejectedBy: mongoose.Types.ObjectId[],
     assignedTo: mongoose.Types.ObjectId | null,
-    status: 'brodcasted' | 'assigned' | 'completed' | 'rejected',
+    status: 'pending' | 'brodcasted' | 'assigned' | 'completed' | 'rejected',
     accpectedAt: Date,
     createdAt?: Date,
     updatedAt?: Date,
@@ -31,7 +31,7 @@ const deliverySchema = new mongoose.Schema<IDeliveryAssignment>({
     },
     status: {
         type: String,
-        enum: ['brodcasted', 'assigned', 'completed' , 'rejected'],
+        enum: ['pending', 'brodcasted', 'assigned', 'completed', 'rejected'],
         default: 'brodcasted'
     },
     accpectedAt: {

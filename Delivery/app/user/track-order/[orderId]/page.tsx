@@ -11,10 +11,10 @@ import { ArrowLeft, Box, MoveRight, CircleCheckBig, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { getSocket } from "@/app/lib/socket"
+import { useToast } from "@/app/components/Toast"
 
 const LiveMap = dynamic(() => import("@/app/components/LiveMap"), { ssr: false, loading: () => <div className='w-full h-64 bg-gray-100 animate-pulse rounded-lg' /> })
 const DeliveryChat = dynamic(() => import("@/app/components/DeliveryChat"), { ssr: false })
-
 interface ILocation {
   latitude: number;
   longitude: number;
@@ -35,6 +35,7 @@ const TrackOrder = () => {
     longitude: 0,
   })
   const [orderDelivered, setOrderDelivered] = useState<any>({})
+  const { showToast } = useToast()
 
   const fetchOrder = async () => {
     try {
@@ -49,8 +50,8 @@ const TrackOrder = () => {
         latitude: res?.data?.order?.assignedDeliveryBoy?.location?.coordinates?.[1],
         longitude: res?.data?.order?.assignedDeliveryBoy?.location?.coordinates?.[0],
       })
-    } catch (error) {
-      console.error({ error })
+    } catch (error:any) {
+      showToast(error?.response?.data?.message || 'Failed to get order !', 'error');
     } finally {
       setLoading(false)
     }

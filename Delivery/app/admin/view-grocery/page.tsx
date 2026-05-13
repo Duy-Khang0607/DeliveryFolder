@@ -75,7 +75,6 @@ const ViewGrocery = () => {
         showToast(res?.data?.message, "error");
       }
     } catch (error) {
-      console.error({ error })
       showToast('System error', "error");
     }
   }
