@@ -54,15 +54,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Thông báo tất cả delivery boys khác rằng đơn hàng đã được nhận → xóa khỏi danh sách
         await emitEventHandler('assignment-accepted', { assignmentId: assignment?._id, orderId: order?._id })
 
-        await DeliveryAssignment.updateMany({
-            _id: { $ne: assignment?._id },
-            brodcastedTo: deliveryBoyId,
-            status: 'brodcasted'
-        }, {
-            $pull: {
-                brodcastedTo: deliveryBoyId
-            }
-        })
+        // await DeliveryAssignment.updateMany({
+        //     _id: { $ne: assignment?._id },
+        //     brodcastedTo: deliveryBoyId,
+        //     status: 'brodcasted'
+        // }, {
+        //     $pull: {
+        //         brodcastedTo: deliveryBoyId
+        //     }
+        // })
 
         return NextResponse.json({ success: true, assignment, message: "Order accepted successfully" }, { status: 200 })
 

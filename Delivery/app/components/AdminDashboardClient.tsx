@@ -6,6 +6,7 @@ import { ReactElement } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 import { getSocket } from "../lib/socket"
 import { useToast } from "./Toast"
+import { Wifi, WifiOff } from "lucide-react"
 
 interface propType {
   earning: {
@@ -97,6 +98,43 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
     filter === "today" ? chartDataState?.today
       : filter === "sevenDays" ? chartDataState?.sevenDays
         : chartDataState?.allTime
+
+  const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
+    deliveryBoy: { label: 'Delivery', color: 'text-orange-200' },
+    admin: { label: 'Admin', color: 'text-purple-200' },
+    user: { label: 'User', color: 'text-blue-200' },
+  }
+
+
+  const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean, name: string, role: string }) => {
+    const { userId, isOnline, name, role } = data
+    const displayName = name || `#${userId.slice(-6)}`
+    const config = ROLE_CONFIG[role || ''] || { label: 'User', color: 'text-blue-200' }
+
+
+    showToast(
+      <div className="flex flex-col leading-tight text-green-700">
+        <span className="font-bold text-sm">{displayName}</span>
+        <span className="flex items-center gap-1">
+          {config.label} ·
+          {isOnline
+            ? <><Wifi className='w-4 h-4 font-bold text-green-700' /> Online</>
+            : <><WifiOff className='w-4 h-4 font-bold text-red-700' /> Offline</>
+          }
+        </span>
+      </div>,
+      isOnline ? 'success' : 'error'
+    )
+  }
+
+  useEffect(() => {
+    // Lắng nghe socket khi user offline/online
+    const socket = getSocket()
+
+    socket.on('user-status-updated', handleUserStatusUpdated)
+
+    return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
+  }, [])
 
   return (
     <div className="pt-24 pb-12 px-2 sm:px-2 lg:px-2 max-w-[90%] mx-auto">
@@ -206,15 +244,15 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={activeChartData || []} barCategoryGap="40%">
             <CartesianGrid stroke="#f0f0f0" strokeDasharray="4 4" vertical={false} />
-          <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-          <Tooltip
-            contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", fontSize: "13px" }}
-            cursor={{ fill: "#f0fdf4" }}
-          />
-          <Bar dataKey="orders" fill="#16a34a" radius={[6, 6, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </motion.div>
+            <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", fontSize: "13px" }}
+              cursor={{ fill: "#f0fdf4" }}
+            />
+            <Bar dataKey="orders" fill="#16a34a" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
     </div >
   )
 }

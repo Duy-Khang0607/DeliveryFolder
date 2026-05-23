@@ -1,46 +1,33 @@
 'use client'
 
 import { IOrder } from "@/app/models/orders.model"
-import axios from "axios"
+// import axios from "axios"
 import { useEffect, useState } from "react"
-import { ArrowLeft, ArrowRight, Box, Boxes, Loader2 } from 'lucide-react'
+import { ArrowLeft, Box, Boxes, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import AdminOrdersCart from "@/app/components/AdminOrdersCart"
 import { getSocket } from "@/app/lib/socket"
 import { useToast } from "@/app/components/Toast"
 import { useRouter } from "next/navigation"
 import Pagination from "@/app/components/Pagination"
+import { useOrdersPaginatedAdmin } from "@/app/hooks/userOrdersPaginated"
+import { useQueryClient } from "@tanstack/react-query"
 
 const ManageOrders = () => {
-    const [orders, setOrders] = useState<IOrder[]>([])
-    const [loading, setLoading] = useState(false)
     const [loadingFilter, setLoadingFilter] = useState(false)
     const [status, setStatus] = useState<string>('')
     const { showToast } = useToast()
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
-    const itemsPerPage = 10
     const router = useRouter()
 
+    // Tanstack query
+    const queryClient = useQueryClient()
+    const { data, isLoading, isFetching } = useOrdersPaginatedAdmin(currentPage)
 
-
-    const fetchOrder = async (page: number = 1) => {
-        setLoading(true)
-        try {
-            const res = await axios.get(`/api/auth/admin/get-orders?page=${page}&limit=${itemsPerPage}`)
-            setOrders(res?.data?.orders)
-            setCurrentPage(res?.data?.pagination?.currentPage)
-            setTotalPages(res?.data?.pagination?.totalPages)
-            setTotalItems(res?.data?.pagination?.totalItems || 0)
-            setLoading(false)
-        } catch (error: any) {
-            setLoading(false)
-            showToast(error?.response?.data?.message || 'System error !', 'error')
-        } finally {
-            setLoading(false)
-        }
-    }
+    // Lấy từ data thay vì state
+    const orders = data?.orders ?? []
+    const totalPages = data?.pagination?.totalPages ?? 1
+    const totalItems = data?.pagination?.totalItems ?? 0
 
     const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setLoadingFilter(true)
@@ -49,9 +36,18 @@ const ManageOrders = () => {
     }
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
-        setOrders((prev) => prev?.map((order) =>
-            order?._id?.toString() === orderId ? { ...order, status: newStatus as IOrder['status'] } : order
-        ))
+        // Update cache trực tiếp thay vì setOrders
+        queryClient.setQueryData(
+            ['orders', 'pagination', currentPage],
+            (oldData: any) => ({
+                ...oldData,
+                orders: oldData?.orders?.map((order: IOrder) =>
+                    order?._id?.toString() === orderId
+                        ? { ...order, status: newStatus as IOrder['status'] }
+                        : order
+                )
+            })
+        )
     }
 
     const handlePrevPage = () => {
@@ -67,61 +63,37 @@ const ManageOrders = () => {
     }
 
     useEffect(() => {
-        fetchOrder(currentPage);
-    }, [currentPage]);
-
-    useEffect(() => {
         const socket = getSocket()
-
-        const handleNewOrder = (newOrder: any) => {
-            setOrders((prev) => [newOrder, ...prev!])
+        const handleNewOrder = () => {
+            // Refetch tất cả pages của orders
+            queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
-
-        const handleOrderAssigned = (data: any) => {
-            const { orderId, assignmentDeliveryBoy, status } = data
-            setOrders((prevOrders) => {
-                if (!prevOrders) return prevOrders
-                return prevOrders?.map((order: IOrder) =>
-                    order?._id?.toString() === orderId?.toString()
-                        ? { ...order, assignedDeliveryBoy: assignmentDeliveryBoy, status: status || 'Out of delivery' }
-                        : order
-                )
-            })
+        const handleOrderAssigned = () => {
+            queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
-
-        const handleOrderStatusUpdated = (data: any) => {
-            const { orderId, status, assignedDeliveryBoy } = data
-            setOrders((prevOrders) => {
-                if (!prevOrders) return prevOrders
-                return prevOrders?.map((order: IOrder) =>
-                    order?._id?.toString() === orderId?.toString()
-                        ? { ...order, status: status, assignedDeliveryBoy: assignedDeliveryBoy }
-                        : order
-                )
-            })
+        const handleOrderStatusUpdated = () => {
+            queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
-
         const handleAllRejected = (data: any) => {
             if (data) showToast(data?.message, 'warning')
+            queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
-
         socket?.on('new-order', handleNewOrder)
         socket?.on('order-assigned', handleOrderAssigned)
         socket?.on('order-status-updated', handleOrderStatusUpdated)
         socket?.on('all-rejected', handleAllRejected)
-
         return () => {
             socket?.off('new-order', handleNewOrder)
             socket?.off('order-assigned', handleOrderAssigned)
             socket?.off('order-status-updated', handleOrderStatusUpdated)
             socket?.off('all-rejected', handleAllRejected)
         }
-    }, [])
+    }, [queryClient]) // thêm queryClient vào dependency
 
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto py-5 relative'>
             {/* Loading */}
-            {loading ? (
+            {isLoading ? (
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}
                     animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -200,7 +172,10 @@ const ManageOrders = () => {
                                         </select>
                                         {loadingFilter && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-2xl z-10">
-                                                <Loader2 className="animate-spin text-green-700 w-5 h-5" />
+                                                {/* <Loader2 className="animate-spin text-green-700 w-5 h-5" /> */}
+                                                {isFetching && !isLoading && (
+                                                    <Loader2 className="animate-spin w-4 h-4 text-green-700" />
+                                                )}
                                             </div>
                                         )}
                                     </div>

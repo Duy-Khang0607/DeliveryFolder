@@ -71,6 +71,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                     role: 'deliveryBoy',
                     isOnline: true,
                     _id: { $nin: updatedAssignment.rejectedBy },
+                    // Chỗ nãy tìm shipper theo vị trí gần đó
                     // location: {
                     //     $near: {
                     //         $geometry: { type: 'Point', coordinates: [Number(longitude), Number(latitude)] },
@@ -97,9 +98,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
                 if (candidates?.length > 0) {
                     updatedAssignment.brodcastedTo = candidates
-                    await updatedAssignment.save()
+                    // await updatedAssignment.save()
+                    // await updatedAssignment.populate('order')
 
-                    await updatedAssignment.populate('order')
+                    await DeliveryAssignment.deleteOne({ _id: updatedAssignment._id })
 
                     // Batch fetch in one query (eliminates N+1)
                     const boys = await User.find({ _id: { $in: candidates } }).select('socketId')

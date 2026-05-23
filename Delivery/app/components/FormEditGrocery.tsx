@@ -1,7 +1,7 @@
 'use client'
 import React, { ChangeEvent, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BadgePlus, Box, Camera, DollarSign, Edit, Loader2, Truck, Shield, Upload, User } from 'lucide-react'
+import { BadgePlus, Box, Camera, DollarSign, Edit, Loader2, User } from 'lucide-react'
 import { useToast } from './Toast'
 import axios from 'axios'
 import Image from 'next/image'
@@ -74,14 +74,14 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
     const [loading, setLoading] = useState<boolean>(false)
     const [loadingImage, setLoadingImage] = useState<boolean>(false)
     const [backendImage, setBackendImage] = useState<File | null>(null)
-    const [preview, setPreview] = useState<string | null>()
+    const [preview, setPreview] = useState<string | null>(null)
     const disableAdd = editItem?.name.toString() && editItem?.category.toString() && (editItem?.unit?.toString() || '') && editItem?.price.toString();
     const [open, setOpen] = useState(false);
     const { showToast } = useToast();
     const [name, setName] = useState<string>(editItem?.name.toString() || '')
     const [category, setCategory] = useState<string>(editItem?.category.toString() || '')
     const [unit, setUnit] = useState<string>(editItem?.unit?.toString() || '')
-    const [price, setPrice] = useState<string>(editItem?.price.toString() || '')
+    const [price, setPrice] = useState<string>(editItem?.price?.toLocaleString('en-US') || '')
 
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +109,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
             formData.append('name', name)
             formData.append('category', category)
             formData.append('unit', unit)
-            formData.append('price', price)
+            formData.append('price', price.replace(/,/g, ''))
             if (backendImage) formData.append('image', backendImage)
             const response: any = await axios.put('/api/auth/admin/update-grocery', formData)
             if (response?.data?.success) {
@@ -128,7 +128,14 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
         }
     }
 
-    const avatarSrc = preview || (typeof editItem?.image?.[0] === 'string' ? editItem?.image?.[0] : '')
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value.replace(/,/g, '') // bỏ dấu phẩy cũ
+        if (!/^\d*$/.test(raw)) return              // chỉ cho nhập số
+        const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
+        setPrice(formatted)
+    }
+
+    const avatarSrc = preview || (typeof editItem?.image?.[0] === 'string' ? editItem?.image?.[0] : null)
     const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
     const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm placeholder:text-gray-400'
 
@@ -174,7 +181,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                                 />
                             ) : (
                                 <div className='w-full h-full flex items-center justify-center bg-linear-to-br from-green-100 to-emerald-200'>
-                                    <User className='w-8 h-8 text-green-600' />
+                                    <Box className='w-8 h-8 text-green-600' />
                                 </div>
                             )}
                         </div>
@@ -249,10 +256,10 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                             </label>
                             <div className='relative'>
                                 <input
-                                    type="number"
+                                    type="text"
                                     placeholder='Enter price'
                                     className={`${inputClass} pr-10`}
-                                    value={price} onChange={(e) => setPrice(e.target.value)}
+                                    value={price} onChange={handlePriceChange}
                                 />
                             </div>
                         </div>

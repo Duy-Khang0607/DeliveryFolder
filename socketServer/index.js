@@ -26,13 +26,17 @@ io.on("connection", (socket) => {
   // Socket auto connect khi login vô
   socket.on("identity", async (userId) => {
     // ✅ THÊM: broadcast cho tất cả client
-    io.emit('user-status-updated', { userId, isOnline: true })
     try {
       socket.userId = userId;
-      await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
+      const res = await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`, {
         userId,
         socketId: socket.id
       }, internalHeaders)
+
+      // Lấy name, role từ response (cần API trả về)
+      const { name, role } = res.data?.user || {}
+
+      io.emit('user-status-updated', { userId, isOnline: true, name, role })
     } catch (error) {
       console.error('❌ Identity error:', error.response?.data || error.message);
     }
@@ -73,13 +77,14 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", async (reason) => {
     try {
-      await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
+      const res = await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
         userId: socket?.userId
       }, internalHeaders)
+      const { name, role } = res.data?.user || {}
 
       // ✅ THÊM: broadcast cho tất cả client
       if (socket.userId) {
-        io.emit('user-status-updated', { userId: socket.userId, isOnline: false })
+        io.emit('user-status-updated', { userId: socket.userId, isOnline: false, name, role })
       }
     } catch (error) {
       console.error('❌ Disconnect error:', error.message);

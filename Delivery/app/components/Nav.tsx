@@ -27,7 +27,8 @@ const Nav = ({ user }: { user: IUser }) => {
   const [sideBar, setSideBar] = useState(false)
   const router = useRouter()
   const [orders, setOrders] = useState<number | undefined>(0)
-  const { cartData } = useSelector((state: RootState) => state.cart)
+  const { cartData } = useSelector((state: RootState) => state?.cart)
+  const { userData } = useSelector((state: RootState) => state?.user)
   const { showToast } = useToast()
   const [isEdit, setEdit] = useState<boolean>(false)
   const [editItem, setEditItem] = useState<IUser | null>(null)
@@ -63,7 +64,7 @@ const Nav = ({ user }: { user: IUser }) => {
   }
 
   const handleEditUser = () => {
-    setEditItem(user)
+    setEditItem(userData || user)
     setEdit(true)
   }
 

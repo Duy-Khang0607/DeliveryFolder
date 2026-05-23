@@ -47,7 +47,7 @@ const AddGrocery = () => {
       formData.append('name', name)
       formData.append('category', category)
       formData.append('unit', unit)
-      formData.append('price', price)
+      formData.append('price', price.replace(/,/g, ''))
       if (backendImage) formData.append('image', backendImage)
       const response: any = await axios.post('/api/auth/admin/add-grocery', formData)
       if (response?.data?.success) {
@@ -68,6 +68,13 @@ const AddGrocery = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/,/g, '') // bỏ dấu phẩy cũ
+    if (!/^\d*$/.test(raw)) return              // chỉ cho nhập số
+    const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
+    setPrice(formatted)
   }
 
   const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
@@ -202,14 +209,14 @@ const AddGrocery = () => {
               {/* Price */}
               <div>
                 <label className={labelClass}>
-                  <DollarSign className='w-3.5 h-3.5' /> Password
+                  <DollarSign className='w-3.5 h-3.5' /> Price
                 </label>
                 <div className='relative'>
                   <input
-                    type="number"
-                    placeholder='Password'
+                    type="text"
+                    placeholder='Enter price'
                     className={`${inputClass} pr-10`}
-                    value={price} onChange={(e) => setPrice(e.target.value)}
+                    value={price} onChange={handlePriceChange}
                   />
                 </div>
               </div>

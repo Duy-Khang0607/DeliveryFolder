@@ -1,13 +1,13 @@
 'use client'
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Box, CardSim, Loader2, LocationEdit, Mail, Phone, Timer, User } from 'lucide-react';
+import { Box, Loader2, LocationEdit, Mail, Phone, Timer, Truck, User } from 'lucide-react';
 import { getSocket } from '../lib/socket';
 import { useSelector } from 'react-redux';
 import dynamic from 'next/dynamic';
 import { useToast } from './Toast';
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Legend, PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 const LiveMap = dynamic(() => import('./LiveMap'), { ssr: false, loading: () => <div className='w-full h-64 bg-gray-100 animate-pulse rounded-lg' /> });
 const DeliveryChat = dynamic(() => import('./DeliveryChat'), { ssr: false });
@@ -47,7 +47,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
             const response = await axios.get('/api/delivery/get-assignments');
             const filterData = response?.data?.assignments?.filter((data: any) => data?.order?.status !== 'Pending');
             setAssignments(filterData);
-        } catch (error:any) {
+        } catch (error: any) {
             showToast(error?.response?.data?.message || 'Failed to get assignments !', 'error');
             setLoading(false);
         } finally {
@@ -138,6 +138,10 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }
 
+    const playNotificationSound = () => {
+        new Audio('/sounds/notification.mp3').play().catch(() => { })
+    }
+
     // Lấy vị trí hiện tại của delivery boy
     useEffect(() => {
         if (!userData?._id) return
@@ -176,6 +180,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         fetchCurrentOrder();
     }, [userData?._id]);
 
+    // Socket lắng nghe sự kiện assignment-rejected
     useEffect(() => {
         const socket = getSocket()
 
@@ -193,6 +198,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         return () => { socket?.off('assignment-rejected', handleAssignmentRejected) }
     }, [userData?._id])
 
+    // Socket lắng nghe sự kiện order-status-updated và new-assignment
     useEffect(() => {
         const socket = getSocket()
 
@@ -212,9 +218,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
         const handleNewAssignment = (newAssignment: any) => {
             setAssignments((prev) => {
-
-                // Normalize: socket item có `assignment`, API item có `_id`
-                // Unify thành `_id` để nhất quán
                 const normalized = {
                     ...newAssignment,
                     _id: newAssignment._id || newAssignment.assignment,
@@ -228,6 +231,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                 if (alreadyExists) return prev;
                 return [...prev, newAssignment];
             });
+            playNotificationSound()
         }
 
         const handleLocationUpdate = (data: any) => {
@@ -258,10 +262,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         }
     }, [])
 
-    const todayEarningData = [
-        { name: "Today", earning, deliveries: earning / 40 }
-    ]
-
     if (assignments?.length === 0 && !currentOrder) {
         return (
             <div className='w-[90%] mx-auto mt-24 mb-12 h-full'>
@@ -273,9 +273,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
                 {/* Earning banner */}
                 <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45 }}
+                    animate={{ opacity: 1 }}
                     className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 to-emerald-500 p-6 sm:p-8 mb-6 shadow-lg'
                 >
                     <div className='absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10' />
@@ -367,14 +365,9 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
     if (currentOrder && userlocation) {
         return (
-            <div className='pt-24 pb-12 px-4 sm:px-6 max-w-7xl mx-auto space-y-4'>
-
+            <div className='w-[90%] mx-auto mt-24 mb-12 h-full space-y-4'>
                 {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35 }}
-                >
+                <motion.div>
                     <p className='text-xs font-semibold uppercase tracking-widest text-green-500 mb-1'>In Progress</p>
                     <div className='flex items-center gap-3'>
                         <h1 className='text-2xl sm:text-3xl font-extrabold text-gray-800'>Active Order</h1>
@@ -386,9 +379,9 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
                 {/* Map */}
                 <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
+                    // initial={{ opacity: 0, y: 16 }}
+                    // animate={{ opacity: 1, y: 0 }}
+                    // transition={{ duration: 0.4 }}
                     className='bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden'
                 >
                     <div className='px-5 py-4 border-b border-gray-100 flex items-center justify-between'>
@@ -472,18 +465,27 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     }
 
     return (
-        <div className='pt-24 pb-12 px-4 sm:px-6 max-w-7xl mx-auto'>
+        <div className='w-[90%] mx-auto mt-24 mb-12 h-full'>
             {/* Header */}
             <div className='flex items-center justify-between mb-8'>
-                <div>
+                <div className='flex flex-row items-center gap-2'>
                     <p className='text-xs font-semibold uppercase tracking-widest text-green-500 mb-1'>Incoming</p>
-                    <h1 className='text-2xl sm:text-3xl font-extrabold text-gray-800'>New Assignments</h1>
+                    <motion.span
+                        initial={{ x: 0 }}
+                        animate={{ x: [0, '100%', 0] }}
+                        transition={{ duration: 1, repeat: Infinity, repeatType: "loop", ease: "linear" }}
+                        className='w-full h-full inline-block relative'
+                    >
+                        <Truck className='w-6 h-6 text-green-600' />
+                        {assignments?.length > 0 && (
+                            <div className='absolute -top-2 -right-2'>
+                                <span className='w-5 h-5 flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold'>
+                                    {assignments?.length}
+                                </span>
+                            </div>
+                        )}
+                    </motion.span>
                 </div>
-                {assignments?.length > 0 && (
-                    <span className='w-8 h-8 flex items-center justify-center rounded-full bg-green-600 text-white text-sm font-bold'>
-                        {assignments?.length}
-                    </span>
-                )}
             </div>
 
             {loading ? (
@@ -506,11 +508,11 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
                             return (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
+                                    initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.35, delay: index * 0.06 }}
                                     key={_id}
-                                    className='bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col'
+                                    className='bg-white rounded-2xl border border-green-300 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col animate-pulse'
                                 >
                                     {/* Card header */}
                                     <div className='px-5 pt-5 pb-4 border-b border-gray-50'>

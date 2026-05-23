@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Create grocery
-        const grocery = await Grocery.create({ name, category, price, unit, image: imageUrls });
+        const grocery = await Grocery.create({ name, category, price, unit, image: imageUrls ? [imageUrls] : [] });
 
         return NextResponse.json({ success: true, message: 'Grocery created successfully', grocery }, { status: 200 });
     } catch (error) {

@@ -1,44 +1,30 @@
 'use client'
 import UserOrdersCart from '@/app/components/UserOrdersCart'
 import { getSocket } from '@/app/lib/socket'
-import axios from 'axios'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Box, Boxes, Loader2 } from 'lucide-react'
+import { ArrowLeft, Box, Boxes, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { IOrder } from "@/app/models/orders.model"
 import { useEffect, useState } from 'react'
 import Pagination from '@/app/components/Pagination'
 import { useToast } from '@/app/components/Toast'
+import { useOrdersPaginatedUser } from "@/app/hooks/userOrdersPaginated"
+import { useQueryClient } from "@tanstack/react-query"
 
 const MyOrders = () => {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [orders, setOrders] = useState<any[]>([])
   const [loadingFilter, setLoadingFilter] = useState(false)
   const [status, setStatus] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 10
-  const { showToast } = useToast()
 
+  // Tanstack query
+  const queryClient = useQueryClient()
+  const { data, isLoading, isFetching } = useOrdersPaginatedUser(currentPage)
 
-
-  const fetchOrders = async (page: number = 1) => {
-    setLoading(true)
-    try {
-      const res = await axios.get(`/api/auth/user/my-orders?page=${page}&limit=${itemsPerPage}`);
-      setOrders(res?.data?.orders)
-      setCurrentPage(res?.data?.pagination?.currentPage)
-      setTotalPages(res?.data?.pagination?.totalPages)
-      setTotalItems(res?.data?.pagination?.totalItems || 0)
-    } catch (error: any) {
-      showToast(error?.response?.data?.message || 'Failed to get orders !', 'error');
-      setLoading(false)
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Lấy từ data thay vì state
+  const orders = data?.orders ?? []
+  const totalPages = data?.pagination?.totalPages ?? 1
+  const totalItems = data?.pagination?.totalItems ?? 0
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
@@ -61,31 +47,19 @@ const MyOrders = () => {
   useEffect(() => {
     const socket = getSocket()
 
-    const handleOrderAssigned = (data: any) => {
-      const { orderId, assignmentDeliveryBoy } = data
-      setOrders((prevOrders) => {
-        if (!prevOrders) return prevOrders
-        return prevOrders.map((order) =>
-          order?._id.toString() === orderId?.toString()
-            ? { ...order, assignedDeliveryBoy: assignmentDeliveryBoy }
-            : order
-        )
-      })
+    const handleOrderAssigned = () => {
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
     }
 
     socket?.on('order-assigned', handleOrderAssigned)
     return () => {
       socket?.off('order-assigned', handleOrderAssigned)
     }
-  }, [])
-
-  useEffect(() => {
-    fetchOrders(currentPage);
-  }, [currentPage]);
+  }, [queryClient]) // thêm queryClient vào dependency
 
   return (
     <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto min-h-screen'>
-      {loading ? (
+      {isLoading ? (
         <motion.div
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: [0, -10, 0], opacity: 1 }}

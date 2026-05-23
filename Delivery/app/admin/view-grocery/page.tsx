@@ -70,7 +70,7 @@ const ViewGrocery = () => {
       const res = await axios.delete(`/api/auth/admin/delete-grocery`, { data: { id: id } })
       if (res?.data?.success) {
         showToast(res?.data?.message, "success");
-        await fetchGrocery()
+        await fetchGrocery(currentPage)
       } else {
         showToast(res?.data?.message, "error");
       }
@@ -175,12 +175,18 @@ const ViewGrocery = () => {
                             <div className='relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer'
                               onClick={() => { setOpen(true); setEditItem(item) }}
                             >
-                              <Image
-                                src={item?.image[0]}
-                                alt={item?.name}
-                                fill
-                                className='object-cover group-hover:scale-110 transition-transform duration-300'
-                              />
+                              {item?.image?.[0] ? (
+                                <Image
+                                  src={item.image[0]}
+                                  alt={item?.name}
+                                  fill
+                                  className='object-cover group-hover:scale-110 transition-transform duration-300'
+                                />
+                              ) : (
+                                <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+                                  <Package className='w-6 h-6 text-green-400' />
+                                </div>
+                              )}
                             </div>
 
                             {/* Name + category badge */}
@@ -203,7 +209,7 @@ const ViewGrocery = () => {
                             <div className='flex items-center gap-2'>
                               <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
                               <p className='text-sm font-extrabold text-green-700'>
-                                ${item?.price}
+                                ${item?.price?.toLocaleString('en-US')}
                                 <span className='text-xs font-medium text-gray-400 ml-1'>/ {item?.unit || '—'}</span>
                               </p>
                             </div>
@@ -274,7 +280,7 @@ const ViewGrocery = () => {
           {/* Edit Grocery */}
           <AnimatePresence mode='wait' onExitComplete={() => setEdit(false)}>
             {isEdit && (
-              <FormEditGrocery isEdit={isEdit} title="Edit Grocery" description="Edit a grocery item in your store." setEdit={setEdit} editItem={editItem} fetchGrocery={fetchGrocery} />
+              <FormEditGrocery isEdit={isEdit} title="Edit Grocery" description="Edit a grocery item in your store." setEdit={setEdit} editItem={editItem} fetchGrocery={() => fetchGrocery(currentPage)} />
             )}
           </AnimatePresence>
 

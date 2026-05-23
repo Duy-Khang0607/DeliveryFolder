@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 400 })
         }
 
-        return NextResponse.json({ success: true }, { status: 200 })
+        return NextResponse.json({ success: true, user: { name: user?.name, role: user?.role } }, { status: 200 })
 
     } catch (error) {
         return NextResponse.json({ success: false, message: "API Socket Failed" }, { status: 500 })

@@ -136,7 +136,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
             order.assignedDeliveryBoy = null;
 
             // Xóa DeliveryAssignment liên quan đến order này
-            await DeliveryAssignment.deleteOne({ order: order?._id });
+            // await DeliveryAssignment.deleteOne({ order: order?._id });
+            await DeliveryAssignment.deleteMany({ order: order?._id });
 
         }
 

@@ -16,13 +16,13 @@ const Pagination = ({ totalPages, handlePrevPage, handleNextPage, currentPage, s
         <>
             <div className='fixed left-1/2 -translate-x-1/2 bottom-2 md:bottom-0 flex flex-row justify-center items-center z-50 bg-white/50 backdrop-blur-sm rounded-full p-2 border border-gray-300'>
                 {/* Prev Page */}
-                {totalPages > 1 && (
+                {totalPages > 1 && currentPage > 1 && (
                     <motion.button
                         whileTap={{ scale: 0.97 }}
                         whileHover={{ scale: 1.06 }}
                         onClick={handlePrevPage}
                         disabled={currentPage === 1}
-                        className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === 1 ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
+                        className={`rounded-full p-1 transition-all duration-200 w-6 h-6 flex justify-center items-center ${currentPage === 1 ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
                     >
                         <ArrowLeft className='w-5 h-5' />
                     </motion.button>
@@ -58,7 +58,7 @@ const Pagination = ({ totalPages, handlePrevPage, handleNextPage, currentPage, s
                             className={`${currentPage === totalPages
                                 ? 'bg-green-700 text-white'
                                 : 'bg-white text-green-700 border border-green-700'
-                                } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
+                                } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-6 h-6 font-bold flex justify-center items-center mx-1`}
                         >
                             <span className='text-sm md:text-base w-full text-center'>{totalPages}</span>
                         </motion.button>
@@ -77,21 +77,21 @@ const Pagination = ({ totalPages, handlePrevPage, handleNextPage, currentPage, s
                                 className={`${pageNum === currentPage
                                     ? 'bg-green-700 text-white'
                                     : 'bg-white text-green-700 border border-green-700'
-                                    } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-8 h-8 font-bold flex justify-center items-center mx-1`}
+                                    } rounded-full hover:bg-green-800 hover:text-white cursor-pointer transition-all duration-200 w-6 h-6 font-bold flex justify-center items-center mx-1`}
                             >
-                                <span className='text-sm md:text-base w-full text-center'>{pageNum}</span>
+                                <span className='text-xs md:text-xm w-full text-center'>{pageNum}</span>
                             </motion.button>
                         );
                     })
                 )}
                 {/* Next Page */}
-                {totalPages > 1 && (
+                {totalPages > 1 && currentPage < totalPages && (
                     <motion.button
                         whileTap={{ scale: 0.97 }}
                         whileHover={{ scale: 1.06 }}
                         onClick={handleNextPage}
                         disabled={currentPage === totalPages}
-                        className={`rounded-full p-2 transition-all duration-200 w-auto h-auto ${currentPage === totalPages ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
+                        className={`rounded-full p-1 transition-all duration-200 w-6 h-6 flex justify-center items-center ${currentPage === totalPages ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-green-700 text-white cursor-pointer hover:bg-green-800'}`}
                     >
                         <ArrowRight className='w-5 h-5' />
                     </motion.button>

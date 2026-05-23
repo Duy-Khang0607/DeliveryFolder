@@ -48,13 +48,20 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
             className='relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer'
             onClick={() => setOpen(true)}
           >
-            <Image
-              src={groceries?.image[0]}
-              alt={groceries?.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className='object-cover group-hover:scale-110 transition-transform duration-300'
-            />
+            {groceries?.image[0] ? (
+              <Image
+                src={groceries?.image[0]}
+                alt={groceries?.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className='object-cover group-hover:scale-110 transition-transform duration-300'
+              />
+            )
+              :
+              (<div className='w-full h-full flex items-center justify-center bg-gray-100'>
+                <Package className='w-6 h-6 text-green-400' />
+              </div>)
+            }
           </div>
 
           {/* Category badge + name */}

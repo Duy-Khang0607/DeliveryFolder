@@ -103,7 +103,9 @@ const ManageUsers = () => {
     useEffect(() => {
         // Lắng nghe socket khi user offline
         const socket = getSocket()
+
         socket.on('user-status-updated', handleUserStatusUpdated)
+
         return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
     }, [])
 

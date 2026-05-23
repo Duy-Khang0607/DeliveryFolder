@@ -14,11 +14,32 @@ export const userSlice = createSlice({
     initialState,
     reducers: {
         setUserData: (state, action: PayloadAction<IUser | null>) => {
-            // State ở đây là gì và Action cũng vậy
-            state.userData = action.payload
+            if (action.payload && state.userData) {
+                // Giữ isOnline hiện tại, không để API stale override
+                state.userData = {
+                    ...action.payload,
+                    isOnline: state.userData.isOnline,
+                    socketId: state.userData.socketId
+                }
+            } else {
+                state.userData = action.payload
+            }
+        },
+
+        // Bổ sung cho luồng user còn giữ session khi truy cập web
+        setOnlineStatus: (state, action: PayloadAction<boolean>) => {
+            if (state.userData) {
+                state.userData.isOnline = action.payload
+            }
+        },
+
+        setSocketId: (state, action: PayloadAction<string | null>) => {
+            if (state.userData) {
+                state.userData.socketId = action.payload
+            }
         },
     },
 })
 
-export const { setUserData } = userSlice.actions
+export const { setUserData, setOnlineStatus, setSocketId } = userSlice.actions
 export default userSlice.reducer
