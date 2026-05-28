@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import uploadOnCloudinary from "@/app/lib/cloudinary";
 import connectDB from "@/app/lib/db";
+import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Grocery from "@/app/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,7 +28,11 @@ export async function DELETE(req: NextRequest) {
         if (!grocery) {
             return NextResponse.json({ success: false, message: 'Grocery not found' }, { status: 404 });
         }
+
+        await emitEventHandler('grocery-deleted', { grocery: grocery })
+
         return NextResponse.json({ success: true, message: 'Grocery deleted successfully' }, { status: 200 });
+
     } catch (error) {
         return NextResponse.json({ success: false, message: 'Add grocery failed' }, { status: 500 });
     }

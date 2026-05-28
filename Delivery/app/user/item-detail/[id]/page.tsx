@@ -7,42 +7,23 @@ import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/app/redux/store'
 import { addToCart, decreaseQuantity, ICartSlice, increaseQuantity, removeCart } from '@/app/redux/cartSlice'
 import ButtonHome from '@/app/components/ButtonHome'
-import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { useState } from 'react'
 import { IGrocery } from '@/app/models/grocery.model'
 import { use } from 'react'
 import PopupImage from '@/app/HOC/PopupImage'
-import { useToast } from '@/app/components/Toast'
+import { useGetGroceryById } from '@/app/hooks/useGroceryId'
 
 const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
     const { id } = use(params)
-    const [item, setItem] = useState<IGrocery | null>(null)
-    const [loading, setLoading] = useState(true)
     const [open, setOpen] = useState(false);
 
     const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state?.cart as ICartSlice)
     const dispatch = useDispatch()
-    const { showToast } = useToast()
     const cartItem = cartData?.find(ci => ci?._id?.toString() === id)
 
+    const { data, isLoading } = useGetGroceryById(id)
+    const item = data?.grocery as IGrocery
 
-    useEffect(() => {
-        const fetchItem = async () => {
-            try {
-                setLoading(true)
-                const res = await axios.get(`/api/auth/admin/get-grocery?page=1&limit=100`)
-                if (res?.data?.success) {
-                    const found = res?.data?.groceries?.find((g: IGrocery) => g?._id?.toString() === id)
-                    setItem(found || null)
-                }
-            } catch (error: any) {
-                showToast(error?.response?.data?.message || 'Failed to get item !', 'error');
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchItem()
-    }, [id])
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10 pb-20'>
             {/* Back to home */}
@@ -66,7 +47,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
 
                 {/* Left panel: Item detail card */}
                 <div className='lg:col-span-2'>
-                    {loading ? (
+                    {isLoading ? (
                         <motion.div
                             initial={{ y: 40, opacity: 0 }}
                             animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -111,13 +92,20 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                         {/* Product image */}
                                         <div className='relative sm:w-56 md:h-56 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow cursor-pointer w-full h-full'
                                             onClick={() => setOpen(true)}>
-                                            <Image
-                                                src={item?.image[0]}
-                                                alt={item?.name}
-                                                width={224}
-                                                height={224}
-                                                className='object-contain group-hover:scale-105 transition-transform duration-400 w-full h-full cursor-pointer'
-                                            />
+                                            {item?.image[0] ? (
+                                                <Image
+                                                    src={item?.image[0]}
+                                                    alt={item?.name}
+                                                    width={224}
+                                                    height={224}
+                                                    loading='eager'
+                                                    className='object-contain group-hover:scale-105 transition-transform duration-400 w-full h-full cursor-pointer'
+                                                />
+                                            ) : (
+                                                <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+                                                    <Package className='w-6 h-6 text-green-400' />
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Info */}

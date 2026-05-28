@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Box, Edit, MailIcon, Phone, Search, Shield, Trash2, Truck, User, UserPlus, Wifi, WifiOff } from 'lucide-react'
 import Image from 'next/image'
@@ -14,6 +14,8 @@ import profileImage from '@/app/assets/profile.jpg'
 import FormEditUser from '@/app/components/FormEditUser'
 import Pagination from '@/app/components/Pagination'
 import { getSocket } from '@/app/lib/socket'
+import { useUsersPaginated } from '@/app/hooks/useUsersPaginated'
+import { useQueryClient } from '@tanstack/react-query'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     user: { label: 'User', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <User className='w-3 h-3' /> },
@@ -22,35 +24,22 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.Re
 }
 
 const ManageUsers = () => {
-    const [loading, setLoading] = useState(false)
-    const [users, setUsers] = useState<IUser[]>([])
     const [search, setSearch] = useState<string>('')
-    const [filter, setFilter] = useState<IUser[]>([])
     const [isEdit, setEdit] = useState<boolean>(false)
     const [editItem, setEditItem] = useState<IUser | null>(null)
     const [open, setOpen] = useState(false)
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
-    const itemsPerPage = 10
     const { showToast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('')
+    const [isSearch, setIsSearch] = useState<boolean>(false)
 
-    const fetchUsers = async (page: number = 1) => {
-        try {
-            setLoading(true)
-            const res = await axios.get(`/api/auth/admin/get-users?page=${page}&limit=${itemsPerPage}`)
-            if (res?.data?.success) {
-                setUsers(res?.data?.users)
-                setFilter(res?.data?.users)
-                setTotalPages(res?.data?.pagination?.totalPages)
-                setTotalItems(res?.data?.pagination?.totalItems || 0)
-            }
-        } catch (error: any) {
-            showToast(`${error?.response?.data?.message || 'System error !'}`, "error");
-        } finally {
-            setLoading(false)
-        }
-    }
+    // tanstack query
+    const queryClient = useQueryClient()
+    const { data, isLoading, isFetching } = useUsersPaginated(currentPage, searchQuery)
+    const users = data?.users as IUser[] ?? []
+    const totalPages = data?.pagination?.totalPages ?? 1
+    const totalItems = data?.pagination?.totalItems ?? 0
+
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this user?')) return
@@ -58,7 +47,7 @@ const ManageUsers = () => {
             const res = await axios.delete(`/api/auth/admin/delete-user`, { data: { id: id } })
             if (res?.data?.success) {
                 showToast(res?.data?.message, "success");
-                await fetchUsers(currentPage)
+                queryClient.invalidateQueries({ queryKey: ['users'] })
             } else {
                 showToast(res?.data?.message, "error");
             }
@@ -68,10 +57,15 @@ const ManageUsers = () => {
     }
 
     const handleSearchGrocery = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        const value = search.toLowerCase()
-
-        setFilter(users?.filter((item: IUser) => item?.name?.toLowerCase()?.includes(value) || item?.email?.toLowerCase()?.includes(value) || item?.mobile?.toLowerCase()?.includes(value)))
+        try {
+            setIsSearch(true)
+            e.preventDefault()
+            setSearchQuery(search)  // TanStack tự fetch lại với q=search
+            setCurrentPage(1)       // reset về page 1 khi search mới
+            setIsSearch(false)
+        } catch (error) {
+            setIsSearch(false)
+        }
     }
 
     const handlePrevPage = () => {
@@ -87,17 +81,14 @@ const ManageUsers = () => {
     }
 
     const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean }) => {
+        queryClient.invalidateQueries({ queryKey: ['users', 'pagination'] })
+
         const { userId, isOnline } = data
 
         const idUser = userId.toString().slice(-6)
 
-        const update = (users: IUser[]) =>
-            users?.map(u => u._id?.toString() === userId.toString() ? { ...u, isOnline } : u)
+        if (data) showToast(`User ${idUser} ${isOnline ? 'Online' : 'Offline'}`, isOnline ? 'success' : 'warning')
 
-        setUsers(prev => update(prev))
-        setFilter(prev => update(prev))
-
-        showToast(`User ${idUser} ${isOnline ? 'Online' : 'Offline'}`, isOnline ? 'success' : 'warning')
     }
 
     useEffect(() => {
@@ -109,14 +100,9 @@ const ManageUsers = () => {
         return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
     }, [])
 
-    useEffect(() => {
-        // Fetch data user
-        fetchUsers(currentPage)
-    }, [currentPage])
-
     return (
         <>
-            {loading ? (
+            {isLoading || isSearch ? (
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}
                     animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -182,10 +168,10 @@ const ManageUsers = () => {
                         </motion.form>
 
                         {/* Users */}
-                        {filter?.length > 0 ? (
+                        {users?.length > 0 ? (
                             <>
                                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
-                                    {filter?.map((item: IUser, index: number) => {
+                                    {users?.map((item: IUser, index: number) => {
                                         const roleConfig = ROLE_CONFIG[item?.role || 'user']
                                         return (
                                             <motion.div
@@ -306,7 +292,7 @@ const ManageUsers = () => {
                     {/* Edit User */}
                     <AnimatePresence mode='wait' onExitComplete={() => setEdit(false)}>
                         {isEdit && (
-                            <FormEditUser isEdit={isEdit} title="Edit User" description="Edit a user in your system." setEdit={setEdit} editItem={editItem} fetchUsers={fetchUsers} />
+                            <FormEditUser isEdit={isEdit} title="Edit User" description="Edit a user in your system." setEdit={setEdit} editItem={editItem} fetchUsers={() => queryClient.invalidateQueries({ queryKey: ['users'] })} />
                         )}
                     </AnimatePresence>
 

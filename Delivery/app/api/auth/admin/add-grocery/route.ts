@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import uploadOnCloudinary from "@/app/lib/cloudinary";
 import connectDB from "@/app/lib/db";
+import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Grocery from "@/app/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -39,6 +40,8 @@ export async function POST(req: NextRequest) {
 
         // Create grocery
         const grocery = await Grocery.create({ name, category, price, unit, image: imageUrls ? [imageUrls] : [] });
+
+        await emitEventHandler('grocery-created', { grocery: grocery })
 
         return NextResponse.json({ success: true, message: 'Grocery created successfully', grocery }, { status: 200 });
     } catch (error) {

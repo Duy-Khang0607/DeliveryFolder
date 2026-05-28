@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         await Orders.findByIdAndUpdate(newOrder._id, { stripeSessionUrl: stripeSession.url });
 
         // Gọi event socket khi order thanh toán thành công
-        await emitEventHandler("new-order", newOrder)
+        // await emitEventHandler("new-order", newOrder)
 
         return NextResponse.json({ url: stripeSession?.url }, { status: 200 })
 

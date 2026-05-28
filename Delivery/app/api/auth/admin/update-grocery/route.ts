@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import uploadOnCloudinary from "@/app/lib/cloudinary";
 import connectDB from "@/app/lib/db";
+import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Grocery from "@/app/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -38,6 +39,9 @@ export async function PUT(req: NextRequest) {
         if (!grocery) {
             return NextResponse.json({ success: false, message: 'Grocery not found' }, { status: 404 });
         }
+        
+        await emitEventHandler('grocery-updated', { grocery: grocery })
+
         return NextResponse.json({ success: true, message: 'Grocery updated successfully', grocery: grocery }, { status: 200 });
     } catch (error) {
         console.error({ error })

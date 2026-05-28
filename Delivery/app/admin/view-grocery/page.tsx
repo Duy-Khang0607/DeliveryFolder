@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import axios from 'axios'
 import { Box, DollarSign, Edit, Package, Plus, Search, Tag, Trash2 } from 'lucide-react'
 import Image from 'next/image'
@@ -12,38 +12,24 @@ import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
 import Link from 'next/link'
 import Pagination from '@/app/components/Pagination'
+import { useGroceryPaginatedAdmin } from '@/app/hooks/useGroceryPaginated'
+import { useQueryClient } from '@tanstack/react-query'
 
 const ViewGrocery = () => {
-  const [groceries, setGrocery] = useState<IGrocery[]>([])
-  const [loading, setLoading] = useState(false)
   const [isEdit, setEdit] = useState<boolean>(false)
   const [editItem, setEditItem] = useState<IGrocery | null>(null)
   const [search, setSearch] = useState<string>('')
-  const [filter, setFilter] = useState<IGrocery[]>([])
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 10
   const [open, setOpen] = useState(false)
+  const [isSearch, setIsSearch] = useState<boolean>(false)
 
-
-  const fetchGrocery = async (page: number = 1) => {
-    try {
-      setLoading(true)
-      const res = await axios.get(`/api/auth/admin/get-grocery?page=${page}&limit=${itemsPerPage}`)
-      if (res?.data?.success) {
-        setGrocery(res?.data?.groceries)
-        setFilter(res?.data?.groceries)
-        setTotalPages(res?.data?.pagination?.totalPages)
-        setTotalItems(res?.data?.pagination?.totalItems || 0)
-      }
-    } catch (error: any) {
-      showToast(`${error?.response?.data?.message || 'System error !'}`, "error");
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [searchQuery, setSearchQuery] = useState('')
+  const queryClient = useQueryClient()
+  const { data, isLoading } = useGroceryPaginatedAdmin(currentPage, searchQuery)
+  const groceries = data?.groceries as IGrocery[] ?? []
+  const totalPages = data?.pagination?.totalPages ?? 1
+  const totalItems = data?.pagination?.totalItems ?? 0
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
@@ -57,11 +43,16 @@ const ViewGrocery = () => {
     }
   }
 
-  const handleSearchGrocery = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const value = search.toLowerCase()
-
-    setFilter(groceries?.filter((item: IGrocery) => item?.name?.toLowerCase()?.includes(value) || item?.category?.toLowerCase()?.includes(value)))
+  const handleSearchGrocery = (e: React.FormEvent<HTMLFormElement>) => {
+    try {
+      setIsSearch(true)
+      e.preventDefault()
+      setSearchQuery(search)  // TanStack tự fetch lại với q=search
+      setCurrentPage(1)       // reset về page 1 khi search mới
+      setIsSearch(false)
+    } catch (error) {
+      setIsSearch(false)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -70,7 +61,7 @@ const ViewGrocery = () => {
       const res = await axios.delete(`/api/auth/admin/delete-grocery`, { data: { id: id } })
       if (res?.data?.success) {
         showToast(res?.data?.message, "success");
-        await fetchGrocery(currentPage)
+        queryClient.invalidateQueries({ queryKey: ['grocery'] })
       } else {
         showToast(res?.data?.message, "error");
       }
@@ -79,13 +70,9 @@ const ViewGrocery = () => {
     }
   }
 
-  useEffect(() => {
-    fetchGrocery(currentPage)
-  }, [currentPage])
-
   return (
     <>
-      {loading ? (
+      {isLoading || isSearch ? (
         <motion.div
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -152,10 +139,10 @@ const ViewGrocery = () => {
             </motion.form>
 
             {/* Grocery items */}
-            {filter?.length > 0 ? (
+            {groceries?.length > 0 ? (
               <>
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
-                  {filter?.map((item: IGrocery, index: number) => {
+                  {groceries?.map((item: IGrocery, index: number) => {
                     return (
                       <motion.div
                         key={index}
@@ -280,7 +267,8 @@ const ViewGrocery = () => {
           {/* Edit Grocery */}
           <AnimatePresence mode='wait' onExitComplete={() => setEdit(false)}>
             {isEdit && (
-              <FormEditGrocery isEdit={isEdit} title="Edit Grocery" description="Edit a grocery item in your store." setEdit={setEdit} editItem={editItem} fetchGrocery={() => fetchGrocery(currentPage)} />
+              <FormEditGrocery isEdit={isEdit} title="Edit Grocery" description="Edit a grocery item in your store." setEdit={setEdit} editItem={editItem}
+                fetchGrocery={() => queryClient.invalidateQueries({ queryKey: ['grocery'] })} />
             )}
           </AnimatePresence>
 

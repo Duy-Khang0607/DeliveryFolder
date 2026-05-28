@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { IGrocery } from '../models/grocery.model'
 import Image from 'next/image'
-import { CircleMinus, CirclePlus, DollarSign, Eye, Package, ShoppingCart, Tag } from 'lucide-react'
+import { CircleMinus, CirclePlus, DollarSign, Package, ShoppingCart, Tag } from 'lucide-react'
 import { useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
 import { useDispatch, useSelector } from 'react-redux'
@@ -21,7 +21,7 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
   const dispatch = useDispatch<AppDispatch>()
 
   // State redux - Cart
-  const { cartData } = useSelector((state: RootState) => state.cart)
+  const { cartData } = useSelector((state: RootState) => state?.cart)
 
   // Find item -> khi click "Add to cart"
   const cartItem = cartData?.find(item => item?._id === groceries?._id)
@@ -39,7 +39,6 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
       <div className='h-1 w-full bg-linear-to-r from-green-400 to-green-700' />
 
       {/* Body */}
-
       <div className='p-4 flex flex-col gap-3 flex-1 min-h-[200px]'>
         {/* Header: image + category badge + name (giống avatar block của manage-users) */}
         <div className='flex flex-row gap-3 items-start w-full justify-center min-h-[80px]'>

@@ -1,6 +1,6 @@
 'use client'
 import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Box, Loader2, LocationEdit, Mail, Phone, Timer, Truck, User } from 'lucide-react';
 import { getSocket } from '../lib/socket';
@@ -379,9 +379,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
 
                 {/* Map */}
                 <motion.div
-                    // initial={{ opacity: 0, y: 16 }}
-                    // animate={{ opacity: 1, y: 0 }}
-                    // transition={{ duration: 0.4 }}
                     className='bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden'
                 >
                     <div className='px-5 py-4 border-b border-gray-100 flex items-center justify-between'>
