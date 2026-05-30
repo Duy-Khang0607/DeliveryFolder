@@ -23,14 +23,22 @@ export async function GET(req: NextRequest) {
         // get session
         const session = await auth()
 
-        // get total items
-        const totalItems = await Orders?.countDocuments({user: session?.user?.id});
-
         if (!session?.user?.id) {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
 
-        const orders = await Orders.find({ user: session?.user?.id }).populate('user assignedDeliveryBoy').sort({ createdAt: -1 }).lean().skip(skip).limit(limit);
+        // Thêm đọc status param
+        const status = search.get('status')
+        // Thêm status vào query
+        const query = {
+            user: session?.user?.id,
+            ...(status ? { status } : {})  // filter nếu có status
+        }
+
+        // get total items
+        const totalItems = await Orders?.countDocuments(query);
+
+        const orders = await Orders.find(query).populate('user assignedDeliveryBoy').sort({ createdAt: -1 }).lean().skip(skip).limit(limit);
 
         if (!orders) {
             return NextResponse.json({ success: false, message: 'Orders not found' }, { status: 404 });

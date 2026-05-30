@@ -10,6 +10,7 @@ import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import { generateIdempotencyKey } from '@/app/lib/generateIdempotencyKey'
 import ButtonHome from '@/app/components/ButtonHome'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Dynamic import để tránh lỗi SSR với leaflet
 const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
@@ -53,6 +54,8 @@ const Checkout = () => {
     const toast = useToast()
 
     const [idempotencyKeyState] = useState(() => generateIdempotencyKey())
+
+    const queryClient = useQueryClient()
 
     // Tìm kiếm địa chỉ trên map
     const handleSearchMap = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -128,7 +131,10 @@ const Checkout = () => {
                 },
                 idempotencyKey: idempotencyKeyState
             });
-            if (res?.data?.success) router.push('/user/order-success')
+            if (res?.data?.success) {
+                queryClient.invalidateQueries({ queryKey: ['orders'] })  // ← invalidate trước
+                router.push('/user/order-success')
+            }
             setPay(false)
         } catch (error) {
             setPay(false)
@@ -170,7 +176,7 @@ const Checkout = () => {
             });
             setPay(false)
             window.location.href = res?.data.url
-        } catch (error:any) {
+        } catch (error: any) {
             toast.showToast(error?.response?.data?.message || 'Failed to pay online !', 'error');
         } finally {
             setPay(false)

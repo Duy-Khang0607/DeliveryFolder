@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Box, DollarSign, Edit, Package, Plus, Search, Tag, Trash2 } from 'lucide-react'
 import Image from 'next/image'
@@ -14,6 +14,7 @@ import Link from 'next/link'
 import Pagination from '@/app/components/Pagination'
 import { useGroceryPaginatedAdmin } from '@/app/hooks/useGroceryPaginated'
 import { useQueryClient } from '@tanstack/react-query'
+import { useDebounce } from '@/app/hooks/useDebounce'
 
 const ViewGrocery = () => {
   const [isEdit, setEdit] = useState<boolean>(false)
@@ -22,11 +23,10 @@ const ViewGrocery = () => {
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [open, setOpen] = useState(false)
-  const [isSearch, setIsSearch] = useState<boolean>(false)
+  const debouncedSearch = useDebounce(search, 300)
 
-  const [searchQuery, setSearchQuery] = useState('')
   const queryClient = useQueryClient()
-  const { data, isLoading } = useGroceryPaginatedAdmin(currentPage, searchQuery)
+  const { data, isLoading } = useGroceryPaginatedAdmin(currentPage, debouncedSearch)
   const groceries = data?.groceries as IGrocery[] ?? []
   const totalPages = data?.pagination?.totalPages ?? 1
   const totalItems = data?.pagination?.totalItems ?? 0
@@ -40,18 +40,6 @@ const ViewGrocery = () => {
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1)
-    }
-  }
-
-  const handleSearchGrocery = (e: React.FormEvent<HTMLFormElement>) => {
-    try {
-      setIsSearch(true)
-      e.preventDefault()
-      setSearchQuery(search)  // TanStack tự fetch lại với q=search
-      setCurrentPage(1)       // reset về page 1 khi search mới
-      setIsSearch(false)
-    } catch (error) {
-      setIsSearch(false)
     }
   }
 
@@ -70,9 +58,13 @@ const ViewGrocery = () => {
     }
   }
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch])
+
   return (
     <>
-      {isLoading || isSearch ? (
+      {isLoading ? (
         <motion.div
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -113,7 +105,7 @@ const ViewGrocery = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               className='w-full h-full flex flex-row justify-center items-center'
-              onSubmit={handleSearchGrocery}
+              onSubmit={(e) => e.preventDefault()}
             >
               <div className='relative w-full max-w-lg'>
                 <input

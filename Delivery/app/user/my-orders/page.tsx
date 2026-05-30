@@ -7,19 +7,17 @@ import { useRouter } from 'next/navigation'
 import { IOrder } from "@/app/models/orders.model"
 import { useEffect, useState } from 'react'
 import Pagination from '@/app/components/Pagination'
-import { useToast } from '@/app/components/Toast'
-import { useOrdersPaginatedUser } from "@/app/hooks/userOrdersPaginated"
+import { useOrdersPaginatedUser } from "@/app/hooks/useOrdersPaginated"
 import { useQueryClient } from "@tanstack/react-query"
 
 const MyOrders = () => {
   const router = useRouter()
-  const [loadingFilter, setLoadingFilter] = useState(false)
   const [status, setStatus] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1);
 
   // Tanstack query
   const queryClient = useQueryClient()
-  const { data, isLoading, isFetching } = useOrdersPaginatedUser(currentPage)
+  const { data, isLoading } = useOrdersPaginatedUser(currentPage, status)
 
   // Lấy từ data thay vì state
   const orders = data?.orders ?? []
@@ -39,9 +37,8 @@ const MyOrders = () => {
   }
 
   const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLoadingFilter(true)
     setStatus(e?.target?.value)
-    setLoadingFilter(false)
+    setCurrentPage(1)
   }
 
   useEffect(() => {
@@ -52,6 +49,7 @@ const MyOrders = () => {
     }
 
     socket?.on('order-assigned', handleOrderAssigned)
+
     return () => {
       socket?.off('order-assigned', handleOrderAssigned)
     }
@@ -79,6 +77,7 @@ const MyOrders = () => {
           {/* Back && My orders */}
           <div className='w-full bg-white/70 fixed top-0 left-0 backdrop-blur-xl shadow-md border-b border-gray-300 z-9'>
             <div className='max-w-3xl mx-auto flex flex-row items-center justify-between py-4 h-full gap-5 px-2 md:px-0'>
+
               {/* Back to home and My orders */}
               <div className='w-full flex flex-row items-center gap-2'>
                 <motion.button onClick={() => router.push('/')} whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.06 }} className='bg-white shadow-2xl w-auto rounded-xl text-green-700 text-center flex flex-row gap-2 p-1.5 hover:bg-green-200 cursor-pointer transition-all duration-200 items-center'>
@@ -105,44 +104,42 @@ const MyOrders = () => {
 
               {/* Filter orders status */}
               <div className='ml-2 md:mx-auto'>
-                {orders?.length > 0 && (
-                  <div className="relative">
-                    <label
-                      htmlFor="order-status-filter"
-                      className="absolute left-3 -top-3 bg-white px-1 text-xs font-semibold text-green-700 tracking-wide rounded shadow-sm"
-                      style={{ pointerEvents: "none" }}
-                    >
-                      Filter by Status
-                    </label>
-                    <select
-                      id="order-status-filter"
-                      required
-                      disabled={loadingFilter}
-                      className="px-4 py-2 rounded-2xl border border-green-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer font-medium text-green-700 hover:border-green-500"
-                      value={status}
-                      onChange={handleFilter}
-                      style={{ minWidth: "175px" }}
-                    >
-                      <option value="" >
-                        All Status
-                      </option>
-                      <option value="Pending" >
-                        Pending
-                      </option>
-                      <option value="Out of delivery" >
-                        Out of delivery
-                      </option>
-                      <option value="Delivered" >
-                        Delivered
-                      </option>
-                    </select>
-                    {loadingFilter && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-2xl z-10">
-                        <Loader2 className="animate-spin text-green-700 w-5 h-5" />
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="relative">
+                  <label
+                    htmlFor="order-status-filter"
+                    className="absolute left-3 -top-3 bg-white px-1 text-xs font-semibold text-green-700 tracking-wide rounded shadow-sm"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    Filter by Status
+                  </label>
+                  <select
+                    id="order-status-filter"
+                    required
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-2xl border border-green-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer font-medium text-green-700 hover:border-green-500"
+                    value={status}
+                    onChange={handleFilter}
+                    style={{ minWidth: "175px" }}
+                  >
+                    <option value="" >
+                      All Status
+                    </option>
+                    <option value="Pending" >
+                      Pending
+                    </option>
+                    <option value="Out of delivery" >
+                      Out of delivery
+                    </option>
+                    <option value="Delivered" >
+                      Delivered
+                    </option>
+                  </select>
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-2xl z-10">
+                      <Loader2 className="animate-spin text-green-700 w-5 h-5" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -161,9 +158,8 @@ const MyOrders = () => {
             </motion.div>
           ) : (
             (() => {
-              const filteredOrders = orders?.filter?.((order: IOrder) => !status || order?.status === status)
-              if (filteredOrders?.length > 0) {
-                return filteredOrders?.map((item: IOrder, index: number) => (
+              if (orders?.length > 0) {
+                return orders?.map((item: IOrder, index: number) => (
                   <UserOrdersCart key={index} orders={item as unknown as any} />
                 ))
               }

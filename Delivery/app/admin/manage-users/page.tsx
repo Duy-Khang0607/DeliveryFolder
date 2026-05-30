@@ -16,6 +16,7 @@ import Pagination from '@/app/components/Pagination'
 import { getSocket } from '@/app/lib/socket'
 import { useUsersPaginated } from '@/app/hooks/useUsersPaginated'
 import { useQueryClient } from '@tanstack/react-query'
+import { useDebounce } from '@/app/hooks/useDebounce'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     user: { label: 'User', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <User className='w-3 h-3' /> },
@@ -30,12 +31,11 @@ const ManageUsers = () => {
     const [open, setOpen] = useState(false)
     const [currentPage, setCurrentPage] = useState(1);
     const { showToast } = useToast();
-    const [searchQuery, setSearchQuery] = useState('')
-    const [isSearch, setIsSearch] = useState<boolean>(false)
+    const debouncedSearch = useDebounce(search, 300)
 
     // tanstack query
     const queryClient = useQueryClient()
-    const { data, isLoading, isFetching } = useUsersPaginated(currentPage, searchQuery)
+    const { data, isLoading } = useUsersPaginated(currentPage, debouncedSearch)
     const users = data?.users as IUser[] ?? []
     const totalPages = data?.pagination?.totalPages ?? 1
     const totalItems = data?.pagination?.totalItems ?? 0
@@ -53,18 +53,6 @@ const ManageUsers = () => {
             }
         } catch (error: any) {
             showToast(`${error?.response?.data?.message || 'Delete user failed !'}`, "error");
-        }
-    }
-
-    const handleSearchGrocery = async (e: React.FormEvent<HTMLFormElement>) => {
-        try {
-            setIsSearch(true)
-            e.preventDefault()
-            setSearchQuery(search)  // TanStack tự fetch lại với q=search
-            setCurrentPage(1)       // reset về page 1 khi search mới
-            setIsSearch(false)
-        } catch (error) {
-            setIsSearch(false)
         }
     }
 
@@ -100,9 +88,13 @@ const ManageUsers = () => {
         return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
     }, [])
 
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [debouncedSearch])
+
     return (
         <>
-            {isLoading || isSearch ? (
+            {isLoading ? (
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}
                     animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -142,7 +134,7 @@ const ManageUsers = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4 }}
                             className='w-full h-full flex flex-row justify-center items-center'
-                            onSubmit={handleSearchGrocery}
+                            onSubmit={(e) => e.preventDefault()}
                         >
                             <div className='relative w-full max-w-lg'>
                                 <input

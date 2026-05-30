@@ -14,14 +14,22 @@ export async function GET(req: NextRequest) {
 
         const skip = (page - 1) * limit;
 
-        const totalItems = await Orders?.countDocuments({});
-
         const session = await auth()
+
         if (!session?.user || (session.user as any)?.role !== 'admin') {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
 
-        const orders = await Orders.find({}).populate('user assignedDeliveryBoy').sort({ createdAt: -1 }).lean().skip(skip).limit(limit);
+        // Thêm đọc status param
+        const status = search.get('status')
+        // Thêm status vào query
+        const query = {
+            ...(status ? { status } : {})  // filter nếu có status
+        }
+
+        const totalItems = await Orders?.countDocuments(query);
+
+        const orders = await Orders.find(query).populate('user assignedDeliveryBoy').sort({ createdAt: -1 }).lean().skip(skip).limit(limit);
 
         if (!orders) {
             return NextResponse.json({ success: false, message: 'Not found orders items' }, { status: 400 });

@@ -10,11 +10,10 @@ import { getSocket } from "@/app/lib/socket"
 import { useToast } from "@/app/components/Toast"
 import { useRouter } from "next/navigation"
 import Pagination from "@/app/components/Pagination"
-import { useOrdersPaginatedAdmin } from "@/app/hooks/userOrdersPaginated"
+import { useOrdersPaginatedAdmin } from "@/app/hooks/useOrdersPaginated"
 import { useQueryClient } from "@tanstack/react-query"
 
 const ManageOrders = () => {
-    const [loadingFilter, setLoadingFilter] = useState(false)
     const [status, setStatus] = useState<string>('')
     const { showToast } = useToast()
     const [currentPage, setCurrentPage] = useState(1);
@@ -22,7 +21,7 @@ const ManageOrders = () => {
 
     // Tanstack query
     const queryClient = useQueryClient()
-    const { data, isLoading, isFetching } = useOrdersPaginatedAdmin(currentPage)
+    const { data, isLoading, isFetching } = useOrdersPaginatedAdmin(currentPage, status)
 
     // Lấy từ data thay vì state
     const orders = data?.orders ?? []
@@ -30,9 +29,8 @@ const ManageOrders = () => {
     const totalItems = data?.pagination?.totalItems ?? 0
 
     const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setLoadingFilter(true)
         setStatus(e?.target?.value)
-        setLoadingFilter(false)
+        setCurrentPage(1)
     }
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -64,6 +62,7 @@ const ManageOrders = () => {
 
     useEffect(() => {
         const socket = getSocket()
+
         const handleNewOrder = () => {
             // Refetch tất cả pages của orders
             queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
@@ -78,7 +77,7 @@ const ManageOrders = () => {
             if (data) showToast(data?.message, 'warning')
             queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
-        
+
         socket?.on('new-order', handleNewOrder)
         socket?.on('order-assigned', handleOrderAssigned)
         socket?.on('order-status-updated', handleOrderStatusUpdated)
@@ -141,47 +140,45 @@ const ManageOrders = () => {
 
                             {/* Filter orders status */}
                             <div className='ml-2 md:mx-auto'>
-                                {orders?.length > 0 && (
-                                    <div className="relative">
-                                        <label
-                                            htmlFor="order-status-filter"
-                                            className="absolute left-3 -top-3 bg-white px-1 text-xs font-semibold text-green-700 tracking-wide rounded shadow-sm"
-                                            style={{ pointerEvents: "none" }}
-                                        >
-                                            Filter by Status
-                                        </label>
-                                        <select
-                                            id="order-status-filter"
-                                            required
-                                            disabled={loadingFilter}
-                                            className="px-4 py-2 rounded-2xl border border-green-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer font-medium text-green-700 hover:border-green-500"
-                                            value={status}
-                                            onChange={handleFilter}
-                                            style={{ minWidth: "175px" }}
-                                        >
-                                            <option value="" >
-                                                All Status
-                                            </option>
-                                            <option value="Pending" >
-                                                Pending
-                                            </option>
-                                            <option value="Out of delivery" >
-                                                Out of delivery
-                                            </option>
-                                            <option value="Delivered" >
-                                                Delivered
-                                            </option>
-                                        </select>
-                                        {loadingFilter && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-2xl z-10">
-                                                {/* <Loader2 className="animate-spin text-green-700 w-5 h-5" /> */}
-                                                {isFetching && !isLoading && (
-                                                    <Loader2 className="animate-spin w-4 h-4 text-green-700" />
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                <div className="relative">
+                                    <label
+                                        htmlFor="order-status-filter"
+                                        className="absolute left-3 -top-3 bg-white px-1 text-xs font-semibold text-green-700 tracking-wide rounded shadow-sm"
+                                        style={{ pointerEvents: "none" }}
+                                    >
+                                        Filter by Status
+                                    </label>
+                                    <select
+                                        id="order-status-filter"
+                                        required
+                                        disabled={isLoading}
+                                        className="px-4 py-2 rounded-2xl border border-green-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 cursor-pointer font-medium text-green-700 hover:border-green-500"
+                                        value={status}
+                                        onChange={handleFilter}
+                                        style={{ minWidth: "175px" }}
+                                    >
+                                        <option value="" >
+                                            All Status
+                                        </option>
+                                        <option value="Pending" >
+                                            Pending
+                                        </option>
+                                        <option value="Out of delivery" >
+                                            Out of delivery
+                                        </option>
+                                        <option value="Delivered" >
+                                            Delivered
+                                        </option>
+                                    </select>
+                                    {isLoading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-2xl z-10">
+                                            {/* <Loader2 className="animate-spin text-green-700 w-5 h-5" /> */}
+                                            {isFetching && !isLoading && (
+                                                <Loader2 className="animate-spin w-4 h-4 text-green-700" />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -200,9 +197,8 @@ const ManageOrders = () => {
                         </motion.div>
                     ) : (
                         (() => {
-                            const filteredOrders = orders?.filter?.((order: IOrder) => !status || order?.status === status)
-                            if (filteredOrders?.length > 0) {
-                                return filteredOrders?.map((item: IOrder, index: number) => (
+                            if (orders?.length > 0) {
+                                return orders?.map((item: IOrder, index: number) => (
                                     <AdminOrdersCart key={index} orders={item as unknown as any} handleStatusChange={handleStatusChange} />
                                 ))
                             }
