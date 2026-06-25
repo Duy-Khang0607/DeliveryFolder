@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import { normalizeText } from "../lib/normalizeText";
+import DeliveryAssignment from "./deliveryAssignment.model";
+import { IUser } from "./user.model";
 
 export interface IOrder {
     _id: mongoose.Types.ObjectId,
@@ -25,18 +28,19 @@ export interface IOrder {
         latitude: number,
         longitude: number
     },
-    status: 'Pending' | 'Out of delivery' | 'Delivered',
+    status: 'Pending' | 'Out of delivery' | 'Delivered' | 'Cancelled',
     createdAt?: Date,
     updatedAt?: Date,
     isPaid: Boolean,
-    assignedDeliveryBoy?: mongoose.Types.ObjectId,
-    assignment?: mongoose.Types.ObjectId
+    assignedDeliveryBoy?: IUser | null,
+    assignment?: typeof DeliveryAssignment | null
     deliveryOTP?: string | null,
     deliveryOTPVerification: boolean,
     deliveredAt?: Date | null,
     otpSentAt?: Date | null,
     idempotencyKey?: string | null,
     stripeSessionUrl?: string | null
+    searchText: string
 }
 
 const orderSchema = new mongoose.Schema<IOrder>({
@@ -77,7 +81,7 @@ const orderSchema = new mongoose.Schema<IOrder>({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Out of delivery', 'Delivered'],
+        enum: ['Pending', 'Out of delivery', 'Delivered', 'Cancelled'],
         default: 'Pending'
     },
     isPaid: {
@@ -118,12 +122,51 @@ const orderSchema = new mongoose.Schema<IOrder>({
     stripeSessionUrl: {
         type: String,
         default: null
+    },
+    searchText: {
+        type: String,
+        default: '',
     }
 }, { timestamps: true });
 
 // Indexes for common query patterns
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ searchText: 1 })
+
+// Hook tự build searchText khi save
+orderSchema.pre('save', async function () {
+    const o = this as any
+    const parts = [
+        o.address?.fullName,
+        o.address?.fullAddress,
+        o.address?.city,
+        o.address?.state,
+        o.address?.pincode,
+        o.address?.mobile?.toString(),
+        o?._id?.toString(),
+        o?.items?.map((i: any) => i.grocery?.name) ?? [],
+        o?.items?.map((i: any) => i.grocery?.brand) ?? [],
+        o?.items?.map((i: any) => i.grocery?.price) ?? [],
+        o?.items?.map((i: any) => i.grocery?.unit) ?? [],
+        o?.items?.map((i: any) => i.grocery?.quantity) ?? [],
+        o?.totalAmount?.toString(),
+        o.paymentMethod,
+        o?.status,
+        o?.assignedDeliveryBoy?.toString(),
+        o?.assignment?.toString(),
+        o?.deliveryOTP,
+        o?.deliveryOTPVerification,
+        o?.deliveredAt,
+        o?.otpSentAt,
+        o?.idempotencyKey,
+        o?.stripeSessionUrl,
+        o?.createdAt?.toString(),
+        o?.updatedAt?.toString(),
+        ...(o.items?.map((i: any) => i.name) ?? []),
+    ].filter(Boolean).join(' ')
+    o.searchText = normalizeText(parts)
+})
 
 const Orders = mongoose.models.Orders || mongoose.model("Orders", orderSchema);
 

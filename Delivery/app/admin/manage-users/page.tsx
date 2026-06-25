@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Box, Edit, MailIcon, Phone, Search, Shield, Trash2, Truck, User, UserPlus, Wifi, WifiOff } from 'lucide-react'
+import { Box, Edit, Loader2, MailIcon, Phone, Search, Shield, Trash2, Truck, User, UserPlus, Wifi, WifiOff } from 'lucide-react'
 import Image from 'next/image'
 import ButtonHome from '@/app/components/ButtonHome'
 import { useToast } from '@/app/components/Toast'
@@ -17,6 +17,7 @@ import { getSocket } from '@/app/lib/socket'
 import { useUsersPaginated } from '@/app/hooks/useUsersPaginated'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDebounce } from '@/app/hooks/useDebounce'
+import SearchInput from '@/app/components/SearchInput'
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     user: { label: 'User', color: 'bg-blue-50 text-blue-700 border border-blue-200', icon: <User className='w-3 h-3' /> },
@@ -25,17 +26,25 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.Re
 }
 
 const ManageUsers = () => {
-    const [search, setSearch] = useState<string>('')
+    // Edit user
     const [isEdit, setEdit] = useState<boolean>(false)
     const [editItem, setEditItem] = useState<IUser | null>(null)
-    const [open, setOpen] = useState(false)
-    const [currentPage, setCurrentPage] = useState(1);
-    const { showToast } = useToast();
-    const debouncedSearch = useDebounce(search, 300)
 
-    // tanstack query
+    // Popup image
+    const [open, setOpen] = useState(false)
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Toast - custom hook
+    const { showToast } = useToast();
+
+    // Search
+    const [debouncedSearch, setDebouncedSearch] = useState('')
+
+    // Tanstack query
     const queryClient = useQueryClient()
-    const { data, isLoading } = useUsersPaginated(currentPage, debouncedSearch)
+    const { data, isLoading, isFetching } = useUsersPaginated(currentPage, debouncedSearch)
     const users = data?.users as IUser[] ?? []
     const totalPages = data?.pagination?.totalPages ?? 1
     const totalItems = data?.pagination?.totalItems ?? 0
@@ -129,140 +138,118 @@ const ManageUsers = () => {
                         </div>
 
                         {/* Search */}
-                        <motion.form
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4 }}
-                            className='w-full h-full flex flex-row justify-center items-center'
-                            onSubmit={(e) => e.preventDefault()}
-                        >
-                            <div className='relative w-full max-w-lg'>
-                                <input
-                                    type="text"
-                                    id='search'
-                                    placeholder='Search for a user'
-                                    className='w-full h-full rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 pr-10'
-                                    value={search}
-                                    onChange={(e) => {
-                                        setSearch(e.target.value);
-                                    }}
-                                />
-                                <motion.button
-                                    type='submit'
-                                    whileTap={{ scale: 0.97 }}
-                                    whileHover={{ scale: 1.06 }}
-                                    className='absolute right-0 top-0 bg-green-700 text-white rounded-r-md p-2 hover:bg-green-800 cursor-pointer transition-all duration-200 w-auto h-full'
-
-                                >
-                                    <Search className='w-5 h-5' />
-                                </motion.button>
-                            </div>
-                        </motion.form>
+                        <SearchInput onSearch={setDebouncedSearch} placeholder='Search for a user' />
 
                         {/* Users */}
                         {users?.length > 0 ? (
-                            <>
-                                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
-                                    {users?.map((item: IUser, index: number) => {
-                                        const roleConfig = ROLE_CONFIG[item?.role || 'user']
-                                        return (
-                                            <motion.div
-                                                key={index}
-                                                initial={{ opacity: 0, y: 12 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.35, delay: index * 0.04 }}
-                                                className='group relative bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col'
-                                            >
-                                                {/* Top accent bar theo role */}
-                                                <div className={`h-1 w-full ${item?.role === 'admin' ? 'bg-purple-400' : item?.role === 'deliveryBoy' ? 'bg-orange-400' : 'bg-blue-400'}`} />
-
-                                                <div className='p-4 flex flex-col gap-3 flex-1'>
-                                                    {/* Header: avatar + info */}
-                                                    <div className='flex flex-row gap-3 items-start'>
-                                                        {/* Avatar + online dot */}
-                                                        <div className='relative shrink-0'>
-                                                            <Image
-                                                                onClick={() => { setOpen(true); setEditItem(item) }}
-                                                                src={item?.image || profileImage}
-                                                                alt={item?.name}
-                                                                width={64}
-                                                                height={64}
-                                                                className='w-16 h-16 object-cover rounded-xl border-2 border-gray-100 shadow cursor-pointer'
-                                                            />
-                                                            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${item?.isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                                        </div>
-
-                                                        {/* Name + role + status */}
-                                                        <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
-                                                            <div className='flex items-center gap-2 flex-wrap'>
-                                                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleConfig?.color}`}>
-                                                                    {roleConfig?.icon}
-                                                                    {roleConfig?.label}
-                                                                </span>
-                                                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${item?.isOnline ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                                                                    {item?.isOnline ? <Wifi className='w-3 h-3' /> : <WifiOff className='w-3 h-3' />}
-                                                                    {item?.isOnline ? 'Online' : 'Offline'}
-                                                                </span>
-                                                            </div>
-                                                            <h2 className='font-bold text-gray-800 text-sm leading-tight truncate'>{item?.name}</h2>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Divider */}
-                                                    <div className='border-t border-dashed border-gray-100' />
-
-                                                    {/* Contact info */}
-                                                    <div className='flex flex-col gap-2'>
-                                                        <div className='flex items-start gap-2 min-w-0'>
-                                                            <MailIcon className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />
-                                                            <p className='text-xs text-gray-500 break-all leading-relaxed'>{item?.email}</p>
-                                                        </div>
-                                                        <div className='flex items-center gap-2'>
-                                                            <Phone className='w-4 h-4 text-gray-400 shrink-0' />
-                                                            <p className='text-xs text-gray-500'>{item?.mobile || '—'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Footer actions */}
-                                                <div className='px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-row items-center justify-between gap-2'>
-                                                    <span className='text-xs text-gray-400 font-mono'>#{item?._id?.toString().slice(-6)}</span>
-                                                    <div className='flex items-center gap-2'>
-                                                        <motion.button
-                                                            whileTap={{ scale: 0.95 }}
-                                                            whileHover={{ scale: 1.08 }}
-                                                            className='bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 transition-all'
-                                                            onClick={() => { setEdit(true); setEditItem(item) }}
-                                                        >
-                                                            <Edit className='w-4 h-4' />
-                                                        </motion.button>
-                                                        <motion.button
-                                                            whileTap={{ scale: 0.95 }}
-                                                            whileHover={{ scale: 1.08 }}
-                                                            onClick={() => handleDelete(item?._id?.toString() || '')}
-                                                            className='bg-red-500 hover:bg-red-600 text-white rounded-lg p-1.5 transition-all'
-                                                        >
-                                                            <Trash2 className='w-4 h-4' />
-                                                        </motion.button>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )
-                                    })}
+                            isFetching ? (
+                                <div className='w-full flex justify-center items-center py-20'>
+                                    <Loader2 className='w-15 h-15 md:w-20 md:h-20 animate-spin text-green-700' />
                                 </div>
+                            ) : (
+                                <>
+                                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-5 w-full'>
+                                        {users?.map((item: IUser, index: number) => {
+                                            const roleConfig = ROLE_CONFIG[item?.role || 'user']
+                                            return (
+                                                <motion.div
+                                                    key={index}
+                                                    initial={{ opacity: 0, y: 12 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.35, delay: index * 0.04 }}
+                                                    className='group relative bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col'
+                                                >
+                                                    {/* Top accent bar theo role */}
+                                                    <div className={`h-1 w-full ${item?.role === 'admin' ? 'bg-purple-400' : item?.role === 'deliveryBoy' ? 'bg-orange-400' : 'bg-blue-400'}`} />
 
-                                {/* Total items */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4 }}
-                                    className='w-full flex flex-row justify-between items-center gap-2 ml-2 pb-20'
-                                >
-                                    <span className='text-sm text-gray-400 font-semibold'>
-                                        Page <span className='text-green-700 font-extrabold'>{currentPage}</span> · <span className='text-green-700 font-extrabold'>{totalItems}</span> users total
-                                    </span>
-                                </motion.div>
-                            </>
+                                                    <div className='p-4 flex flex-col gap-3 flex-1'>
+                                                        {/* Header: avatar + info */}
+                                                        <div className='flex flex-row gap-3 items-start'>
+                                                            {/* Avatar + online dot */}
+                                                            <div className='relative shrink-0'>
+                                                                <Image
+                                                                    onClick={() => { setOpen(true); setEditItem(item) }}
+                                                                    src={item?.image || profileImage}
+                                                                    alt={item?.name}
+                                                                    width={64}
+                                                                    height={64}
+                                                                    className='w-16 h-16 object-cover rounded-xl border-2 border-gray-100 shadow cursor-pointer'
+                                                                />
+                                                                <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${item?.isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                            </div>
+
+                                                            {/* Name + role + status */}
+                                                            <div className='flex flex-col gap-1.5 min-w-0 flex-1'>
+                                                                <div className='flex items-center gap-2 flex-wrap'>
+                                                                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleConfig?.color}`}>
+                                                                        {roleConfig?.icon}
+                                                                        {roleConfig?.label}
+                                                                    </span>
+                                                                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${item?.isOnline ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                                                        {item?.isOnline ? <Wifi className='w-3 h-3' /> : <WifiOff className='w-3 h-3' />}
+                                                                        {item?.isOnline ? 'Online' : 'Offline'}
+                                                                    </span>
+                                                                </div>
+                                                                <h2 className='font-bold text-gray-800 text-sm leading-tight truncate'>{item?.name}</h2>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Divider */}
+                                                        <div className='border-t border-dashed border-gray-100' />
+
+                                                        {/* Contact info */}
+                                                        <div className='flex flex-col gap-2'>
+                                                            <div className='flex items-start gap-2 min-w-0'>
+                                                                <MailIcon className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />
+                                                                <p className='text-xs text-gray-500 break-all leading-relaxed'>{item?.email}</p>
+                                                            </div>
+                                                            <div className='flex items-center gap-2'>
+                                                                <Phone className='w-4 h-4 text-gray-400 shrink-0' />
+                                                                <p className='text-xs text-gray-500'>{item?.mobile || '—'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Footer actions */}
+                                                    <div className='px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-row items-center justify-between gap-2'>
+                                                        <span className='text-xs text-gray-400 font-mono'>#{item?._id?.toString().slice(-6)}</span>
+                                                        <div className='flex items-center gap-2'>
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
+                                                                whileHover={{ scale: 1.08 }}
+                                                                className='bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 transition-all cursor-pointer'
+                                                                onClick={() => { setEdit(true); setEditItem(item) }}
+                                                            >
+                                                                <Edit className='w-4 h-4' />
+                                                            </motion.button>
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
+                                                                whileHover={{ scale: 1.08 }}
+                                                                onClick={() => handleDelete(item?._id?.toString() || '')}
+                                                                className='bg-red-500 hover:bg-red-600 text-white rounded-lg p-1.5 transition-all cursor-pointer'
+                                                            >
+                                                                <Trash2 className='w-4 h-4' />
+                                                            </motion.button>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* Total items */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className='w-full flex flex-row justify-between items-center gap-2 ml-2 pb-20'
+                                    >
+                                        <span className='text-sm text-gray-400 font-semibold'>
+                                            Page <span className='text-green-700 font-extrabold'>{currentPage}</span> · <span className='text-green-700 font-extrabold'>{totalItems}</span> users total
+                                        </span>
+                                    </motion.div>
+                                </>
+                            )
                         ) : (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}

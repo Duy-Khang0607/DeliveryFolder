@@ -1,5 +1,5 @@
 'use client'
-import { BadgePlus, Loader2, Package, User, Plus, Box, DollarSign, Camera } from 'lucide-react'
+import { BadgePlus, Loader2, Package, User, Plus, Box, DollarSign, Camera, Loader } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChangeEvent, useState } from 'react'
 import Image from 'next/image'
@@ -7,19 +7,22 @@ import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
 import ButtonHome from '@/app/components/ButtonHome'
-import { data } from '@/app/data'
 import Link from 'next/link'
+import { useCategories, useUnits } from '@/app/hooks/useCategoriesUnits'
+import { ICategories } from '@/app/models/categories.model'
+import { IUnits } from '@/app/models/units.model'
 
 const AddGrocery = () => {
   const [name, setName] = useState<string>('')
   const [category, setCategory] = useState<string>('')
   const [unit, setUnit] = useState<string>('')
   const [price, setPrice] = useState<string>('')
+  const [stock, setStock] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [loadingImage, setLoadingImage] = useState<boolean>(false)
   const [backendImage, setBackendImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>()
-  const disableAdd = name?.length > 0 && category?.length > 0 && unit?.length > 0 && price?.length > 0;
+  const disableAdd = name?.length > 0 && category?.length > 0 && unit?.length > 0 && price?.length > 0 && stock > 0;
   const [open, setOpen] = useState(false);
   const { showToast } = useToast();
 
@@ -48,6 +51,7 @@ const AddGrocery = () => {
       formData.append('category', category)
       formData.append('unit', unit)
       formData.append('price', price.replace(/,/g, ''))
+      formData.append('stock', stock.toString())
       if (backendImage) formData.append('image', backendImage)
       const response: any = await axios.post('/api/auth/admin/add-grocery', formData)
       if (response?.data?.success) {
@@ -56,6 +60,7 @@ const AddGrocery = () => {
         setCategory('')
         setUnit('')
         setPrice('')
+        setStock(0)
         setBackendImage(null)
         setPreview(null)
       } else {
@@ -76,6 +81,11 @@ const AddGrocery = () => {
     const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
     setPrice(formatted)
   }
+
+  // Categories & Units
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategories()
+
+  const { data: unitsData, isLoading: unitsLoading } = useUnits()
 
   const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
   const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm placeholder:text-gray-400'
@@ -184,25 +194,43 @@ const AddGrocery = () => {
 
               {/* Category - Unit */}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+
+                {/* Category */}
                 <div>
                   <label className={labelClass}>
                     <Box className='w-3.5 h-3.5' /> Category
                   </label>
-                  <select required className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} >
-                    <option value=''>Select category</option>
-                    {data?.categories?.map((item: string, index: number) => (
-                      <option key={index} value={item}>{item}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select required className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} >
+                      <option value=''>Select category</option>
+                      {categoriesData?.filter((item: ICategories) => item?.isActive).map((item: ICategories, index: number) => (
+                        <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
+                      ))}
+                    </select>
+                    {categoriesLoading && (
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <Loader className="w-5 h-5 animate-spin text-gray-400" />
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Unit */}
                 <div>
                   <label className='text-base font-semibold'>Unit <span className='text-red-500'>*</span></label>
-                  <select required className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} >
-                    <option value=''>Select units</option>
-                    {data?.units?.map((item: string, index: number) => (
-                      <option key={index} value={item}>{item}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select required className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} >
+                      <option value=''>Select units</option>
+                      {unitsData?.filter((item: IUnits) => item?.isActive).map((item: IUnits, index: number) => (
+                        <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
+                      ))}
+                    </select>
+                    {unitsLoading && (
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <Loader className="w-5 h-5 animate-spin text-gray-400" />
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -217,6 +245,23 @@ const AddGrocery = () => {
                     placeholder='Enter price'
                     className={`${inputClass} pr-10`}
                     value={price} onChange={handlePriceChange}
+                  />
+                </div>
+              </div>
+
+              {/* Stock */}
+              <div>
+                <label className={labelClass}>
+                  <Box className='w-3.5 h-3.5' /> Stock
+                </label>
+                <div className='relative'>
+                  <input
+                    type="number"
+                    placeholder='Enter stock'
+                    className={`${inputClass} pr-10`}
+                    value={stock}
+                    onChange={(e) => setStock(Number(e.target.value))}
+                    min={0}
                   />
                 </div>
               </div>

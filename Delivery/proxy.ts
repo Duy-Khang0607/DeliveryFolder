@@ -8,7 +8,7 @@ export default auth((req) => {
     const { pathname } = req.nextUrl
     const session = req.auth
 
-    const publicRoutes = ['/login', '/register']
+    const publicRoutes = ['/login', '/register', '/reset-password', '/forgot-password', '/verify-email']
     if (publicRoutes.some(route => pathname.startsWith(route))) {
         return NextResponse.next()
     }

@@ -14,8 +14,13 @@ export async function POST(req: NextRequest) {
         await connectDB()
 
         const session = await auth()
+
         if (!session?.user) {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+
+        if ((session?.user as any)?.role !== 'deliveryBoy') {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
         const { orderId, otp } = await req.json()

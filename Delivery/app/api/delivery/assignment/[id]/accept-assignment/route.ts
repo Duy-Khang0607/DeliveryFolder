@@ -16,8 +16,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const deliveryBoyId = session?.user?.id
 
-        if (!deliveryBoyId) {
-            return NextResponse.json({ success: false, message: "Delivery boy not found" }, { status: 404 })
+        if ((session?.user as any)?.role !== 'deliveryBoy') {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
         const alreadyAssigned = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: { $nin: ['brodcasted', 'completed', 'rejected'] } })

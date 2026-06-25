@@ -1,5 +1,5 @@
 'use client'
-import { CircleMinus, CirclePlus, ShoppingBag, ShoppingBasket, Trash } from 'lucide-react'
+import { AlertTriangle, CircleMinus, CirclePlus, Package, ShoppingBag, ShoppingBasket, Trash, Warehouse } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -75,7 +75,7 @@ const Cart = () => {
                             cartData?.map((item, index) => (
                                 <>
                                     {/* Wrapper tạo hiệu ứng running border */}
-                                    <div className="relative p-[2px] rounded-2xl overflow-hidden group/card">
+                                    <div key={item?._id?.toString() || index} className="relative p-[2px] rounded-2xl overflow-hidden group/card">
                                         {/* Lớp gradient xoay - ẩn mặc định, hiện khi hover */}
                                         <div
                                             className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
@@ -86,7 +86,7 @@ const Cart = () => {
                                             }}
                                         />
                                         <motion.div
-                                            key={index}
+                                            key={item?._id?.toString() || index}
                                             initial={{ opacity: 0, y: 12 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
@@ -100,13 +100,20 @@ const Cart = () => {
                                             <div className='p-4 flex flex-row items-center gap-4 flex-1'>
                                                 {/* Image */}
                                                 <div className='relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden border border-gray-100 shadow'>
-                                                    <Image
-                                                        src={item?.image[0]}
-                                                        alt={item?.name}
-                                                        fill
-                                                        className='object-cover group-hover:scale-105 transition-transform duration-300'
-                                                        sizes='(max-width: 640px) 80px, 96px'
-                                                    />
+                                                    {item?.image[0] ? (
+                                                        <Image
+                                                            src={item?.image[0]}
+                                                            alt={item?.name}
+                                                            fill
+                                                            className='object-cover group-hover:scale-105 transition-transform duration-300'
+                                                            sizes='(max-width: 640px) 80px, 96px'
+                                                        />
+                                                    ) : (
+                                                        <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+                                                            <Package className='w-6 h-6 text-green-400' />
+                                                        </div>
+                                                    )}
+
                                                 </div>
 
                                                 {/* Info */}
@@ -121,6 +128,12 @@ const Cart = () => {
                                                         ${item?.price}
                                                         <span className='text-xs font-normal text-gray-400 ml-1'>× {item?.quantity}</span>
                                                     </p>
+                                                    {/* Stock */}
+                                                    <div className='flex items-center gap-1.5'>
+                                                        <Warehouse className='w-4 h-4 text-gray-400 shrink-0' />
+                                                        <span className='text-sm text-gray-500'>Stock x</span>
+                                                        <span className={`text-green-700 font-bold`}>{item?.stock}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -209,7 +222,7 @@ const Cart = () => {
 
                     {/* Footer: CTA */}
                     <div className='px-4 py-3 bg-gray-50 border-t border-gray-100'>
-                        {cartData?.length > 0 ? (
+                        {cartData?.length > 0 && cartData?.every(item => item?.stock > 0) ? (
                             <Link
                                 href='/user/checkout'
                                 className='block w-full py-2.5 text-center text-white text-sm font-semibold rounded-xl bg-green-600 hover:bg-green-700 transition-all duration-200 shadow-sm'

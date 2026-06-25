@@ -26,7 +26,7 @@ const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
 const Checkout = () => {
     const router = useRouter()
 
-    const { userData } = useSelector((state: RootState) => state.user)
+    const { userData } = useSelector((state: RootState) => state?.user)
 
     const [position, setPosition] = useState<[number, number] | null>(null)
 

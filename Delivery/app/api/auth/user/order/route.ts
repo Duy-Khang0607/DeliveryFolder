@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
+import Grocery from "@/app/models/grocery.model";
 import Orders from "@/app/models/orders.model";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const session = await auth()
+        
         if (!session?.user) {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
         }
@@ -47,6 +49,23 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: 'Order already created', newOrder: existingOrder }, { status: 200 });
             }
         }
+
+        // Xử lý stock
+        const decremented: { id: string, qty: number }[] = []
+        for (const item of items) {
+            const updated = await Grocery.findOneAndUpdate(
+              { _id: item.grocery, stock: { $gte: item.quantity } },
+              { $inc: { stock: -item.quantity } }
+            )
+            if (!updated) {
+              // rollback tất cả item đã trừ trước đó
+              await Promise.all(decremented.map(d =>
+                Grocery.findByIdAndUpdate(d.id, { $inc: { stock: d.qty } })
+              ))
+              return NextResponse.json({ success: false, message: `"${item.name}" is out of stock` }, { status: 409 })
+            }
+            decremented.push({ id: item.grocery, qty: item.quantity })
+          }
 
         // Create order
         const newOrder = await Orders.create({

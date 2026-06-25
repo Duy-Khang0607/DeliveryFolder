@@ -1,5 +1,5 @@
 'use client'
-import { CircleX, LogOut, Menu, Package, PackagePlus, Plus, Search, ShoppingCart, User, UserCog, Users, X } from 'lucide-react'
+import { CircleX, LogOut, Menu, Package, PackagePlus, Search, ShoppingCart, User, UserCog, Users, X } from 'lucide-react'
 import { IUser } from '../models/user.model'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -33,6 +33,7 @@ const Nav = ({ user }: { user: IUser }) => {
   const [isEdit, setEdit] = useState<boolean>(false)
   const [editItem, setEditItem] = useState<IUser | null>(null)
 
+
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -64,7 +65,7 @@ const Nav = ({ user }: { user: IUser }) => {
   }
 
   const handleEditUser = () => {
-    setEditItem(userData || user)
+    setEditItem(userData)
     setEdit(true)
   }
 
@@ -144,9 +145,15 @@ const Nav = ({ user }: { user: IUser }) => {
         {user?.role === 'admin' && (
           <div className='hidden md:flex flex-row gap-4 items-center w-full'>
             {/* View Category */}
-            <Link href='admin/view-grocery' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
+            <Link href='admin/view-categories' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
               <PackagePlus className='w-5 h-5 text-green-500' />
               Categories
+            </Link>
+
+            {/* View Category */}
+            <Link href='admin/view-grocery' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
+              <PackagePlus className='w-5 h-5 text-green-500' />
+              Groceries
             </Link>
             {/* Manager Orders */}
             <Link href='admin/manage-orders' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
@@ -274,9 +281,15 @@ const Nav = ({ user }: { user: IUser }) => {
             {/* Items */}
             <div className='flex flex-col gap-3 mt-4'>
               {/* Manage categories */}
-              <Link href='admin/view-grocery' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
+              <Link href='admin/view-categories' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <PackagePlus className='text-white w-5 h-5' />
                 Categories
+              </Link>
+
+              {/* Manage categories */}
+              <Link href='admin/view-grocery' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
+                <PackagePlus className='text-white w-5 h-5' />
+                Groceries
               </Link>
 
               {/* Manager Orders */}

@@ -7,8 +7,15 @@ import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest) {
     try {
+        
+        const session = await auth()
+        
+        if (!session?.user?.id) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+        
         await connectDB();
-
+        
         const formData = await req.formData();
         const getString = (key: string) => formData.get(key) as string;
 

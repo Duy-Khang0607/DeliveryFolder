@@ -25,6 +25,7 @@ export async function PUT(req: NextRequest) {
         const unit = formData.get('unit') as string;
         const price = formData.get('price') as string;
         const file = formData.get('image') as Blob | null;
+        const stock = formData.get('stock') as string;
 
         let imageUrls;
         if (file) {
@@ -35,11 +36,11 @@ export async function PUT(req: NextRequest) {
         }
 
         // Update grocery
-        const grocery = await Grocery.findByIdAndUpdate(_id?.toString(), { name, category, price, unit, image: imageUrls }, { new: true });
+        const grocery = await Grocery.findByIdAndUpdate(_id?.toString(), { name, category, price, unit, image: imageUrls, stock }, { new: true });
         if (!grocery) {
             return NextResponse.json({ success: false, message: 'Grocery not found' }, { status: 404 });
         }
-        
+
         await emitEventHandler('grocery-updated', { grocery: grocery })
 
         return NextResponse.json({ success: true, message: 'Grocery updated successfully', grocery: grocery }, { status: 200 });

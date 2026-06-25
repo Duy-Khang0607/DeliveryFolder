@@ -44,10 +44,12 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
     const [isOnline] = useState<boolean>(editItem?.isOnline || false)
     const [location, setLocation] = useState<{ type: string, coordinates: number[] }>(editItem?.location || { type: 'Point', coordinates: [0, 0] })
     const [showPassword, setShowPassword] = useState(false);
-    const isAdmin = editItem?.role === 'admin'
-    const endpoint = isAdmin
+    const endpoint = editItem?.role === 'admin'
         ? '/api/auth/admin/update-user'
         : '/api/auth/user/update-profile'
+
+
+    console.log({ editItem })
 
     useEffect(() => {
         if (!editItem) return
@@ -262,6 +264,7 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
                                     className={`${inputClass} pr-10`}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    // autoComplete="new-password" // undisable auto fill password 
                                 />
                                 <button
                                     type='button'

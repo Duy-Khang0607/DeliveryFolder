@@ -1,12 +1,11 @@
 'use client'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Box, CardSim, CheckCircle, ChevronDown, ChevronUp, Loader2, LocationEdit, Phone, Truck, User } from 'lucide-react'
+import { Box, CardSim, CheckCircle, ChevronDown, ChevronUp, Loader2, LocationEdit, Package, Phone, Truck, User } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
 import axios from 'axios'
 import { IUserClient } from '../types'
-import { getSocket } from '../lib/socket'
 import { useToast } from "@/app/components/Toast"
 
 
@@ -52,7 +51,7 @@ interface IOrder {
 const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
     const [expand, setExpand] = useState(false)
     const [isOpenImage, setOpenImage] = useState(false)
-    const statusPayment = ['Out of delivery', 'Pending']
+    const statusPayment = ['Out of delivery', 'Pending', 'Cancelled']
     const [status, setStatus] = useState<string>('Pending')
     const [loading, setLoading] = useState(false)
     const { showToast } = useToast()
@@ -80,28 +79,12 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
         setStatus(orders?.status)
     }, [orders?.status])
 
-    useEffect(() => {
-        const socket = getSocket()
-
-        const handleOrderStatusUpdated = (data: any) => {
-            if (data?.orderId?.toString() === orders?._id.toString()) {
-                setStatus((prev) => prev === data?.status ? prev : data?.status)
-            }
-        }
-
-        socket?.on('order-status-updated', handleOrderStatusUpdated)
-
-        return () => {
-            socket.off('order-status-updated', handleOrderStatusUpdated)
-        }
-    }, [])
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className='w-full rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col bg-white'
+            className='w-full rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col bg-white mb-7 last:mb-0'
         >
             {/* Top accent bar — color by status */}
             <div className={`h-1 w-full ${status === 'Delivered' ? 'bg-linear-to-r from-green-400 to-green-600' : status === 'Out of delivery' ? 'bg-linear-to-r from-yellow-400 to-orange-400' : 'bg-linear-to-r from-gray-300 to-gray-400'}`} />
@@ -248,14 +231,20 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                                 className='flex justify-between items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100'
                             >
                                 <div className='flex items-center gap-3'>
-                                    <Image
-                                        src={item?.image[0]}
-                                        width={52}
-                                        height={52}
-                                        onClick={() => setOpenImage(true)}
-                                        alt={item?.name}
-                                        className="object-cover w-[52px] h-[52px] rounded-xl border border-gray-200 cursor-pointer hover:scale-105 transition-transform duration-200"
-                                    />
+                                    {item?.image[0] ? (
+                                        <Image
+                                            src={item?.image[0]}
+                                            width={52}
+                                            height={52}
+                                            onClick={() => setOpenImage(true)}
+                                            alt={item?.name}
+                                            className="object-cover w-[52px] h-[52px] rounded-xl border border-gray-200 cursor-pointer hover:scale-105 transition-transform duration-200"
+                                        />
+                                    ) : (
+                                        <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+                                            <Package className='w-6 h-6 text-green-400' />
+                                        </div>
+                                    )}
                                     <AnimatePresence>
                                         {isOpenImage && item?.image[0] && (
                                             <PopupImage image={item?.image[0]} setOpen={setOpenImage} />

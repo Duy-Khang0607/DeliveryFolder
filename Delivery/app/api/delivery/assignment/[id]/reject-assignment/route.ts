@@ -17,8 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
         const deliveryBoyId = session?.user?.id
 
-        if (!deliveryBoyId) {
-            return NextResponse.json({ success: false, message: "Delivery boy not found" }, { status: 404 });
+        if ((session?.user as any)?.role !== 'deliveryBoy') {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
         const assignment = await DeliveryAssignment.findById(id)

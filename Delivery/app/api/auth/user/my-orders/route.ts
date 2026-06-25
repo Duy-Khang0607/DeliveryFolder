@@ -1,5 +1,6 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
+import { normalizeText } from "@/app/lib/normalizeText";
 import Orders from "@/app/models/orders.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -29,11 +30,12 @@ export async function GET(req: NextRequest) {
 
         // Thêm đọc status param
         const status = search.get('status')
-        // Thêm status vào query
-        const query = {
-            user: session?.user?.id,
-            ...(status ? { status } : {})  // filter nếu có status
-        }
+        const raw = search.get('search')
+        const q = raw ? normalizeText(raw) : null  // normalize cùng cách
+        const query: any = {}
+        query.user = session.user.id  // ← thêm dòng này
+        if (status) query.status = status
+        if (q) query.searchText = { $regex: q, $options: 'i' }
 
         // get total items
         const totalItems = await Orders?.countDocuments(query);

@@ -10,6 +10,10 @@ export async function GET(request: Request) {
 
         const session = await auth()
 
+        if ((session?.user as any)?.role !== 'deliveryBoy') {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+        }
+
         const deliveryBoyId = session?.user?.id
 
         const activeAssignment = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: 'assigned' }).populate({
@@ -18,6 +22,7 @@ export async function GET(request: Request) {
                 path: 'address',
             }
         })
+
         if (!activeAssignment) {
             return NextResponse.json({ success: true, assignment: null, message: 'No active assignment found' }, { status: 200 })
         }

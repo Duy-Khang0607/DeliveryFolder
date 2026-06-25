@@ -25,7 +25,12 @@ export interface IUser {
         coordinates: number[];
     };
     socketId: string | null;
-    isOnline: boolean
+    isOnline: boolean;
+    resetPasswordToken?: string | null;
+    resetPasswordExpires?: Date | null;
+    isEmailVerified: boolean;
+    emailVerificationToken?: string | null;
+    emailVerificationExpires?: Date | null;
 }
 
 
@@ -74,7 +79,12 @@ const userSchema = new mongoose.Schema<IUser>({
             type: [Number],
             default: [0, 0]
         }
-    }
+    },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: null },
+    emailVerificationExpires: { type: Date, default: null },
 }, {
     timestamps: true,
 });

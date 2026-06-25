@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
         // get user id from session
         const session = await auth();
 
+        // check session
+        if (!session?.user?.id) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+
         // update user
         const user = await User?.findOneAndUpdate({ email: session?.user?.email }, { mobile, role }, { new: true });
 

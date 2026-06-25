@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         } : {}
 
         const totalItems = await User?.countDocuments(query);
-        const users = await User?.find(query).lean().skip(skip).limit(limit);
+        const users = await User?.find(query).lean().select('-password').skip(skip).limit(limit);
 
         if (!users) {
             return NextResponse.json({ success: false, message: 'Not found users !' }, { status: 400 });

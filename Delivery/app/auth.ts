@@ -22,7 +22,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import connectDB from "./lib/db";
 import bcrypt from "bcryptjs";
-import User from "./models/user.model";
+import User, { IUser } from "./models/user.model";
 import Google from "next-auth/providers/google";
 import { authConfig } from "./auth.config";
 // Cấu hình NextAuth với các hàm handlers, signIn, signOut, auth
@@ -55,27 +55,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     // 2. Lấy email và password từ form
                     const { email, password } = credentials as { email: string, password: string };
 
-                    // 3. Tìm user trong database theo email
-                    const user = await User.findOne({ email });
+                    // 3. Tìm user trong database theo email (lean = raw MongoDB, không apply schema defaults)
+                    const user = await User.findOne({ email }).lean<IUser>();
                     if (!user) {
-                        return null; // Return null thay vì throw error
+                        return null;
                     }
 
                     // 4. So sánh password với password đã hash trong database
-                    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+                    const isPasswordCorrect = await bcrypt.compare(password, user.password ?? '');
                     if (!isPasswordCorrect) {
-                        return null; // Return null thay vì throw error
+                        return null;
                     }
 
-                    // 5. Return user nếu đăng nhập thành công
+                    // Chỉ chặn khi DB explicitly lưu false (user mới chưa verify)
+                    // undefined = user cũ (legacy) → cho qua
+                    if (user.isEmailVerified === false) {
+                        throw new Error("EMAIL_NOT_VERIFIED");
+                    }
+
+                    // 6. Return user nếu đăng nhập thành công
                     return {
                         id: user._id.toString(),
                         name: user.name,
                         email: user.email,
-                        role: user.role,
+                        role: user.role ?? 'user',
                     };
                 } catch (error) {
-                    // Chỉ log lỗi hệ thống thực sự (DB error, etc.)
+                    if (error instanceof Error && error.message === "EMAIL_NOT_VERIFIED") {
+                        throw error; // re-throw để NextAuth truyền về client
+                    }
                     console.error("❌ Auth error:", error);
                     return null;
                 }
@@ -112,53 +120,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // SESSION: Cấu hình session
     session: {
         strategy: "jwt",  // Sử dụng JWT thay vì database sessions (nhẹ hơn, không cần query DB)
-        maxAge: 30 * 24 * 60 * 60, // Thời gian sống của session: 30 ngày (tính bằng giây)
+        maxAge: 7 * 24 * 60 * 60,   // tối đa 7 ngày (remember me)
+        updateAge: 60 * 60,          // gia hạn mỗi 1 giờ khi active
     },
 
     // SECRET: Key bí mật để mã hóa JWT token (BẮT BUỘC phải có trong .env)
     secret: process.env.NEXTAUTH_SECRET,
-
-    //     // jwt callback: Được gọi KHI TẠO hoặc CẬP NHẬT JWT token
-    //     // - Chạy ngay sau khi user đăng nhập thành công (authorize return user)
-    //     // - Mục đích: Thêm thông tin custom vào JWT token (id, role, ...)
-    //     // - Token này được mã hóa và lưu trên client (cookie)
-    //     jwt: ({ token, user, trigger, session }) => {
-    //         // Chỉ khi đăng nhập lần đầu (user có giá trị)
-    //         if (user) {
-    //             token.id = user.id as string;
-    //             token.name = user.name as string;
-    //             token.email = user.email as string;
-    //             token.role = user.role as string; // Thêm role để phân quyền
-    //         }
-
-    //         // Khi client gọi update({ role: '...' })
-    //         if (trigger === 'update' && session?.role) {
-    //             token.role = session.role;
-    //         }
-
-    //         return token;
-    //     },
-
-
-
-    //     // session callback: Được gọi KHI LẤY SESSION từ client
-    //     // - Chạy mỗi khi gọi useSession() hoặc getSession()
-    //     // - Mục đích: Đưa data từ JWT token vào session object
-    //     // - Session này được trả về cho client để sử dụng trong components
-    //     session: ({ session, token }) => {
-    //         if (session.user) {
-    //             session.user.id = token.id as string;
-    //             session.user.name = token.name as string;
-    //             session.user.email = token.email as string;
-    //             session.user.role = token.role as string; // Client có thể truy cập session.user.role
-    //         }
-    //         return session;
-    //     }
-    // },
-
-    // PAGES: Custom URL cho các trang authentication
-    // pages: {
-    //     signIn: "/login",  // Redirect đến trang /login khi cần đăng nhập
-    //     error: "/login"    // Redirect đến trang /login khi có lỗi xảy ra
-    // },
 }) 

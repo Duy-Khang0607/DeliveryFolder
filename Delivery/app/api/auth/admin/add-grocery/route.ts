@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         const unit = formData.get('unit') as string;
         const price = formData.get('price') as string;
         const file = formData.get('image') as Blob | null;
+        const stock = formData.get('stock') as string;
 
         let imageUrls;
         if (file) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Create grocery
-        const grocery = await Grocery.create({ name, category, price, unit, image: imageUrls ? [imageUrls] : [] });
+        const grocery = await Grocery.create({ name, category, price, unit, image: imageUrls ? [imageUrls] : [], stock });
 
         await emitEventHandler('grocery-created', { grocery: grocery })
 

@@ -1,5 +1,5 @@
 'use client'
-import { CircleMinus, CirclePlus, DollarSign, Info, Package, ShoppingBag, ShoppingBasket, Tag, Trash } from 'lucide-react'
+import { AlertTriangle, CircleMinus, CirclePlus, DollarSign, Info, Package, ShoppingBag, ShoppingBasket, Tag, Trash, Warehouse } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -24,6 +24,28 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
     const { data, isLoading } = useGetGroceryById(id)
     const item = data?.grocery as IGrocery
 
+    // Stock
+    const stock = item?.stock ?? 0
+    const isOut = stock === 0
+    const isLow = stock > 0 && stock <= 10
+    const MAX_DISPLAY = 100
+
+    const badgeClass = isOut
+        ? 'bg-red-50 text-red-600 border-red-200'
+        : isLow
+            ? 'bg-amber-50 text-amber-600 border-amber-200'
+            : 'bg-green-50 text-green-700 border-green-200'
+
+    const barColor = isOut
+        ? 'bg-red-400'
+        : isLow
+            ? 'bg-amber-400'
+            : 'bg-green-500'
+
+    const barWidth = `${Math.min((stock / MAX_DISPLAY) * 100, 100)}%`
+
+    const isStockColor = isOut ? 'text-red-500' : isLow ? 'text-amber-400' : 'text-green-700'
+
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10 pb-20'>
             {/* Back to home */}
@@ -36,7 +58,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className='gap-2 flex flex-row w-full justify-center mt-4 mb-6'
+                className='gap-2 flex flex-row w-full justify-center items-center mt-4 mb-6'
             >
                 <Info className='w-10 h-10 text-gray-400' />
                 <span className='text-green-700 text-2xl sm:text-3xl md:text-4xl font-bold'>Item Detail</span>
@@ -81,9 +103,8 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                     }}
                                 />
                                 <motion.div
-                                    className='relative bg-white rounded-[14px] border border-transparent 
-               shadow-md hover:shadow-xl transition-all duration-300 
-               overflow-hidden flex flex-col group z-10'>
+                                    className='relative bg-white rounded-[14px] border border-transparent shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group z-10'>
+
                                     {/* Top accent bar */}
                                     <div className='h-1 w-full bg-linear-to-r from-green-400 to-green-700' />
 
@@ -126,6 +147,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
 
                                             {/* Details rows */}
                                             <div className='flex flex-col gap-2.5'>
+                                                {/* Price && Unit */}
                                                 <div className='flex items-center gap-2'>
                                                     <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
                                                     <p className='text-xl font-extrabold text-green-700'>${item?.price}</p>
@@ -135,6 +157,44 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                                     <p className='text-sm text-gray-500'>
                                                         Unit: <span className='font-semibold text-gray-700'>{item?.unit || '—'}</span>
                                                     </p>
+                                                </div>
+
+                                                {/* ── Stock display ── */}
+                                                <div className='flex flex-col gap-2 pt-1'>
+                                                    {/* Badge row */}
+                                                    <div className='flex items-center justify-between'>
+                                                        <div className='flex items-center gap-1.5'>
+                                                            <Warehouse className='w-4 h-4 text-gray-400 shrink-0' />
+                                                            <span className='text-sm text-gray-500'>Availability</span>
+                                                            <span className={`${isStockColor} font-bold`}>{stock}</span>
+                                                        </div>
+                                                        <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeClass}`}>
+                                                            {isOut && <AlertTriangle className='w-3 h-3' />}
+                                                            {isOut ? 'Out of Stock' : isLow ? `Only ${stock} left!` : 'In Stock'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Progress bar */}
+                                                    <div className='h-1.5 w-full bg-gray-100 rounded-full overflow-hidden'>
+                                                        <motion.div
+                                                            className={`h-full rounded-full ${barColor}`}
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: barWidth }}
+                                                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Low stock warning */}
+                                                    {isLow && !isOut && (
+                                                        <motion.p
+                                                            initial={{ opacity: 0, y: -4 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className='text-xs text-amber-600 font-semibold flex items-center gap-1'
+                                                        >
+                                                            <AlertTriangle className='w-3 h-3' />
+                                                            Hurry! Almost sold out.
+                                                        </motion.p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -185,13 +245,17 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: -6 }}
                                                     transition={{ duration: 0.25 }}
-                                                    onClick={() => dispatch(addToCart({ ...item, quantity: 1 }))}
-                                                    whileTap={{ scale: 0.97 }}
-                                                    whileHover={{ scale: 1.01 }}
-                                                    className='w-full bg-green-600 hover:bg-green-700 text-white rounded-xl flex flex-row justify-center items-center gap-2 py-3 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm'
+                                                    onClick={() => (item?.stock ?? 0) > 0 && dispatch(addToCart({ ...item, quantity: 1 }))}
+                                                    whileTap={(item?.stock ?? 0) > 0 ? { scale: 0.97 } : {}}
+                                                    whileHover={(item?.stock ?? 0) > 0 ? { scale: 1.01 } : {}}
+                                                    disabled={(item?.stock ?? 0) === 0}
+                                                    className={`w-full rounded-xl flex flex-row justify-center items-center gap-2 py-3 text-sm font-semibold transition-all duration-200 shadow-sm
+                                                        ${(item?.stock ?? 0) === 0
+                                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                            : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'}`}
                                                 >
                                                     <ShoppingBag className='w-5 h-5' />
-                                                    Add to cart
+                                                    {(item?.stock ?? 0) === 0 ? 'Out of Stock' : 'Add to cart'}
                                                 </motion.button>
                                             )}
                                         </AnimatePresence>
@@ -245,7 +309,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                 <p className='text-xs text-gray-400 font-medium'>{cartData?.length} item{cartData?.length > 1 ? 's' : ''} in cart</p>
                                 <div className='flex flex-col gap-2 max-h-40 overflow-y-auto'>
                                     {cartData?.map((ci, idx) => (
-                                        <div key={idx} className='flex items-center justify-between gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100'>
+                                        <div key={ci?._id?.toString() || idx} className='flex items-center justify-between gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100'>
                                             <div className='flex items-center gap-2 min-w-0'>
                                                 <div className='relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-gray-200'>
                                                     <Image src={ci?.image[0]} alt={ci?.name} fill className='object-cover' />
@@ -285,6 +349,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
 
             </div>
 
+            {/* Popup Image */}
             <AnimatePresence>
                 {open && item?.image[0] && (
                     <PopupImage image={item?.image[0]} setOpen={setOpen} />

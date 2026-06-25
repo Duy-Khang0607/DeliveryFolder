@@ -1,63 +1,15 @@
 'use client'
 import React, { ChangeEvent, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BadgePlus, Box, Camera, DollarSign, Edit, Loader2, User } from 'lucide-react'
+import { BadgePlus, Box, Camera, DollarSign, Edit, Loader, Loader2, User } from 'lucide-react'
 import { useToast } from './Toast'
 import axios from 'axios'
 import Image from 'next/image'
 import PopupImage from '../HOC/PopupImage'
 import { IGrocery } from '../models/grocery.model'
-
-const categories = [
-    "Fresh Food",
-    "Vegetables",
-    "Fruits",
-    "Meat",
-    "Seafood",
-    "Eggs & Dairy",
-    "Frozen Food",
-    "Rice & Noodles",
-    "Cooking Oil & Spices",
-    "Sauces & Condiments",
-    "Canned Food",
-    "Snacks",
-    "Beverages",
-    "Coffee & Tea",
-    "Bakery",
-    "Health & Supplements",
-    "Household Supplies",
-    "Cleaning Products",
-    "Personal Care",
-    "Baby Products",
-    "Pet Supplies"
-]
-
-const units = [
-    "Kilogram (kg)",
-    "Gram (g)",
-    "Milligram (mg)",
-    "Liter (L)",
-    "Milliliter (ml)",
-    "Piece (pcs)",
-    "Pack (pack)",
-    "Box (box)",
-    "Bottle (btl)",
-    "Can (can)",
-    "Bag (bag)",
-    "Tray (tray)",
-    "Bunch (bunch)",
-    "Set (set)",
-    "Dozen (doz)",
-    "Carton (ctn)",
-    "Bundle (bdl)",
-    "Roll (roll)",
-    "Jar (jar)",
-    "Tube (tube)",
-    "Sack (sack)",
-    "Gallon (gal)",
-    "Pound (lb)",
-    "Ounce (oz)"
-]
+import { useCategories, useUnits } from '../hooks/useCategoriesUnits'
+import { ICategories } from '../models/categories.model'
+import { IUnits } from '../models/units.model'
 
 
 interface FormGroceryProps {
@@ -75,13 +27,14 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
     const [loadingImage, setLoadingImage] = useState<boolean>(false)
     const [backendImage, setBackendImage] = useState<File | null>(null)
     const [preview, setPreview] = useState<string | null>(null)
-    const disableAdd = editItem?.name.toString() && editItem?.category.toString() && (editItem?.unit?.toString() || '') && editItem?.price.toString();
-    const [open, setOpen] = useState(false);
+    const disableAdd = editItem?.name.toString() && editItem?.category.toString() && (editItem?.unit?.toString() || '') && editItem?.price.toString() && editItem?.stock > 0;
+    const [open, setOpen] = useState<boolean>(false);
     const { showToast } = useToast();
     const [name, setName] = useState<string>(editItem?.name.toString() || '')
     const [category, setCategory] = useState<string>(editItem?.category.toString() || '')
     const [unit, setUnit] = useState<string>(editItem?.unit?.toString() || '')
     const [price, setPrice] = useState<string>(editItem?.price?.toLocaleString('en-US') || '')
+    const [stock, setStock] = useState<number>(editItem?.stock || 0)
 
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +63,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
             formData.append('category', category)
             formData.append('unit', unit)
             formData.append('price', price.replace(/,/g, ''))
+            formData.append('stock', stock.toString())
             if (backendImage) formData.append('image', backendImage)
             const response: any = await axios.put('/api/auth/admin/update-grocery', formData)
             if (response?.data?.success) {
@@ -134,6 +88,11 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
         const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
         setPrice(formatted)
     }
+
+    // Categories & Units
+    const { data: categories, isLoading: categoriesLoading } = useCategories()
+
+    const { data: untis, isLoading: unitsLoading } = useUnits()
 
     const avatarSrc = preview || (typeof editItem?.image?.[0] === 'string' ? editItem?.image?.[0] : null)
     const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
@@ -229,23 +188,48 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                                 <label className={labelClass}>
                                     <Box className='w-3.5 h-3.5' /> Category
                                 </label>
-                                <select required className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} >
-                                    <option value=''>Select category</option>
-                                    {categories?.map((item, index) => (
-                                        <option key={index} value={item}>{item}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        required
+                                        disabled={categoriesLoading}
+                                        className={inputClass}
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
+                                    >
+                                        <option value=''>Select category</option>
+                                        {categories?.filter((item: ICategories) => item?.isActive).map((item: ICategories, index: number) => (
+                                            <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
+                                        ))}
+                                    </select>
+                                    {categoriesLoading && (
+                                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                            <Loader className="w-5 h-5 animate-spin text-gray-400" />
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <div>
                                 <label className={labelClass}>
                                     <Box className='w-3.5 h-3.5' /> Unit
                                 </label>
-                                <select required className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} >
-                                    <option value=''>Select units</option>
-                                    {units?.map((item, index) => (
-                                        <option key={index} value={item}>{item}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        required
+                                        disabled={unitsLoading}
+                                        className={inputClass}
+                                        value={unit}
+                                        onChange={(e) => setUnit(e.target.value)}>
+                                        <option value=''>Select units</option>
+                                        {untis?.filter((item: IUnits) => item?.isActive).map((item: IUnits, index: number) => (
+                                            <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
+                                        ))}
+                                    </select>
+                                    {unitsLoading && (
+                                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                            <Loader className="w-5 h-5 animate-spin text-gray-400" />
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -260,6 +244,22 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                                     placeholder='Enter price'
                                     className={`${inputClass} pr-10`}
                                     value={price} onChange={handlePriceChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Stock */}
+                        <div>
+                            <label className={labelClass}>
+                                <DollarSign className='w-3.5 h-3.5' /> Stock
+                            </label>
+                            <div className='relative'>
+                                <input
+                                    type="text"
+                                    placeholder='Enter stock'
+                                    className={`${inputClass} pr-10`}
+                                    value={stock}
+                                    onChange={(e) => setStock(Number(e.target.value))}
                                 />
                             </div>
                         </div>

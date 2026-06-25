@@ -1,8 +1,9 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
+import { sendEmail } from "@/app/lib/mailer";
 import DeliveryAssignment from "@/app/models/deliveryAssignment.model";
-import Orders from "@/app/models/orders.model";
+import Orders, { IOrder } from "@/app/models/orders.model";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -121,6 +122,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
                     latitude: b?.location?.coordinates[1],
                     longitude: b?.location?.coordinates[0],
                 }))
+            }
+
+            // Gửi email thông báo đến user khi đơn hàng được vận chuyển tới delivery
+            try {
+                const userDoc = order?.user as IOrder
+                if (userDoc) {
+                    await sendEmail(
+                        order?.user?.email,
+                        "Order Out of delivery - Delivery App #" + String(order?._id)?.slice(-6),
+                        `<h2>Your order is out for delivery! <span style="font-size:1.5em;">🚚</span></h2>
+                        <p>Order ID: <strong>#${String(order?._id)?.slice(-6)}</strong></p>
+                        <p>Thank you for using our service !</p>`
+                    )
+                }
+            } catch (emailError) {
+                return NextResponse.json({ success: false, emailError, message: 'Failed to send email notification' }, { status: 500 })
             }
 
         }

@@ -10,6 +10,7 @@ export interface IGrocery {
     image: string[],
     createdAt: Date,
     updatedAt: Date,
+    stock: number,
 }
 
 const grocerySchema = new mongoose.Schema<IGrocery>({
@@ -32,6 +33,11 @@ const grocerySchema = new mongoose.Schema<IGrocery>({
     image: {
         type: [String],
         required: true,
+    },
+    stock: {
+        type: Number,
+        default: 0,
+        min: 0
     }
 }, { timestamps: true });
 

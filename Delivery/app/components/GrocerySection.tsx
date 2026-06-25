@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { getSocket } from '../lib/socket'
 import { useGroceryPaginatedUser } from '../hooks/useGroceryPaginated'
+import { Loader2 } from 'lucide-react'
 
 const GrocerySection = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -17,7 +18,7 @@ const GrocerySection = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const searchParams = useSearchParams()
     const q = searchParams.get('q') || ''
-    const { data } = useGroceryPaginatedUser(currentPage, q)
+    const { data, isFetching } = useGroceryPaginatedUser(currentPage, q)
     const groceries = data?.groceries ?? []
     const totalPages = data?.pagination?.totalPages ?? 1
     const totalItems = data?.pagination?.totalItems ?? 0
@@ -67,6 +68,7 @@ const GrocerySection = () => {
 
     }, [queryClient, currentPage, q])
 
+
     return (
         <>
             <CategorySilder selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
@@ -77,24 +79,31 @@ const GrocerySection = () => {
                 <h2 className='text-green-700 font-extrabold text-3xl tracking-wide text-center'>Popular Grocery Items</h2>
 
                 {/* Grocery Items */}
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-10 w-full'>
-                    <AnimatePresence mode='popLayout' initial={false} key={selectedCategory}>
-                        {filteredGroceryList?.length > 0 ? (
-                            filteredGroceryList?.map((item: IGrocery) => (
-                                <GroceryItemCard key={item?._id.toString()} groceries={item} />
-                            ))
-                        ) : (
-                            <motion.div
-                                key='no-items'
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                                className='w-full h-full'>
-                                <p className='text-gray-500 text-sm md:text-md font-semibold'>No groceries items found for this category</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                {isFetching ? (
+                    <div className='w-full h-full flex items-center justify-center py-20'>
+                        <Loader2 className='animate-spin w-15 h-15 md:w-20 md:h-20 text-green-700' />
+                    </div>
+                ) : (
+                    <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-10 w-full'>
+                        <AnimatePresence mode='popLayout' initial={false} key={selectedCategory}>
+                            {filteredGroceryList?.length > 0 ? (
+                                filteredGroceryList?.map((item: IGrocery) => (
+                                    <GroceryItemCard key={item?._id.toString()} groceries={item} />
+                                ))
+                            ) : (
+                                <motion.div
+                                    key='no-items'
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4 }}
+                                    className='w-full h-full'>
+                                    <p className='text-gray-500 text-sm md:text-md font-semibold'>No groceries items found for this category</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+
 
                 {/* Pagination */}
                 {totalItems > 0 && (

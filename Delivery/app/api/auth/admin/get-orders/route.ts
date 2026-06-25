@@ -1,5 +1,6 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
+import { normalizeText } from "@/app/lib/normalizeText";
 import Orders from "@/app/models/orders.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -22,10 +23,11 @@ export async function GET(req: NextRequest) {
 
         // Thêm đọc status param
         const status = search.get('status')
-        // Thêm status vào query
-        const query = {
-            ...(status ? { status } : {})  // filter nếu có status
-        }
+        const raw = search.get('search')
+        const q = raw ? normalizeText(raw) : null  // normalize cùng cách
+        const query: any = {}
+        if (status) query.status = status
+        if (q) query.searchText = { $regex: q, $options: 'i' }
 
         const totalItems = await Orders?.countDocuments(query);
 
@@ -34,6 +36,7 @@ export async function GET(req: NextRequest) {
         if (!orders) {
             return NextResponse.json({ success: false, message: 'Not found orders items' }, { status: 400 });
         }
+
         return NextResponse.json({
             success: true, pagination: {
                 currentPage: page,
@@ -42,6 +45,7 @@ export async function GET(req: NextRequest) {
                 itemsPerPage: limit,
             }, orders
         }, { status: 200 })
+        
     } catch (error) {
         return NextResponse.json({ success: false, message: 'Get failed order items' }, { status: 500 });
     }

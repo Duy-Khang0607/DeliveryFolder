@@ -146,11 +146,14 @@ const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder)
             </div>
 
             {/* List cartegory */}
-            <div ref={scrollRef} className='flex gap-4 overflow-hidden scroll-smooth mt-10 scrollbar-hide'>
+            <div ref={scrollRef}
+                className='flex gap-4 overflow-x-auto scroll-smooth mt-10 scrollbar-hide cursor-grab active:cursor-grabbing'
+                style={{ WebkitOverflowScrolling: 'touch' }}
+            >
                 {categories?.map((item) => {
                     const Icon = item?.icon;
                     const isSelected = selectedCategory === item?.category;
-                    return <div key={item?.id} onClick={() => onSelectCategory(isSelected ? '' : item?.category)} className={`min-w-[150px] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all rounded-2xl ${item.color} shadow-md hover:shadow-xl ${isSelected ? 'border-green-400 border-2 shadow-green-700/50' : ''}`}>
+                    return <div key={item?.id} onClick={() => onSelectCategory(isSelected ? '' : item?.category)} className={`min-w-[150px] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all rounded-2xl  ${item.color} shadow-md hover:shadow-xl snap-proximity ${isSelected ? 'border-green-400 border-2 shadow-green-700/50' : ''}`}>
                         <Icon className='w-10 h-10' />
                         <p className='text-center text-sm md:text-base font-semibold text-gray-600'>{item?.category}</p>
                     </div>

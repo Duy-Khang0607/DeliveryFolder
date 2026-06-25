@@ -6,6 +6,11 @@ export const authConfig = {
         error: "/login"
     },
     callbacks: {
+        // Thêm callback này để middleware biết route nào cần protect
+        authorized({ auth }) {
+            return !!auth?.user  // có user trong session → cho qua
+        },
+
         jwt: ({ token, user }) => {
             if (user) {
                 token.id = user.id as string
@@ -15,6 +20,7 @@ export const authConfig = {
             }
             return token
         },
+        
         session: ({ session, token }) => {
             if (session.user) {
                 session.user.id = token.id as string

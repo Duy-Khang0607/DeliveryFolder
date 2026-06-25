@@ -6,8 +6,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        
+        // check session
+        const session = await auth()
+        if (!session?.user?.id) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+        
         await connectDB()
-
+        
         const { id } = await params
         const grocery = await Grocery.findById(id).lean()
         if (!grocery) return NextResponse.json({ success: false }, { status: 404 })

@@ -10,8 +10,12 @@ export async function GET() {
 
         const session = await auth();
 
-        if (!session || !session?.user) {
-            return NextResponse.json({ success: false, message: 'User is not authenticated' }, { status: 400 });
+        if (!session?.user) {
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        }
+
+        if ((session?.user as any)?.role !== 'deliveryBoy') {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
         const assignments = await DeliveryAssignment.find({
