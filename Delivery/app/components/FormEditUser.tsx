@@ -49,8 +49,6 @@ const FormEditUser = ({ isEdit, title, description, setEdit, editItem, fetchUser
         : '/api/auth/user/update-profile'
 
 
-    console.log({ editItem })
-
     useEffect(() => {
         if (!editItem) return
         setName(editItem.name || '')

@@ -39,7 +39,6 @@ const ResetPassword = () => {
             } else {
                 showToast(res?.data?.message, "error");
             }
-            console.log({ res })
         } catch (error: any) {
             showToast(error?.response?.data?.message || "Failed to reset password. Please try again later", "error");
         } finally {

@@ -75,7 +75,6 @@ const ManageOrders = () => {
             queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
         const handleOrderStatusUpdated = (data: any) => {
-            console.log("dataAdmin", data)
             if (data?.status === 'Cancelled' && data?.orderId) {
                 showToast(`Order ${data?.orderId?.toString()?.slice(-6)} cancelled successfully`, 'success')
             }

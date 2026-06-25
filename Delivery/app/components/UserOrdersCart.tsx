@@ -53,7 +53,6 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
             }))
             const res = await axios.post('/api/auth/user/reorder', { items })
             const { available, unavailable } = res.data
-            console.log({available, unavailable})
 
             if (available.length === 0) {
                 showToast('All items are no longer available', 'error')

@@ -1,5 +1,5 @@
 'use client'
-import { BadgePlus, Upload, Loader2, Eye, ArrowLeft, Package, EyeOff, Users, User, Box, Mail, Lock, Plus, Phone, Camera } from 'lucide-react'
+import { BadgePlus, Loader2, Eye, EyeOff, Users, User, Mail, Lock, Plus, Phone, Camera } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChangeEvent, useState } from 'react'
 import Image from 'next/image'
@@ -7,7 +7,6 @@ import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import PopupImage from '@/app/HOC/PopupImage'
 import ButtonHome from '@/app/components/ButtonHome'
-import { data } from '@/app/data'
 import Link from 'next/link'
 
 const AddUser = () => {
