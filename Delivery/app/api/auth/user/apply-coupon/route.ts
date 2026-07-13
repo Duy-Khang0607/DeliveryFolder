@@ -1,6 +1,6 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
-import Coupon from "@/app/models/coupon.model";
+import Coupon, { ICoupon } from "@/app/models/coupon.model";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const session = await auth();
-        if (!session?.user?.id) {
+
+        const userId = (session?.user as any)?.id;
+
+        if (!userId) {
             return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
         }
 
@@ -36,8 +39,9 @@ export async function POST(req: NextRequest) {
 
         // Check already used by this user
         const alreadyUsed = coupon.usedBy.some(
-            (id: any) => id.toString() === session.user.id
+            (id: ICoupon) => id?.toString() === userId
         );
+
         if (alreadyUsed) {
             return NextResponse.json({ success: false, message: 'You have already used this coupon' }, { status: 400 });
         }
