@@ -1,6 +1,7 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { emitEventHandler } from "@/app/lib/emitEventHandler";
+import Coupon from "@/app/models/coupon.model";
 import Grocery from "@/app/models/grocery.model";
 import Orders from "@/app/models/orders.model";
 import User from "@/app/models/user.model";
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
         }
 
         // get body
-        const { userId, items, paymentMethod, totalAmount, address, idempotencyKey } = await req.json();
+        const { userId, items, paymentMethod, totalAmount, address, idempotencyKey, couponCode } = await req.json();
 
         // Check req
         if (!userId || !Array.isArray(items) || items?.length === 0 || !paymentMethod || totalAmount == null || !address) {
@@ -67,18 +68,64 @@ export async function POST(req: NextRequest) {
             decremented.push({ id: item.grocery, qty: item.quantity })
           }
 
+        // Re-validate coupon server-side
+        let serverDiscountAmount = 0;
+        let validCouponCode: string | null = null;
+
+        if (couponCode) {
+            const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+            const subTotal = items.reduce((sum: number, item: any) => sum + Number(item.price) * Number(item.quantity), 0);
+            const deliveryFee = subTotal > 100 ? 0 : 40;
+
+            const couponValid =
+                coupon &&
+                coupon.isActive &&
+                (!coupon.expiresAt || new Date(coupon.expiresAt) > new Date()) &&
+                (coupon.maxUses === null || coupon.usedCount < coupon.maxUses) &&
+                !coupon.usedBy.some((id: any) => id.toString() === userId) &&
+                subTotal >= coupon.minOrderAmount;
+
+            if (couponValid) {
+                if (coupon.discountType === 'percentage') {
+                    serverDiscountAmount = (subTotal * coupon.discountValue) / 100;
+                } else {
+                    serverDiscountAmount = Math.min(coupon.discountValue, subTotal);
+                }
+                serverDiscountAmount = Math.round(serverDiscountAmount * 100) / 100;
+                validCouponCode = coupon.code;
+            }
+        }
+
+        // Tính lại totalAmount server-side
+        const subTotal = items.reduce((sum: number, item: any) => sum + Number(item.price) * Number(item.quantity), 0);
+        const deliveryFee = subTotal > 100 ? 0 : 40;
+        const finalAmount = Math.max(subTotal + deliveryFee - serverDiscountAmount, 0);
+
         // Create order
         const newOrder = await Orders.create({
             user: userId,
             items,
             paymentMethod,
-            totalAmount,
+            totalAmount: finalAmount,
             address,
-            idempotencyKey: idempotencyKey || null
+            idempotencyKey: idempotencyKey || null,
+            couponCode: validCouponCode,
+            discountAmount: serverDiscountAmount,
         })
+
+        // Cập nhật coupon usage sau khi tạo order thành công
+        if (validCouponCode) {
+            await Coupon.findOneAndUpdate(
+                { code: validCouponCode },
+                { $inc: { usedCount: 1 }, $push: { usedBy: userId } }
+            );
+        }
 
         // Gọi event socket khi order thanh toán thành công
         await emitEventHandler("new-order", newOrder)
+
+        // Gọi event socket cập nhật stock
+        await emitEventHandler("grocery-updated", { groceryIds: items.map(i => i.grocery) })
 
         // Trả order thành công
         return NextResponse.json({ success: true, message: 'Create new order successfully', newOrder }, { status: 201 });

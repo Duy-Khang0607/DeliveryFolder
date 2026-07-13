@@ -48,7 +48,8 @@ const GrocerySection = () => {
             queryClient.invalidateQueries({ queryKey: ['grocery'] })
         }
 
-        const handleGroceryUpdated = () => {
+        const handleGroceryUpdated = (data: any) => {
+            console.log({ data })
             queryClient.invalidateQueries({ queryKey: ['grocery'] })
         }
 

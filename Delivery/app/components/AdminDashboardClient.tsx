@@ -1,12 +1,16 @@
 'use client'
 
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { ReactElement } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 import { getSocket } from "../lib/socket"
 import { useToast } from "./Toast"
-import { Wifi, WifiOff } from "lucide-react"
+import { ArrowLeft, ArrowRight, Box, CheckCircle, DollarSign, Loader2, Package, TrendingUp, Truck, User, Wifi, WifiOff, X } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import axios from "axios"
+import Image from "next/image"
+import { useDeliveryDashboard, useDeliveryHistory } from "../hooks/useDeliveryDashboard"
 
 interface propType {
   earning: {
@@ -22,77 +26,65 @@ interface propType {
   }
 }
 
+// ── Delivery boy stats type ────────────────────────────────
+interface DeliveryBoyWithStats {
+  _id: string
+  name: string
+  email: string
+  mobile?: string
+  image?: string | null
+  isOnline: boolean
+  completedDeliveries: number
+  totalBroadcasted: number
+  totalRejected: number
+  acceptanceRate: number
+  totalEarnings: number
+  lastDelivery: string | null
+}
+
+// Icon map client-side (icons không serialize qua JSON)
+const STAT_ICONS: Record<string, ReactElement> = {
+  "Total Orders": <Box className='w-5 h-5 text-green-400' />,
+  "Total Customers": <User className='w-5 h-5 text-green-400' />,
+  "Pending Deliveries": <Truck className='w-5 h-5 text-green-400' />,
+  "Total Revenue": <DollarSign className='w-5 h-5 text-green-400' />,
+}
+
 const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
   const [filter, setFilter] = useState<"today" | "sevenDays" | "total">("today")
-  const [earningState, setEarningState] = useState(earning)
-  const [statsState, setStatsState] = useState(stats)
-  const [chartDataState, setChartDataState] = useState(chartData || {})
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
+
+  // Delivery boy history state
+  const [selectedBoy, setSelectedBoy] = useState<DeliveryBoyWithStats | null>(null)
+  const [historyPage, setHistoryPage] = useState(1)
+
+  // Dashboard stats — initialData từ server props, refetch khi socket new-order
+  const { data: dashboardData } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: () => axios.get('/api/auth/admin/dashboard-stats').then(r => r.data),
+    initialData: {
+      earning,
+      stats: stats.map(s => ({ title: s.title, value: s.value })),
+      chartData,
+    },
+    staleTime: 0,
+  })
+
+  const earningState = dashboardData?.earning ?? earning
+  const statsState = (dashboardData?.stats ?? stats).map((s: { title: string; value: number }) => ({
+    ...s,
+    icon: STAT_ICONS[s.title] ?? null,
+  }))
+  const chartDataState = dashboardData?.chartData ?? chartData
+
+  // Fetch delivery boys
+  const { data: deliveryBoys, isLoading: dbLoading } = useDeliveryDashboard()
+
+  // Fetch history for selected boy
+  const { data: historyData, isLoading: historyLoading } = useDeliveryHistory(selectedBoy?._id, historyPage)
 
   const title = filter === "today" ? "Today" : filter === "sevenDays" ? "Last 7 Days" : "Total"
-
-  useEffect(() => {
-    const socket = getSocket()
-    socket?.on('all-rejected', (data) => {
-      showToast(`No delivery boy accepted order #${data?.orderId?.toString()?.slice(-6)}`, 'warning')
-    })
-    return () => {
-      socket.off('all-rejected')
-    }
-  }, [])
-
-  useEffect(() => {
-    const socket = getSocket()
-
-    const handleNewOrder = (newOrder: any) => {
-      const orderAmount = Number(newOrder?.totalAmount) || 0;
-      setEarningState(prev => ({
-        today: prev?.today + orderAmount,
-        sevenDays: prev?.sevenDays + orderAmount,
-        total: prev?.total + orderAmount,
-      }))
-
-      setStatsState((prev) => prev?.map((item) => {
-        return {
-          ...item,
-          value: item?.title === "Total Orders" ? item?.value + 1 :
-            item?.title === "Pending Deliveries" ? item?.value + 1 :
-              item?.title === "Total Revenue" ? item?.value + orderAmount : item?.value,
-        }
-      }) || [])
-
-      setChartDataState((prev) => {
-        const orderDate = new Date(newOrder?.createdAt || Date.now())
-        // Key cho từng dataset — phải khớp với format khi tạo trong AdminDashboard.tsx
-        const todayKey = `${orderDate.getHours().toString().padStart(2, '0')}:00`
-        const sevenDaysKey = orderDate.toLocaleDateString('en-US', {
-          weekday: 'short', month: 'short', day: 'numeric'
-        })
-        const allTimeKey = orderDate.toLocaleDateString('en-US', {
-          month: 'short', year: '2-digit'
-        })
-        return {
-          today: prev?.today?.map((item) =>
-            item.day === todayKey ? { ...item, orders: item.orders + 1 } : item
-          ),
-          sevenDays: prev?.sevenDays?.map((item) =>
-            item.day === sevenDaysKey ? { ...item, orders: item.orders + 1 } : item
-          ),
-          allTime: prev?.allTime?.map((item) =>
-            item.day === allTimeKey ? { ...item, orders: item.orders + 1 } : item
-          ),
-        }
-      })
-    }
-
-    // Khi có đơn hàng mới, cập nhật số tiền earning tương ứng theo filter
-    socket?.on('new-order', handleNewOrder)
-
-    return () => {
-      socket.off('new-order', handleNewOrder)
-    }
-
-  }, [])
 
   const activeChartData =
     filter === "today" ? chartDataState?.today
@@ -105,35 +97,48 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
     user: { label: 'User', color: 'text-blue-200' },
   }
 
-
   const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean, name: string, role: string }) => {
     const { userId, isOnline, name, role } = data
     const displayName = name || `#${userId.slice(-6)}`
     const config = ROLE_CONFIG[role || ''] || { label: 'User', color: 'text-blue-200' }
 
-
-    showToast(
-      <div className="flex flex-col leading-tight text-green-700">
-        <span className="font-bold text-sm">{displayName}</span>
-        <span className="flex items-center gap-1">
-          {config.label} ·
-          {isOnline
-            ? <><Wifi className='w-4 h-4 font-bold text-green-700' /> Online</>
-            : <><WifiOff className='w-4 h-4 font-bold text-red-700' /> Offline</>
-          }
-        </span>
-      </div>,
-      isOnline ? 'success' : 'error'
-    )
+    if (data) {
+      showToast(
+        <div className="flex flex-col leading-tight text-green-700">
+          <span className="font-bold text-sm">{displayName}</span>
+          <span className="flex items-center gap-1">
+            {config.label} ·
+            {isOnline
+              ? <><Wifi className='w-4 h-4 font-bold text-green-700' /> Online</>
+              : <><WifiOff className='w-4 h-4 font-bold text-red-700' /> Offline</>
+            }
+          </span>
+        </div>,
+        isOnline ? 'success' : 'error'
+      )
+    }
+    queryClient.invalidateQueries({ queryKey: ['admin-delivery-boys'] })
   }
 
   useEffect(() => {
     // Lắng nghe socket khi user offline/online
     const socket = getSocket()
 
-    socket.on('user-status-updated', handleUserStatusUpdated)
+    const handleNewOrder = () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] })
+    }
 
-    return () => { socket.off('user-status-updated', handleUserStatusUpdated) }
+    socket?.on('new-order', handleNewOrder)
+    socket.on('user-status-updated', handleUserStatusUpdated)
+    socket?.on('all-rejected', (data) => {
+      showToast(`No delivery boy accepted order #${data?.orderId?.toString()?.slice(-6)}`, 'warning')
+    })
+
+    return () => {
+      socket.off('new-order', handleNewOrder)
+      socket.off('user-status-updated', handleUserStatusUpdated)
+      socket.off('all-rejected')
+    }
   }, [])
 
   return (
@@ -194,8 +199,8 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statsState?.length > 0 && (() => {
-          const maxValue = Math.max(...statsState?.map(s => s?.value), 1)
-          return statsState?.map((stat, index) => (
+          const maxValue = Math.max(...statsState?.map((s: { value: number }) => s?.value), 1)
+          return statsState?.map((stat: { title: string; value: number; icon: ReactElement }, index: number) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -253,7 +258,226 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
           </BarChart>
         </ResponsiveContainer>
       </motion.div>
-    </div >
+
+      {/* ── Delivery Boys Leaderboard ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.3 }}
+        className="mt-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-bold text-gray-700">Delivery Boys</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Performance overview</p>
+          </div>
+          <span className="px-2.5 py-1 bg-green-50 text-green-600 rounded-full text-xs font-semibold flex gap-1 items-center justify-center">
+            {deliveryBoys?.length} <User className="w-5 h-5" />
+          </span>
+        </div>
+
+        {dbLoading ? (
+          <div className="flex items-center justify-center py-10 bg-white rounded-2xl border border-gray-100">
+            <Loader2 className="w-6 h-6 animate-spin text-green-600" />
+          </div>
+        ) : deliveryBoys?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 bg-white rounded-2xl border border-dashed border-gray-200 gap-2">
+            <Truck className="w-8 h-8 text-gray-300" />
+            <p className="text-sm text-gray-400 font-medium">No delivery boys found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {deliveryBoys?.map((boy: DeliveryBoyWithStats, index: number) => (
+              <motion.div
+                key={boy?._id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.06 }}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+              >
+                {/* Card header */}
+                <div className="px-4 pt-4 pb-3 flex items-center gap-3 border-b border-gray-50">
+                  <div className="relative shrink-0">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {boy?.image
+                        ? <Image src={boy?.image} alt={boy?.name} width={40} height={40} className="object-cover w-full h-full" />
+                        : <User className="w-5 h-5 text-gray-400" />}
+                    </div>
+                    <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${boy.isOnline ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 text-sm truncate">{boy.name}</p>
+                    <p className="text-[11px] text-gray-400 truncate">{boy.email}</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${boy.isOnline ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-gray-100 text-gray-400'}`}>
+                    {boy.isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+
+                {/* Stats row */}
+                <div className="px-4 py-3 grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-xs text-gray-400">Deliveries</p>
+                    <p className="text-base font-extrabold text-gray-800">{boy.completedDeliveries}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Earnings</p>
+                    <p className="text-base font-extrabold text-green-600">${boy.totalEarnings}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Accept %</p>
+                    <p className={`text-base font-extrabold ${boy.acceptanceRate >= 70 ? 'text-green-600' : boy.acceptanceRate >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                      {boy.acceptanceRate}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 pb-4 flex items-center justify-between">
+                  <p className="text-[11px] text-gray-400">
+                    {boy.lastDelivery
+                      ? `Last: ${new Date(boy.lastDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                      : 'No deliveries yet'}
+                  </p>
+                  <button
+                    onClick={() => { setSelectedBoy(boy); setHistoryPage(1) }}
+                    className="flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-800 transition-colors cursor-pointer"
+                  >
+                    View History <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* ── Delivery History Modal ── */}
+      <AnimatePresence>
+        {selectedBoy && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+            onClick={() => setSelectedBoy(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.93, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.93, opacity: 0, y: 16 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+            >
+              {/* Modal header */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                  {selectedBoy.image
+                    ? <Image src={selectedBoy.image} alt={selectedBoy.name} width={36} height={36} className="object-cover w-full h-full" />
+                    : <User className="w-4 h-4 text-gray-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 text-sm truncate">{selectedBoy.name}</p>
+                  <p className="text-xs text-gray-400">Delivery History</p>
+                </div>
+                <button
+                  onClick={() => setSelectedBoy(null)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Stats pills */}
+              <div className="px-5 py-3 grid grid-cols-3 gap-3 border-b border-gray-100 shrink-0">
+                {[
+                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Completed', value: selectedBoy.completedDeliveries, color: 'text-green-700 bg-green-50' },
+                  { icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Earnings', value: `$${selectedBoy.totalEarnings}`, color: 'text-green-700 bg-green-50' },
+                  { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Accept Rate', value: `${selectedBoy.acceptanceRate}%`, color: 'text-blue-700 bg-blue-50' },
+                ].map(s => (
+                  <div key={s.label} className={`flex flex-col items-center py-2.5 rounded-xl ${s.color}`}>
+                    <span className="mb-0.5">{s.icon}</span>
+                    <p className="text-xs text-gray-500">{s.label}</p>
+                    <p className="font-extrabold text-sm">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Order list */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-3">
+                {historyLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-green-600" />
+                  </div>
+                ) : historyData?.orders?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-2">
+                    <Package className="w-8 h-8 text-gray-300" />
+                    <p className="text-sm text-gray-400">No delivered orders yet</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {historyData?.orders?.map((order: any) => (
+                      <div key={order._id} className="flex flex-col gap-1.5 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-gray-800 font-mono">
+                            #{order._id?.toString()?.slice(-6)}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
+                            Delivered
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-500 gap-2">
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {(order.user as any)?.name || order.address?.fullName || '—'}
+                          </span>
+                          <span className="font-bold text-green-700">${order.totalAmount?.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-gray-400">
+                          <span>{order.items?.length} item{order.items?.length !== 1 ? 's' : ''}</span>
+                          <span>
+                            {order.deliveredAt
+                              ? new Date(order.deliveredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                              : order.createdAt
+                                ? new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {historyData?.pagination && historyData.pagination.totalPages > 1 && (
+                <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between shrink-0">
+                  <button
+                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                    disabled={historyPage <= 1}
+                    className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Prev
+                  </button>
+                  <span className="text-xs text-gray-400">
+                    Page <span className="font-bold text-gray-700">{historyPage}</span> / {historyData.pagination.totalPages}
+                  </span>
+                  <button
+                    onClick={() => setHistoryPage(p => Math.min(historyData.pagination.totalPages, p + 1))}
+                    disabled={historyPage >= historyData.pagination.totalPages}
+                    className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    Next <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
   )
 }
 

@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calculator, CreditCard, DollarSign, Loader2, LocateFixed, LocationEdit, MapPinHouse, Phone, Search, Send, StickyNote, Truck, User } from 'lucide-react'
+import { ArrowLeft, Calculator, CheckCircle, CreditCard, DollarSign, Loader2, LocateFixed, LocationEdit, MapPinHouse, Phone, Search, Send, StickyNote, Tag, Truck, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useSelector } from 'react-redux'
@@ -49,7 +49,7 @@ const Checkout = () => {
 
     const [paymentMethod, setPaymentMethod] = useState<string>('')
 
-    const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state.cart)
+    const { cartData, subTotal, deliveryFee, discountAmount, finalTotal, coupon } = useSelector((state: RootState) => state.cart)
 
     const toast = useToast()
 
@@ -129,7 +129,8 @@ const Checkout = () => {
                     latitude: position[0],
                     longitude: position[1]
                 },
-                idempotencyKey: idempotencyKeyState
+                idempotencyKey: idempotencyKeyState,
+                couponCode: coupon?.code ?? null,
             });
             if (res?.data?.success) {
                 queryClient.invalidateQueries({ queryKey: ['orders'] })  // ← invalidate trước
@@ -150,7 +151,7 @@ const Checkout = () => {
 
         setPay(true)
         try {
-            const res = await axios.post('/api/auth/user/payment ', {
+            const res = await axios.post('/api/auth/user/payment', {
                 userId: userData?._id,
                 items: cartData?.map((item) => ({
                     grocery: item?._id,
@@ -172,7 +173,8 @@ const Checkout = () => {
                     latitude: position[0],
                     longitude: position[1]
                 },
-                idempotencyKey: idempotencyKeyState
+                idempotencyKey: idempotencyKeyState,
+                couponCode: coupon?.code ?? null,
             });
             setPay(false)
             window.location.href = res?.data.url
@@ -433,13 +435,24 @@ const Checkout = () => {
                             <p className='text-green-700 font-semibold text-base'>${deliveryFee}</p>
                         </div>
 
+                        {/* Applied coupon */}
+                        {coupon && (
+                            <div className='flex flex-row items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2'>
+                                <div className='flex items-center gap-1.5'>
+                                    <Tag className='w-3.5 h-3.5 text-green-600' />
+                                    <p className='text-green-700 text-sm font-semibold'>{coupon.code}</p>
+                                </div>
+                                <p className='text-green-600 font-bold text-sm'>-${discountAmount.toFixed(2)}</p>
+                            </div>
+                        )}
+
                         {/* Border bottom */}
                         <div className='w-full h-1 bg-gray-400 rounded'></div>
 
                         {/* Final Total */}
                         <div className='flex flex-row items-center justify-between mt-4'>
                             <p className='text-black text-xl font-bold'>Final Total</p>
-                            <p className='text-green-700 font-extrabold text-md'>${finalTotal}</p>
+                            <p className='text-green-700 font-extrabold text-md'>${finalTotal.toFixed(2)}</p>
                         </div>
 
                         <motion.button

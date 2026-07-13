@@ -67,6 +67,21 @@ const ViewGrocery = () => {
     setStockLoading(prev => ({ ...prev, [id]: true }))
     try {
       await axios.patch(`/api/auth/admin/update-stock/${id}`, { stock: next })
+
+      // Đồng bộ luôn vào cache groceries
+      queryClient.setQueryData(
+        ['grocery', 'pagination', currentPage, debouncedSearch],  // ← khớp đúng 4 phần tử
+        (old: any) => {
+          if (!old) return old   // guard nếu cache chưa tồn tại
+          return {
+            ...old,
+            groceries: old.groceries.map((g: IGrocery) =>
+              g._id.toString() === id ? { ...g, stock: next } : g
+            )
+          }
+        }
+      )
+
     } catch {
       setStockMap(prev => ({ ...prev, [id]: current }))
       showToast('Failed to update stock', 'error')

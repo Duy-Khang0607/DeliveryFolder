@@ -104,6 +104,10 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
     }, [orders?._id])
 
 
+    const styleStatus = status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' : status === 'Out of delivery' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : status === 'Cancelled' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200'
+
+    const styleBg = status === 'Delivered' ? 'bg-linear-to-r from-green-400 to-green-600' : status === 'Out of delivery' ? 'bg-linear-to-r from-yellow-400 to-orange-400' : status === 'Cancelled' ? 'bg-linear-to-r from-red-400 to-red-600' : 'bg-linear-to-r from-gray-300 to-gray-400'
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -112,7 +116,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
             className='w-full rounded-2xl border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col bg-white mt-6'
         >
             {/* Top accent bar — color by status */}
-            <div className={`h-1 w-full ${status === 'Delivered' ? 'bg-linear-to-r from-green-400 to-green-600' : status === 'Out of delivery' ? 'bg-linear-to-r from-yellow-400 to-orange-400' : 'bg-linear-to-r from-gray-300 to-gray-400'}`} />
+            <div className={`h-1 w-full ${styleBg}`} />
 
             {/* Header */}
             <div className='p-4 flex flex-row justify-between items-start gap-3 border-b border-dashed border-gray-100'>
@@ -129,7 +133,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                             {orders?.isPaid ? 'Paid' : 'Unpaid'}
                         </span>
                     )}
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' : status === 'Out of delivery' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${styleStatus}`}>
                         {status}
                     </span>
                 </div>

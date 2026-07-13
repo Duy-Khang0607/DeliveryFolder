@@ -1,17 +1,48 @@
 'use client'
-import { AlertTriangle, CircleMinus, CirclePlus, Package, ShoppingBag, ShoppingBasket, Trash, Warehouse } from 'lucide-react'
+import { AlertTriangle, CheckCircle, CircleMinus, CirclePlus, Loader2, Package, ShoppingBag, ShoppingBasket, Tag, Trash, Warehouse, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/app/redux/store'
-import { decreaseQuantity, ICartSlice, increaseQuantity, removeCart } from '@/app/redux/cartSlice'
+import { applyCoupon, decreaseQuantity, ICartSlice, increaseQuantity, removeCart, removeCoupon } from '@/app/redux/cartSlice'
 import ButtonHome from '@/app/components/ButtonHome'
+import { useState } from 'react'
+import axios from 'axios'
 
 const Cart = () => {
     const dispatch = useDispatch()
 
-    const { cartData, subTotal, deliveryFee, finalTotal } = useSelector((state: RootState) => state?.cart as ICartSlice)
+    const { cartData, subTotal, deliveryFee, discountAmount, finalTotal, coupon } = useSelector((state: RootState) => state?.cart as ICartSlice)
+
+    const [couponInput, setCouponInput] = useState('')
+    const [couponLoading, setCouponLoading] = useState(false)
+    const [couponError, setCouponError] = useState('')
+
+    const handleApplyCoupon = async () => {
+        if (!couponInput.trim()) return
+        setCouponLoading(true)
+        setCouponError('')
+        try {
+            const res = await axios.post('/api/auth/user/apply-coupon', {
+                code: couponInput.trim(),
+                orderAmount: subTotal,
+            })
+            if (res.data.success) {
+                dispatch(applyCoupon(res.data.coupon))
+                setCouponInput('')
+            }
+        } catch (err: any) {
+            setCouponError(err?.response?.data?.message || 'Invalid coupon code')
+        } finally {
+            setCouponLoading(false)
+        }
+    }
+
+    const handleRemoveCoupon = () => {
+        dispatch(removeCoupon())
+        setCouponError('')
+    }
 
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
@@ -73,9 +104,9 @@ const Cart = () => {
                             </>
                         ) : (
                             cartData?.map((item, index) => (
-                                <>
+                                <div key={item?._id?.toString() || index}>
                                     {/* Wrapper tạo hiệu ứng running border */}
-                                    <div key={item?._id?.toString() || index} className="relative p-[2px] rounded-2xl overflow-hidden group/card">
+                                    <div className="relative p-[2px] rounded-2xl overflow-hidden group/card">
                                         {/* Lớp gradient xoay - ẩn mặc định, hiện khi hover */}
                                         <div
                                             className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
@@ -173,7 +204,7 @@ const Cart = () => {
                                             </div>
                                         </motion.div>
                                     </div>
-                                </>
+                                </div>
                             ))
                         )}
                     </AnimatePresence >
@@ -199,7 +230,7 @@ const Cart = () => {
                     <div className='p-4 flex flex-col gap-3'>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Subtotal</span>
-                            <span className='text-sm font-bold text-green-700'>${subTotal}</span>
+                            <span className='text-sm font-bold text-green-700'>${subTotal.toFixed(2)}</span>
                         </div>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Delivery Fee</span>
@@ -208,11 +239,79 @@ const Cart = () => {
                             </span>
                         </div>
 
+                        {/* Coupon section */}
                         <div className='border-t border-dashed border-gray-100' />
+
+                        {coupon ? (
+                            /* Applied coupon badge */
+                            <motion.div
+                                initial={{ opacity: 0, y: -6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className='flex items-center justify-between gap-2 px-3 py-2 bg-green-50 rounded-xl border border-green-200'
+                            >
+                                <div className='flex items-center gap-2'>
+                                    <CheckCircle className='w-4 h-4 text-green-600 shrink-0' />
+                                    <div>
+                                        <p className='text-xs font-bold text-green-700'>{coupon.code}</p>
+                                        <p className='text-[11px] text-green-600'>
+                                            {coupon.discountType === 'percentage'
+                                                ? `${coupon.discountValue}% off`
+                                                : `$${coupon.discountValue} off`} — saved ${discountAmount.toFixed(2)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleRemoveCoupon}
+                                    className='p-1 rounded-lg hover:bg-green-100 text-green-500 transition-all cursor-pointer'
+                                >
+                                    <X className='w-3.5 h-3.5' />
+                                </button>
+                            </motion.div>
+                        ) : (
+                            /* Coupon input */
+                            <div className='flex flex-col gap-1.5'>
+                                <p className='text-xs text-gray-400 font-medium flex items-center gap-1'>
+                                    <Tag className='w-3.5 h-3.5' /> Have a coupon?
+                                </p>
+                                <div className='flex gap-2'>
+                                    <input
+                                        type='text'
+                                        placeholder='Enter code'
+                                        value={couponInput}
+                                        onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
+                                        onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                                        className='flex-1 px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all font-mono tracking-wider uppercase placeholder:normal-case placeholder:tracking-normal'
+                                    />
+                                    <motion.button
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={handleApplyCoupon}
+                                        disabled={couponLoading || !couponInput.trim()}
+                                        className='px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0'
+                                    >
+                                        {couponLoading ? <Loader2 className='w-3.5 h-3.5 animate-spin' /> : 'Apply'}
+                                    </motion.button>
+                                </div>
+                                {couponError && (
+                                    <p className='text-[11px] text-red-500 flex items-center gap-1'>
+                                        <AlertTriangle className='w-3 h-3' /> {couponError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        <div className='border-t border-dashed border-gray-100' />
+
+                        {/* Discount row */}
+                        {discountAmount > 0 && (
+                            <div className='flex items-center justify-between'>
+                                <span className='text-sm text-green-600 font-medium'>Discount</span>
+                                <span className='text-sm font-bold text-green-600'>-${discountAmount.toFixed(2)}</span>
+                            </div>
+                        )}
 
                         <div className='flex items-center justify-between'>
                             <span className='font-extrabold text-gray-800 text-base'>Final Total</span>
-                            <span className='font-extrabold text-green-700 text-base'>${finalTotal}</span>
+                            <span className='font-extrabold text-green-700 text-base'>${finalTotal.toFixed(2)}</span>
                         </div>
 
                         {cartData?.length > 0 && (

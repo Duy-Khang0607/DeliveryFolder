@@ -144,6 +144,13 @@ const Nav = ({ user }: { user: IUser }) => {
         {/* Menu admin  */}
         {user?.role === 'admin' && (
           <div className='hidden md:flex flex-row gap-4 items-center w-full'>
+
+            {/* View Coupons */}
+            <Link href='admin/manage-coupons' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
+              <PackagePlus className='w-5 h-5 text-green-500' />
+              Coupons
+            </Link>
+
             {/* View Category */}
             <Link href='admin/view-categories' className='flex items-center gap-1.5 bg-white text-green-700 font-semibold p-2 rounded-full hover:bg-green-100 transition-all duration-300 w-full text-sm'>
               <PackagePlus className='w-5 h-5 text-green-500' />
@@ -280,6 +287,13 @@ const Nav = ({ user }: { user: IUser }) => {
 
             {/* Items */}
             <div className='flex flex-col gap-3 mt-4'>
+
+              {/* Manage Coupons */}
+              <Link href='admin/manage-coupons' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
+                <PackagePlus className='text-white w-5 h-5' />
+                Coupons
+              </Link>
+
               {/* Manage categories */}
               <Link href='admin/view-categories' className='flex flex-row bg-black/10 rounded-lg hover:bg-white/20 items-center p-2 text-sm gap-2'>
                 <PackagePlus className='text-white w-5 h-5' />

@@ -96,7 +96,7 @@ const ManageCategoriesPage = () => {
 
     // ── Categories ──────────────────────────────────────────
     const addCategory = useMutation({
-        mutationFn: (name: string) => axios.post('/api/auth/admin/add-categories', { name }),
+        mutationFn: (name: string) => axios.post('/api/auth/admin/add-categories', { name, isActive: true }),
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories', 'pagination', currentPage, debouncedSearch] }); setAddingCategory(false); showToast('Category added', 'success') },
         onError: () => showToast('Failed to add category', 'error')
     })
@@ -120,7 +120,7 @@ const ManageCategoriesPage = () => {
 
     // ── Units ──────────────────────────────────────────
     const addUnit = useMutation({
-        mutationFn: (name: string) => axios.post('/api/auth/admin/add-units', { name }),
+        mutationFn: (name: string) => axios.post('/api/auth/admin/add-units', { name, isActive: true }),
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['units', 'pagination', currentPage, debouncedSearch] }); setAddingUnit(false); showToast('Unit added', 'success') },
         onError: () => showToast('Failed to add unit', 'error')
     })

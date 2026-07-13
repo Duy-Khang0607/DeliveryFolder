@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
         }
 
-        const alreadyAssigned = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: { $nin: ['brodcasted', 'completed', 'rejected'] } })
+        const alreadyAssigned = await DeliveryAssignment.findOne({ assignedTo: deliveryBoyId, status: { $nin: ['brodcasted', 'completed', 'rejected', 'assigned'] } })
 
         if (alreadyAssigned) {
             return NextResponse.json({ success: false, message: "You are already assigned to another assignment" }, { status: 400 })
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         // Atomic update: only succeeds if status is still 'brodcasted'
         const assignment = await DeliveryAssignment.findOneAndUpdate(
-            { _id: id, status: { $in: ['brodcasted', 'pending'] } },
+            { _id: id, status: { $in: ['brodcasted', 'pending', 'assigned'] } },
             { assignedTo: deliveryBoyId, status: 'assigned', accpectedAt: new Date() },
             { new: true }
         )

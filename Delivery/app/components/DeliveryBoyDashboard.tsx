@@ -203,8 +203,12 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         const socket = getSocket()
 
         const handleOrderStatusUpdated = (data: any) => {
-            if (data?.status === 'Pending') {
-                showToast('Assigment canceled !', 'warning')
+            console.log({data})
+            if (data?.status === 'Pending' || data?.status === 'Cancelled') {
+                showToast(
+                    data?.status === 'Cancelled' ? 'Order has been cancelled!' : 'Assignment canceled!',
+                    'warning'
+                )
                 setAssignments((prev) => prev?.filter((item: any) => item?.order?._id.toString() !== data?.orderId?.toString()))
                 setCurrentOrder((prev: any) => {
                     if (prev?.order?._id?.toString() === data?.orderId?.toString()) {

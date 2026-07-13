@@ -16,16 +16,16 @@ export async function POST(req: NextRequest) {
         }
 
         // Get body
-        const { name } = await req.json()
+        const { name, isActive } = await req.json()
 
         // Check tồn tại units
-        const existingUnits = await Units.findOne({ name });
+        const existingUnits = await Units.findOne({ name, isActive });
         if (existingUnits) {
             return NextResponse.json({ success: false, message: 'Units with this name already exists' }, { status: 400 });
         }
 
         // Create units
-        const units = await Units.create({ name });
+        const units = await Units.create({ name, isActive });
 
         return NextResponse.json({ success: true, message: 'Units created successfully', units }, { status: 200 });
 

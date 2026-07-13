@@ -16,16 +16,16 @@ export async function POST(req: NextRequest) {
         }
 
         // Get body
-        const { name } = await req.json()
+        const { name, isActive } = await req.json()
 
         // Check tồn tại categories
-        const existingCategories = await Categories.findOne({ name });
+        const existingCategories = await Categories.findOne({ name, isActive });
         if (existingCategories) {
             return NextResponse.json({ success: false, message: 'Categories with this name already exists' }, { status: 400 });
         }
 
         // Create grocery
-        const categories = await Categories.create({ name });
+        const categories = await Categories.create({ name, isActive });
 
         return NextResponse.json({ success: true, message: 'Categories created successfully', categories }, { status: 200 });
 

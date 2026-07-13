@@ -142,7 +142,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
         }
 
-        if (status === 'Pending' && order?.assignment) {
+        if ((status === 'Pending' || status === 'Cancelled') && order?.assignment) {
             // Xóa assignment trong Order
             order.assignment = null;
             order.deliveryOTP = null;

@@ -41,6 +41,8 @@ export interface IOrder {
     idempotencyKey?: string | null,
     stripeSessionUrl?: string | null
     searchText: string
+    couponCode?: string | null
+    discountAmount?: number
 }
 
 const orderSchema = new mongoose.Schema<IOrder>({
@@ -122,6 +124,14 @@ const orderSchema = new mongoose.Schema<IOrder>({
     stripeSessionUrl: {
         type: String,
         default: null
+    },
+    couponCode: {
+        type: String,
+        default: null,
+    },
+    discountAmount: {
+        type: Number,
+        default: 0,
     },
     searchText: {
         type: String,
