@@ -2,13 +2,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { IGrocery } from '../models/grocery.model'
 import Image from 'next/image'
-import { CircleMinus, CirclePlus, DollarSign, Package, ShoppingCart, Tag } from 'lucide-react'
+import { CircleMinus, CirclePlus, DollarSign, Package, ShoppingCart, Tag, Warehouse } from 'lucide-react'
 import { useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../redux/store'
-import { addToCart, decreaseQuantity, increaseQuantity } from '../redux/cartSlice'
+import { addToCart, decreaseQuantity, ICartSlice, increaseQuantity } from '../redux/cartSlice'
 import Link from 'next/link'
+import { useToast } from './Toast'
 
 interface GroceryItemCardProps {
   groceries: IGrocery
@@ -21,11 +22,33 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
   const dispatch = useDispatch<AppDispatch>()
 
   // State redux - Cart
-  const { cartData } = useSelector((state: RootState) => state?.cart)
+  const { cartData } = useSelector((state: RootState) => state?.cart as ICartSlice)
 
   // Find item -> khi click "Add to cart"
   const cartItem = cartData?.find(item => item?._id === groceries?._id)
 
+  // Dùng stock từ prop (pagination), KHÔNG dùng useCartStockSync ở đây
+  const stock = groceries?.stock ?? 0
+  const isOut = stock === 0
+
+  const { showToast } = useToast()
+
+  const handleAddToCart = () => {
+    if (isOut) {
+      showToast('Sản phẩm đã hết hàng', 'error')
+      return
+    }
+
+    dispatch(addToCart({ ...groceries, quantity: 1, stock }))
+  }
+
+  const handleIncrease = () => {
+    if ((cartItem?.quantity ?? 0) >= stock) {
+      showToast(`Chỉ còn ${stock} sản phẩm`, 'warning')
+      return
+    }
+    dispatch(increaseQuantity(groceries._id.toString()))
+  }
 
   return (
     <motion.div
@@ -90,6 +113,10 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
             <Package className='w-4 h-4 text-gray-400 shrink-0' />
             <p className='text-xs text-gray-500'>Unit: <span className='font-semibold text-gray-700'>{groceries?.unit || '—'}</span></p>
           </div>
+          <div className='flex items-center gap-2'>
+            <Warehouse className='w-4 h-4 text-gray-400 shrink-0' />
+            <p className='text-xs text-gray-500'>Stock: <span className={`font-semibold ${isOut ? 'text-red-500' : 'text-green-500'}`}>{groceries?.stock || 0}</span></p>
+          </div>
         </div>
       </div>
 
@@ -111,20 +138,27 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
                 {cartItem?.quantity}
               </span>
               <CirclePlus
-                onClick={() => dispatch(increaseQuantity(groceries?._id.toString()))}
-                className='w-5 h-5 text-green-600 hover:text-green-800 cursor-pointer transition-colors'
+                onClick={handleIncrease}
+                className={`w-5 h-5 ${(cartItem?.quantity ?? 0) >= stock
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'text-green-600 hover:text-green-800 cursor-pointer'
+                  }`}
               />
             </div>
           </motion.div>
         ) : (
           <motion.button
-            onClick={() => dispatch(addToCart({ ...groceries, quantity: 1 }))}
+            disabled={isOut}
+            onClick={handleAddToCart}
             whileTap={{ scale: 0.96 }}
             whileHover={{ scale: 1.02 }}
-            className='w-full bg-green-600 hover:bg-green-700 text-white rounded-xl flex flex-row justify-center items-center gap-2 py-1.5 text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer shadow-sm'
+            className={`w-full text-white rounded-xl flex flex-row justify-center items-center gap-2 py-1.5 text-xs md:text-sm font-semibold transition-all duration-200 shadow-sm ${isOut
+              ? 'bg-gray-500 text-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+              }`}
           >
             <ShoppingCart className='w-4 h-4' />
-            Add to cart
+            {isOut ? 'Out of Stock' : 'Add to cart'}
           </motion.button>
         )}
       </div>

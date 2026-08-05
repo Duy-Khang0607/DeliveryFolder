@@ -1,5 +1,6 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
+import { emitEventHandler } from "@/app/lib/emitEventHandler";
 import Grocery from "@/app/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -28,6 +29,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (!grocery) {
             return NextResponse.json({ success: false, message: 'Grocery not found' }, { status: 404 });
         }
+
+        // sau khi update thành công:
+        await emitEventHandler('grocery-updated', {
+            groceryId: id,
+            stock: grocery.stock,
+        })
 
         return NextResponse.json({ success: true, stock: grocery.stock }, { status: 200 });
 

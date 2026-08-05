@@ -3,11 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '../models/grocery.model'
 import CategorySilder from './CategorySilder'
 import GroceryItemCard from './GroceryItemCard'
-import { useEffect, useMemo, useState } from 'react'
+import {  useMemo, useState } from 'react'
 import Pagination from './Pagination'
 import { useSearchParams } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
-import { getSocket } from '../lib/socket'
 import { useGroceryPaginatedUser } from '../hooks/useGroceryPaginated'
 import { Loader2 } from 'lucide-react'
 
@@ -22,7 +20,6 @@ const GrocerySection = () => {
     const groceries = data?.groceries ?? []
     const totalPages = data?.pagination?.totalPages ?? 1
     const totalItems = data?.pagination?.totalItems ?? 0
-    const queryClient = useQueryClient()
 
     const filteredGroceryList = useMemo(() => {
         if (!selectedCategory) return groceries
@@ -40,35 +37,6 @@ const GrocerySection = () => {
             setCurrentPage(prev => prev + 1)
         }
     }
-
-    useEffect(() => {
-        const socket = getSocket()
-
-        const handleGroceryCreated = () => {
-            queryClient.invalidateQueries({ queryKey: ['grocery'] })
-        }
-
-        const handleGroceryUpdated = (data: any) => {
-            console.log({ data })
-            queryClient.invalidateQueries({ queryKey: ['grocery'] })
-        }
-
-        const handleGroceryDeleted = () => {
-            queryClient.invalidateQueries({ queryKey: ['grocery'] })
-        }
-
-        socket?.on('grocery-created', handleGroceryCreated)
-        socket?.on('grocery-updated', handleGroceryUpdated)
-        socket?.on('grocery-deleted', handleGroceryDeleted)
-
-        return () => {
-            socket?.off('grocery-created', handleGroceryCreated)
-            socket?.off('grocery-updated', handleGroceryUpdated)
-            socket?.off('grocery-deleted', handleGroceryDeleted)
-        }
-
-    }, [queryClient, currentPage, q])
-
 
     return (
         <>

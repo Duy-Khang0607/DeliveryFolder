@@ -7,19 +7,20 @@ const fetchGroceryId = async (id: string) => {
 }
 
 export const useGetGroceryById = (id: string) => {
-    const queryClient = useQueryClient()
+    // const queryClient = useQueryClient()
 
     return useQuery({
         queryKey: ['grocery', 'id', id],
         queryFn: () => fetchGroceryId(id),
         enabled: !!id,   // chỉ fetch khi id có giá trị
-        initialData: () => {
-            // Tìm trong tất cả list cache đang có
-            const allCaches = queryClient.getQueriesData<any>({ queryKey: ['grocery', 'pagination'] })
-            for (const [, data] of allCaches) {
-                const found = data?.groceries?.find((g: any) => g._id === id)
-                if (found) return { success: true, grocery: found }
-            }
-        },
+        staleTime: 0,
+        // initialData: () => {
+        //     // Tìm trong tất cả list cache đang có
+        //     const allCaches = queryClient.getQueriesData<any>({ queryKey: ['grocery', 'pagination'] })
+        //     for (const [, data] of allCaches) {
+        //         const found = data?.groceries?.find((g: any) => g._id === id)
+        //         if (found) return { success: true, grocery: found }
+        //     }
+        // },
     })
 }

@@ -203,7 +203,6 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         const socket = getSocket()
 
         const handleOrderStatusUpdated = (data: any) => {
-            console.log({data})
             if (data?.status === 'Pending' || data?.status === 'Cancelled') {
                 showToast(
                     data?.status === 'Cancelled' ? 'Order has been cancelled!' : 'Assignment canceled!',

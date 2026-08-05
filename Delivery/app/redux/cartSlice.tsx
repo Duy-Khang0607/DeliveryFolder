@@ -31,14 +31,33 @@ export const cartSlice = createSlice({
     initialState,
     reducers: {
         addToCart: (state, action: PayloadAction<IGrocery>) => {
-            state.cartData.push(action.payload)
+            const existing = state.cartData.find(i => String(i._id) === String(action.payload._id))
+
+            if (existing) {
+                const maxStock = existing.stock ?? action.payload.stock ?? 0
+
+                if (existing.quantity < maxStock) existing.quantity += 1
+            } else {
+                const maxStock = action.payload.stock ?? 0
+
+                if (maxStock > 0) {
+                    state.cartData.push({ ...action.payload, quantity: 1 })
+                }
+            }
+            
             cartSlice.caseReducers.calcTotals(state)
         },
         increaseQuantity: (state, action: PayloadAction<string>) => {
             const item = state.cartData.find(item => String(item?._id) === action.payload)
-            if (item) {
-                item.quantity = item.quantity + 1;
-            }
+
+            if (!item) return
+
+            const maxStock = item.stock ?? 0
+
+            if (item.quantity >= maxStock) return   // chặn tăng
+
+            item.quantity += 1
+
             cartSlice.caseReducers.calcTotals(state)
         },
         decreaseQuantity: (state, action: PayloadAction<string>) => {
@@ -90,7 +109,16 @@ export const cartSlice = createSlice({
             }
 
             state.finalTotal = Math.max(state.subTotal + state.deliveryFee - state.discountAmount, 0)
-        }
+        },
+        syncCartStock: (
+            state,
+            action: PayloadAction<{ id: string; stock: number }[]>
+        ) => {
+            action.payload.forEach(({ id, stock }) => {
+                const item = state.cartData.find(i => String(i._id) === id)
+                if (item) item.stock = stock
+            })
+        },
     },
 })
 
@@ -103,6 +131,7 @@ export const {
     applyCoupon,
     removeCoupon,
     calcTotals,
+    syncCartStock,
 } = cartSlice.actions
 
 export default cartSlice.reducer

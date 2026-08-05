@@ -368,7 +368,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
               exit={{ scale: 0.93, opacity: 0, y: 16 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               onClick={e => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[65vh] flex flex-col overflow-hidden"
             >
               {/* Modal header */}
               <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">

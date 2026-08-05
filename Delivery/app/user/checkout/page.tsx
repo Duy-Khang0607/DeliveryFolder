@@ -134,6 +134,7 @@ const Checkout = () => {
             });
             if (res?.data?.success) {
                 queryClient.invalidateQueries({ queryKey: ['orders'] })  // ← invalidate trước
+                queryClient.invalidateQueries({ queryKey: ['grocery'] })  // ← invalidate trước
                 router.push('/user/order-success')
             }
             setPay(false)

@@ -223,8 +223,12 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                                                 {cartItem?.quantity}
                                                             </span>
                                                             <CirclePlus
-                                                                onClick={() => dispatch(increaseQuantity(item?._id.toString()))}
-                                                                className='w-5 h-5 text-green-600 hover:text-green-800 cursor-pointer transition-colors'
+                                                                onClick={() => {
+                                                                    if ((cartItem?.quantity ?? 0) < stock) {
+                                                                        dispatch(increaseQuantity(item._id.toString()))
+                                                                    }
+                                                                }}
+                                                                className={`w-5 h-5 text-green-600 hover:text-green-800 cursor-pointer transition-colors ${(cartItem?.quantity ?? 0) >= stock ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                                             />
                                                         </div>
                                                     </div>
