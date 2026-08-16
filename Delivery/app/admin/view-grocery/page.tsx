@@ -15,6 +15,7 @@ import Pagination from '@/app/components/Pagination'
 import { useGroceryPaginatedAdmin } from '@/app/hooks/useGroceryPaginated'
 import { useQueryClient } from '@tanstack/react-query'
 import SearchInput from '@/app/components/SearchInput'
+import { formatVnd } from '@/app/lib/currency'
 
 const ViewGrocery = () => {
   // Edit grocery
@@ -214,7 +215,7 @@ const ViewGrocery = () => {
                               <div className='flex items-center gap-1.5'>
                                 <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
                                 <p className='text-sm font-extrabold text-green-700'>
-                                  ${item?.price?.toLocaleString('en-US')}
+                                  {formatVnd(Number(item?.price ?? 0))}
                                   <span className='text-xs font-medium text-gray-400 ml-1'>/ {item?.unit || '—'}</span>
                                 </p>
                               </div>

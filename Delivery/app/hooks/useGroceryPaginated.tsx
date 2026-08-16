@@ -1,9 +1,10 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import axios from 'axios'
 
-const fetchGroceryUser = async (page: number, q?: string) => {
+const fetchGroceryUser = async (page: number, q?: string, category?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: '20' })
     if (q) params.set('q', q)
+    if (category) params.set('category', category)
     const { data } = await axios.get(`/api/auth/user/get-all-grocery?${params}`)
     return data
 }
@@ -15,10 +16,10 @@ const fetchGroceryAdmin = async (page: number, q?: string) => {
     return data
 }
 
-export const useGroceryPaginatedUser = (page: number, q?: string) => {
+export const useGroceryPaginatedUser = (page: number, q?: string, category?: string) => {
     return useQuery({
-        queryKey: ['grocery', 'pagination', page, q],
-        queryFn: () => fetchGroceryUser(page, q),
+        queryKey: ['grocery', 'pagination', page, q, category],
+        queryFn: () => fetchGroceryUser(page, q, category),
         placeholderData: keepPreviousData,
     })
 }

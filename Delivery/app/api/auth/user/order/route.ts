@@ -6,6 +6,7 @@ import Grocery from "@/app/models/grocery.model";
 import Orders from "@/app/models/orders.model";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
+import { calculateDeliveryPricing } from "@/app/lib/deliveryPricing";
 
 
 
@@ -68,14 +69,26 @@ export async function POST(req: NextRequest) {
             decremented.push({ id: item.grocery, qty: item.quantity })
           }
 
+        if (!address.latitude || !address.longitude) {
+            return NextResponse.json(
+                { success: false, message: "Address coordinates are required" },
+                { status: 400 }
+            );
+        }
+
+        const subTotal = items.reduce((sum: number, item: any) => sum + Number(item.price) * Number(item.quantity), 0);
+        const pricing = calculateDeliveryPricing({
+            subTotal,
+            destLatitude: Number(address.latitude),
+            destLongitude: Number(address.longitude),
+        });
+
         // Re-validate coupon server-side
         let serverDiscountAmount = 0;
         let validCouponCode: string | null = null;
 
         if (couponCode) {
             const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
-            const subTotal = items.reduce((sum: number, item: any) => sum + Number(item.price) * Number(item.quantity), 0);
-            const deliveryFee = subTotal > 100 ? 0 : 40;
 
             const couponValid =
                 coupon &&
@@ -96,10 +109,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Tính lại totalAmount server-side
-        const subTotal = items.reduce((sum: number, item: any) => sum + Number(item.price) * Number(item.quantity), 0);
-        const deliveryFee = subTotal > 100 ? 0 : 40;
-        const finalAmount = Math.max(subTotal + deliveryFee - serverDiscountAmount, 0);
+        const finalAmount = Math.max(subTotal + pricing.deliveryFee - serverDiscountAmount, 0);
 
         // Create order
         const newOrder = await Orders.create({
@@ -111,6 +121,11 @@ export async function POST(req: NextRequest) {
             idempotencyKey: idempotencyKey || null,
             couponCode: validCouponCode,
             discountAmount: serverDiscountAmount,
+            deliveryDistanceKm: pricing.distanceKm,
+            deliveryFee: pricing.deliveryFee,
+            shipperEarning: pricing.shipperEarning,
+            stockDeducted: true,
+            couponApplied: !!validCouponCode,
         })
 
         // Cập nhật coupon usage sau khi tạo order thành công

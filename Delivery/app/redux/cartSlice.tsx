@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import { IGrocery } from "../models/grocery.model"
+import { DELIVERY_PRICING, getMinimumDeliveryFee } from "../lib/deliveryPricing"
 
 export interface ICouponState {
     code: string
@@ -20,9 +21,9 @@ export interface ICartSlice {
 const initialState: ICartSlice = {
     cartData: [],
     subTotal: 0,
-    deliveryFee: 40,
+    deliveryFee: getMinimumDeliveryFee(),
     discountAmount: 0,
-    finalTotal: 40,
+    finalTotal: getMinimumDeliveryFee(),
     coupon: null,
 }
 
@@ -76,9 +77,9 @@ export const cartSlice = createSlice({
         clearCart: (state) => {
             state.cartData = []
             state.subTotal = 0
-            state.deliveryFee = 40
+            state.deliveryFee = getMinimumDeliveryFee()
             state.discountAmount = 0
-            state.finalTotal = 40
+            state.finalTotal = getMinimumDeliveryFee()
             state.coupon = null
         },
         applyCoupon: (state, action: PayloadAction<ICouponState>) => {
@@ -91,9 +92,17 @@ export const cartSlice = createSlice({
             state.discountAmount = 0
             cartSlice.caseReducers.calcTotals(state)
         },
+        setDeliveryFee: (state, action: PayloadAction<number>) => {
+            state.deliveryFee = action.payload
+            state.finalTotal = Math.max(state.subTotal + state.deliveryFee - state.discountAmount, 0)
+        },
         calcTotals: (state) => {
             state.subTotal = state.cartData.reduce((sum, item) => sum + Number(item?.price) * item?.quantity, 0)
-            state.deliveryFee = state.subTotal > 100 ? 0 : 40;
+            if (state.subTotal >= DELIVERY_PRICING.freeDeliverySubtotalVnd) {
+                state.deliveryFee = 0
+            } else if (state.deliveryFee === 0 && state.cartData.length > 0) {
+                state.deliveryFee = getMinimumDeliveryFee()
+            }
 
             // Tính lại discount nếu có coupon (percentage phụ thuộc subTotal)
             if (state.coupon) {
@@ -131,6 +140,7 @@ export const {
     applyCoupon,
     removeCoupon,
     calcTotals,
+    setDeliveryFee,
     syncCartStock,
 } = cartSlice.actions
 

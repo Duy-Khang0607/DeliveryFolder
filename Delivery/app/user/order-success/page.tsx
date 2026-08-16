@@ -2,31 +2,45 @@
 import { Box, CircleCheckBig, MoveRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
+import { useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'next/navigation'
+import axios from 'axios'
 import { clearCart } from '@/app/redux/cartSlice'
 import ButtonHome from '@/app/components/ButtonHome'
 
-
-const OrderSuccess = () => {
+const OrderSuccessContent = () => {
     const dispatch = useDispatch()
+    const queryClient = useQueryClient()
+    const searchParams = useSearchParams()
+    const sessionId = searchParams.get('session_id')
 
-    // Clear cart khi vào trang order success
     useEffect(() => {
-        dispatch(clearCart())
-    }, [dispatch])
+        const finalizeOrder = async () => {
+            try {
+                if (sessionId) {
+                    await axios.post('/api/auth/user/stripe/confirm-payment', { sessionId })
+                }
+            } catch (error) {
+                console.error('Failed to confirm online payment:', error)
+            } finally {
+                dispatch(clearCart())
+                queryClient.invalidateQueries({ queryKey: ['grocery'] })
+                queryClient.invalidateQueries({ queryKey: ['orders'] })
+            }
+        }
+
+        finalizeOrder()
+    }, [dispatch, queryClient, sessionId])
 
     return (
-
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
-            {/* Back to home */}
-            <div className='min-h-[40px] w-full'>
+            <div className='min-h-10 w-full'>
                 <ButtonHome />
             </div>
 
-            {/* Notification success */}
             <section className='flex flex-col items-center text-center justify-center min-h-screen gap-2 px-6'>
-                {/* Icon Success */}
                 <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
@@ -53,7 +67,6 @@ const OrderSuccess = () => {
                     <CircleCheckBig className='w-15 h-15 text-green-700' />
                 </motion.div>
 
-                {/* Title */}
                 <motion.h1
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -63,14 +76,15 @@ const OrderSuccess = () => {
                     Order Placed Successfully
                 </motion.h1>
 
-                {/* Description */}
                 <motion.p
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }} className='text-base w-full max-w-2xl'>Thank you for shopping with us! Your order has been placed and is being processed. You can track its progress in your <strong>My Orders</strong> section
+                    transition={{ duration: 0.4 }}
+                    className='text-base w-full max-w-2xl'
+                >
+                    Thank you for shopping with us! Your order has been placed and is being processed. You can track its progress in your <strong>My Orders</strong> section
                 </motion.p>
 
-                {/* Icon Box */}
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}
                     animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -84,7 +98,6 @@ const OrderSuccess = () => {
                     <Box className='w-15 h-15 text-green-700' />
                 </motion.div>
 
-                {/* Go to My Orders */}
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -97,9 +110,16 @@ const OrderSuccess = () => {
                         Go to My Orders  <MoveRight className='w-5 h-5' />
                     </Link>
                 </motion.div>
-
             </section>
         </section>
+    )
+}
+
+const OrderSuccess = () => {
+    return (
+        <Suspense fallback={null}>
+            <OrderSuccessContent />
+        </Suspense>
     )
 }
 

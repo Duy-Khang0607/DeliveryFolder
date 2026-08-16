@@ -3,14 +3,17 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Calculator, CheckCircle, CreditCard, DollarSign, Loader2, LocateFixed, LocationEdit, MapPinHouse, Phone, Search, Send, StickyNote, Tag, Truck, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '@/app/redux/store'
+import { setDeliveryFee } from '@/app/redux/cartSlice'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
 import { generateIdempotencyKey } from '@/app/lib/generateIdempotencyKey'
 import ButtonHome from '@/app/components/ButtonHome'
 import { useQueryClient } from '@tanstack/react-query'
+import { formatVnd } from '@/app/lib/currency'
+import { calculateDeliveryPricing } from '@/app/lib/deliveryPricing'
 
 // Dynamic import để tránh lỗi SSR với leaflet
 const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
@@ -24,6 +27,7 @@ const MapViewComponent = dynamic(() => import('@/app/components/MapView'), {
 
 
 const Checkout = () => {
+    const dispatch = useDispatch()
     const router = useRouter()
 
     const { userData } = useSelector((state: RootState) => state?.user)
@@ -55,7 +59,20 @@ const Checkout = () => {
 
     const [idempotencyKeyState] = useState(() => generateIdempotencyKey())
 
+    const [distanceKm, setDistanceKm] = useState<number | null>(null)
+
     const queryClient = useQueryClient()
+
+    useEffect(() => {
+        if (!position) return
+        const pricing = calculateDeliveryPricing({
+            subTotal,
+            destLatitude: position[0],
+            destLongitude: position[1],
+        })
+        setDistanceKm(pricing.distanceKm)
+        dispatch(setDeliveryFee(pricing.deliveryFee))
+    }, [position, subTotal, dispatch])
 
     // Tìm kiếm địa chỉ trên map
     const handleSearchMap = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -427,14 +444,21 @@ const Checkout = () => {
 
                         <div className='flex flex-row items-center justify-between'>
                             <p className='text-gray-400 text-sm font-semibold'>Subtotal</p>
-                            <p className='text-green-700 font-semibold text-base'>${subTotal}</p>
+                            <p className='text-green-700 font-semibold text-base'>{formatVnd(subTotal)}</p>
                         </div>
 
                         {/* Delivery Fee */}
                         <div className='flex flex-row items-center justify-between'>
                             <p className='text-gray-400 text-sm font-semibold'>Delivery Fee</p>
-                            <p className='text-green-700 font-semibold text-base'>${deliveryFee}</p>
+                            <p className='text-green-700 font-semibold text-base'>
+                                {deliveryFee === 0 ? 'Free' : formatVnd(deliveryFee)}
+                            </p>
                         </div>
+                        {distanceKm != null && (
+                            <p className='text-xs text-gray-400 text-right -mt-2'>
+                                Khoảng cách: {distanceKm} km
+                            </p>
+                        )}
 
                         {/* Applied coupon */}
                         {coupon && (
@@ -443,7 +467,7 @@ const Checkout = () => {
                                     <Tag className='w-3.5 h-3.5 text-green-600' />
                                     <p className='text-green-700 text-sm font-semibold'>{coupon.code}</p>
                                 </div>
-                                <p className='text-green-600 font-bold text-sm'>-${discountAmount.toFixed(2)}</p>
+                                <p className='text-green-600 font-bold text-sm'>-{formatVnd(discountAmount)}</p>
                             </div>
                         )}
 
@@ -453,7 +477,7 @@ const Checkout = () => {
                         {/* Final Total */}
                         <div className='flex flex-row items-center justify-between mt-4'>
                             <p className='text-black text-xl font-bold'>Final Total</p>
-                            <p className='text-green-700 font-extrabold text-md'>${finalTotal.toFixed(2)}</p>
+                            <p className='text-green-700 font-extrabold text-md'>{formatVnd(finalTotal)}</p>
                         </div>
 
                         <motion.button

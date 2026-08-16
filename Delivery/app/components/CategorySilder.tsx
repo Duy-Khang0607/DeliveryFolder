@@ -1,44 +1,22 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Apple, ArrowBigLeft, ArrowBigRight, Beef, Fish, Leaf, Milk, Sandwich, ShoppingCart, Baby, IceCreamBowl, Droplet, Flame, PawPrint, HeartPulse, Home, SprayCan, User, Cookie, CupSoda, GlassWater, Candy } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react';
-
-
-const categories = [
-    { id: 1, category: "Fresh Food", icon: Leaf, color: "bg-green-100 text-green-700" },
-    { id: 2, category: "Vegetables", icon: Leaf, color: "bg-green-100 text-green-700" },
-    { id: 3, category: "Fruits", icon: Apple, color: "bg-red-100 text-red-700" },
-    { id: 4, category: "Meat", icon: Beef, color: "bg-rose-100 text-rose-700" },
-    { id: 5, category: "Seafood", icon: Fish, color: "bg-blue-100 text-blue-700" },
-    { id: 6, category: "Eggs & Dairy", icon: Milk, color: "bg-yellow-100 text-yellow-700" },
-    { id: 7, category: "Frozen Food", icon: Sandwich, color: "bg-orange-100 text-orange-700" },
-    { id: 8, category: "Rice & Noodles", icon: IceCreamBowl, color: "bg-purple-100 text-purple-700" },
-    { id: 9, category: "Cooking Oil & Spices", icon: Flame, color: "bg-purple-100 text-purple-700" },
-    { id: 10, category: "Sauces & Condiments", icon: Droplet, color: "bg-purple-100 text-purple-700" },
-    { id: 11, category: "Canned Food", icon: SprayCan, color: "bg-purple-100 text-purple-700" },
-    { id: 12, category: "Snacks", icon: Candy, color: "bg-purple-100 text-purple-700" },
-    { id: 13, category: "Beverages", icon: GlassWater, color: "bg-purple-100 text-purple-700" },
-    { id: 14, category: "Coffee & Tea", icon: CupSoda, color: "bg-purple-100 text-purple-700" },
-    { id: 15, category: "Bakery", icon: Cookie, color: "bg-purple-100 text-purple-700" },
-    { id: 16, category: "Health & Supplements", icon: HeartPulse, color: "bg-purple-100 text-purple-700" },
-    { id: 17, category: "Household Supplies", icon: Home, color: "bg-purple-100 text-purple-700" },
-    { id: 18, category: "Cleaning Products", icon: SprayCan, color: "bg-purple-100 text-purple-700" },
-    { id: 19, category: "Personal Care", icon: User, color: "bg-purple-100 text-purple-700" },
-    { id: 20, category: "Baby Products", icon: Baby, color: "bg-purple-100 text-purple-700" },
-    { id: 21, category: "Pet Supplies", icon: PawPrint, color: "bg-purple-100 text-purple-700" }
-];
+import { ArrowBigLeft, ArrowBigRight, Loader2, ShoppingCart } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useCategoryOptions } from '@/app/hooks/useCategoryUnitOptions'
+import { getCategoryDisplay } from '@/app/lib/categoryDisplay'
 
 interface ICategorySilder {
     selectedCategory: string;
     onSelectCategory: (category: string) => void;
 }
 
-
 const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder) => {
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [showLeft, setShowLeft] = useState(false);
     const [showRight, setShowRight] = useState(true);
     const animRef = useRef<number | null>(null);
+
+    const { data: categoryOptions = [], isLoading: categoriesLoading } = useCategoryOptions('', true, { slider: true })
 
     const easeOutBack = (t: number) => {
         const c1 = 1.25;
@@ -130,7 +108,7 @@ const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder)
             if (rafId) cancelAnimationFrame(rafId);
             if (animRef.current) cancelAnimationFrame(animRef.current);
         };
-    }, []);
+    }, [categoryOptions.length, categoriesLoading]);
 
     return (
         <motion.div className='w-[90%] mx-auto md:w-[80%] my-10 relative'
@@ -139,35 +117,45 @@ const CategorySilder = ({ selectedCategory, onSelectCategory }: ICategorySilder)
             transition={{ duration: 0.6 }}
             viewport={{ once: false, amount: 0.5 }}
         >
-            {/* Title */}
             <div className='flex flex-row items-center justify-center gap-2'>
                 <ShoppingCart className='w-10 h-10' />
                 <h2 className='text-2xl md:text-3xl text-green-700 font-extrabold tracking-wide'>Shopping by Category</h2>
             </div>
 
-            {/* List cartegory */}
             <div ref={scrollRef}
                 className='flex gap-4 overflow-x-auto scroll-smooth mt-10 scrollbar-hide cursor-grab active:cursor-grabbing'
                 style={{ WebkitOverflowScrolling: 'touch' }}
             >
-                {categories?.map((item) => {
-                    const Icon = item?.icon;
-                    const isSelected = selectedCategory === item?.category;
-                    return <div key={item?.id} onClick={() => onSelectCategory(isSelected ? '' : item?.category)} className={`min-w-[150px] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all rounded-2xl  ${item.color} shadow-md hover:shadow-xl snap-proximity ${isSelected ? 'border-green-400 border-2 shadow-green-700/50' : ''}`}>
-                        <Icon className='w-10 h-10' />
-                        <p className='text-center text-sm md:text-base font-semibold text-gray-600'>{item?.category}</p>
+                {categoriesLoading ? (
+                    <div className='w-full flex items-center justify-center py-8'>
+                        <Loader2 className='w-8 h-8 animate-spin text-green-600' />
                     </div>
-                })}
+                ) : categoryOptions?.length === 0 ? (
+                    <p className='text-sm text-gray-400 w-full text-center py-8'>No categories available</p>
+                ) : (
+                    categoryOptions?.map((item) => {
+                        const { icon: Icon, color } = getCategoryDisplay(item?.name)
+                        const isSelected = selectedCategory === item?.name;
+                        return (
+                            <div
+                                key={item?._id.toString()}
+                                onClick={() => onSelectCategory(isSelected ? '' : item?.name)}
+                                className={`min-w-[150px] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all rounded-2xl ${color} shadow-md hover:shadow-xl snap-proximity ${isSelected ? 'border-green-400 border-2 shadow-green-700/50' : ''}`}
+                            >
+                                <Icon className='w-10 h-10' />
+                                <p className='text-center text-sm md:text-base font-semibold text-gray-600 line-clamp-2'>{item?.name}</p>
+                            </div>
+                        )
+                    })
+                )}
             </div>
 
-            {/* Button left */}
             {showLeft && (
                 <div onClick={() => scrollByAmount('left')} className='absolute top-2/3 left-0 bg-white shadow-md shadow-black/20 rounded-2xl transition-all text-center p-2 cursor-pointer hover:shadow-black/50 -translate-y-1/2'>
                     <ArrowBigLeft className='w-5 h-5 text-green-700 hover:text-green-500 transition-all' />
                 </div>
             )}
 
-            {/* Button right */}
             {showRight && (
                 <div onClick={() => scrollByAmount('right')} className='absolute top-2/3 right-0 -translate-y-1/2 bg-white shadow-md shadow-black/20 rounded-2xl transition-all text-center p-2 cursor-pointer hover:shadow-black/50'>
                     <ArrowBigRight className='w-5 h-5 text-green-700 hover:text-green-500 transition-all' />

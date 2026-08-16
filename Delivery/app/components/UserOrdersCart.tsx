@@ -13,6 +13,7 @@ import { addToCart, clearCart } from '../redux/cartSlice'
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from '../redux/store'
 import { IGrocery } from '../models/grocery.model'
+import { formatVnd } from '../lib/currency'
 
 interface UserOrderProps {
     orders: IOrder
@@ -263,7 +264,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                                         <p className='text-xs text-gray-400 mt-0.5'>{item?.quantity} × {item?.unit}</p>
                                     </div>
                                 </div>
-                                <p className='text-sm font-bold text-green-700 shrink-0'>${item?.price}</p>
+                                <p className='text-sm font-bold text-green-700 shrink-0'>{formatVnd(Number(item?.price ?? 0))}</p>
                             </motion.div>
                         ))
                     )}
@@ -303,7 +304,7 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                     )}
                 </div>
                 <p className='font-extrabold text-sm md:text-base text-gray-800'>
-                    Total: <span className='text-green-700'>${orders?.totalAmount}</span>
+                    Total: <span className='text-green-700'>{formatVnd(Number(orders?.totalAmount ?? 0))}</span>
                 </p>
             </div>
 

@@ -1,16 +1,16 @@
 'use client'
-import { BadgePlus, Loader2, Package, User, Plus, Box, DollarSign, Camera, Loader } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ChangeEvent, useState } from 'react'
-import Image from 'next/image'
+import { BadgePlus, Loader2, Package, User, Plus, Box, DollarSign, Loader } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { useState } from 'react'
 import axios from 'axios'
 import { useToast } from '@/app/components/Toast'
-import PopupImage from '@/app/HOC/PopupImage'
 import ButtonHome from '@/app/components/ButtonHome'
 import Link from 'next/link'
-import { useCategories, useUnits } from '@/app/hooks/useCategoriesUnits'
-import { ICategories } from '@/app/models/categories.model'
-import { IUnits } from '@/app/models/units.model'
+import { useCategoryOptions, useUnitOptions } from '@/app/hooks/useCategoryUnitOptions'
+import SearchableSelect from '@/app/components/SearchableSelect'
+import GroceryImagePicker, { GroceryImageValue } from '@/app/components/GroceryImagePicker'
+
+const emptyImage: GroceryImageValue = { file: null, imageUrl: null, preview: null }
 
 const AddGrocery = () => {
   const [name, setName] = useState<string>('')
@@ -20,27 +20,11 @@ const AddGrocery = () => {
   const [stock, setStock] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [loadingImage, setLoadingImage] = useState<boolean>(false)
-  const [backendImage, setBackendImage] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>()
+  const [imageValue, setImageValue] = useState<GroceryImageValue>(emptyImage)
   const disableAdd = name?.length > 0 && category?.length > 0 && unit?.length > 0 && price?.length > 0 && stock > 0;
-  const [open, setOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('')
+  const [unitSearch, setUnitSearch] = useState('')
   const { showToast } = useToast();
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    setLoadingImage(true)
-    try {
-      const file = e?.target.files;
-      if (!file || file.length == 0) return
-      const filterFile = file[0];
-      setBackendImage(filterFile)
-      setPreview(URL.createObjectURL(filterFile))
-      setLoadingImage(false)
-    } catch (error) {
-      showToast('Upload image failed !', "error");
-      setLoadingImage(false)
-    }
-  }
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -52,7 +36,8 @@ const AddGrocery = () => {
       formData.append('unit', unit)
       formData.append('price', price.replace(/,/g, ''))
       formData.append('stock', stock.toString())
-      if (backendImage) formData.append('image', backendImage)
+      if (imageValue.file) formData.append('image', imageValue.file)
+      if (imageValue.imageUrl) formData.append('imageUrl', imageValue.imageUrl)
       const response: any = await axios.post('/api/auth/admin/add-grocery', formData)
       if (response?.data?.success) {
         showToast(response?.data?.message, "success");
@@ -61,8 +46,7 @@ const AddGrocery = () => {
         setUnit('')
         setPrice('')
         setStock(0)
-        setBackendImage(null)
-        setPreview(null)
+        setImageValue(emptyImage)
       } else {
         showToast(response?.data?.message, "error");
       }
@@ -82,14 +66,11 @@ const AddGrocery = () => {
     setPrice(formatted)
   }
 
-  // Categories & Units
-  const { data: categoriesData, isLoading: categoriesLoading } = useCategories()
-
-  const { data: unitsData, isLoading: unitsLoading } = useUnits()
+  const { data: categoryOptions = [], isLoading: categoriesLoading } = useCategoryOptions(categorySearch)
+  const { data: unitOptions = [], isLoading: unitsLoading } = useUnitOptions(unitSearch)
 
   const labelClass = 'text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5'
   const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm placeholder:text-gray-400'
-  const avatarSrc = preview || (typeof backendImage === 'string' ? backendImage : '')
 
   return (
     <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
@@ -130,44 +111,16 @@ const AddGrocery = () => {
             <p className='text-sm max-w-sm md:max-w-xl'>Add new grocery item to your store</p>
           </div>
 
-          {/* Avatar overlap */}
-          <div className='relative -mt-10 px-6 mb-4 flex items-end gap-4'>
-            <div className='relative shrink-0'>
-              <div className='w-20 h-20 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gray-100'>
-                {loadingImage ? (
-                  <div className='w-full h-full flex items-center justify-center'>
-                    <Loader2 className='w-6 h-6 animate-spin text-green-600' />
-                  </div>
-                ) : avatarSrc ? (
-                  <Image
-                    onClick={() => setOpen(true)}
-                    src={avatarSrc}
-                    width={80}
-                    height={80}
-                    alt="Avatar"
-                    className="object-cover w-full h-full cursor-pointer"
-                  />
-                ) : (
-                  <div className='w-full h-full flex items-center justify-center bg-linear-to-br from-green-100 to-emerald-200'>
-                    <Box className='w-8 h-8 text-green-600' />
-                  </div>
-                )}
-              </div>
-              <label
-                htmlFor="file-upload"
-                className='absolute top-0 right-0 bg-green-600 hover:bg-green-700 text-white rounded-lg p-1.5 cursor-pointer shadow-md transition-all'
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Camera className='w-5 h-5' />
-              </label>
-              <input type="file" id="file-upload" className="hidden" onChange={handleFileChange} accept='image/*' />
-            </div>
-
-            <AnimatePresence>
-              {open && avatarSrc && (
-                <PopupImage image={avatarSrc} setOpen={setOpen} />
-              )}
-            </AnimatePresence>
+          {/* Image picker */}
+          <div className='px-6 mb-4'>
+            <GroceryImagePicker
+              value={imageValue}
+              onChange={setImageValue}
+              loading={loadingImage}
+              onLoadingChange={setLoadingImage}
+              onError={(msg) => showToast(msg, 'error')}
+              fileInputId='add-grocery-image'
+            />
           </div>
 
           {/* Form body */}
@@ -200,37 +153,29 @@ const AddGrocery = () => {
                   <label className={labelClass}>
                     <Box className='w-3.5 h-3.5' /> Category
                   </label>
-                  <div className="relative">
-                    <select required className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)} >
-                      <option value=''>Select category</option>
-                      {categoriesData?.filter((item: ICategories) => item?.isActive).map((item: ICategories, index: number) => (
-                        <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
-                      ))}
-                    </select>
-                    {categoriesLoading && (
-                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <Loader className="w-5 h-5 animate-spin text-gray-400" />
-                      </span>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    value={category}
+                    onChange={setCategory}
+                    options={categoryOptions}
+                    isLoading={categoriesLoading}
+                    onSearchChange={setCategorySearch}
+                    placeholder="Search category..."
+                    inputClassName={inputClass}
+                  />
                 </div>
 
                 {/* Unit */}
                 <div>
                   <label className='text-base font-semibold'>Unit <span className='text-red-500'>*</span></label>
-                  <div className="relative">
-                    <select required className={inputClass} value={unit} onChange={(e) => setUnit(e.target.value)} >
-                      <option value=''>Select units</option>
-                      {unitsData?.filter((item: IUnits) => item?.isActive).map((item: IUnits, index: number) => (
-                        <option key={item?._id?.toString() || index} value={item?.name}>{item?.name}</option>
-                      ))}
-                    </select>
-                    {unitsLoading && (
-                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <Loader className="w-5 h-5 animate-spin text-gray-400" />
-                      </span>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    value={unit}
+                    onChange={setUnit}
+                    options={unitOptions}
+                    isLoading={unitsLoading}
+                    onSearchChange={setUnitSearch}
+                    placeholder="Search unit..."
+                    inputClassName={inputClass}
+                  />
                 </div>
               </div>
 

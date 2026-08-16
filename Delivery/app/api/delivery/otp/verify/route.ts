@@ -2,6 +2,7 @@
 
 import { auth } from "@/app/auth"
 import connectDB from "@/app/lib/db"
+import { DELIVERY_EARNING_PER_ORDER } from "@/app/lib/currency"
 import { emitEventHandler } from "@/app/lib/emitEventHandler"
 import { sendEmail } from "@/app/lib/mailer"
 import DeliveryAssignment from "@/app/models/deliveryAssignment.model"
@@ -84,7 +85,11 @@ export async function POST(req: NextRequest) {
             console.error('Failed to send delivery notification email:', emailError)
         }
 
-        return NextResponse.json({ success: true, message: "OTP verified successfully" }, { status: 200 })
+        return NextResponse.json({
+            success: true,
+            message: "OTP verified successfully",
+            shipperEarning: order.shipperEarning || DELIVERY_EARNING_PER_ORDER,
+        }, { status: 200 })
 
     } catch (error) {
         return NextResponse.json({ success: false, message: "Verification of OTP failed" }, { status: 500 })

@@ -14,7 +14,7 @@ const HeroSection = () => {
             title: 'Shopping',
             subTitle: 'Shopping is now easier than ever with our grocery delivery service. Browse and order your favorite products with just a few clicks.',
             btnText: 'Shop Now',
-            bg: 'https://media.istockphoto.com/id/2191424156/vi/anh/ph%E1%BB%A5-n%E1%BB%AF-mua-h%C3%A0ng-t%E1%BA%A1p-h%C3%B3a-trong-khi-%C4%91%E1%BB%8Dc-nh%C3%A3n-s%E1%BA%A3n-ph%E1%BA%A9m.jpg?s=2048x2048&w=is&k=20&c=0iTULcsMSHzziyDR6hjzTIp1w3nbjXEpTrUTHtG3b6U='
+            bg: 'https://www.evogennutrition.com/cdn/shop/files/Confetti_Cake-b2b-email-banner-web.jpg?v=1782662444&width=1200'
         },
         {
             id: 2,
@@ -23,7 +23,7 @@ const HeroSection = () => {
             title: 'Fresh Vegetables',
             subTitle: 'Fresh vegetables delivered to your door. Order now and enjoy the convenience of having your groceries delivered to your door.',
             btnText: 'Vegetables Now',
-            bg: 'https://media.istockphoto.com/id/914906098/vi/anh/ng%C6%B0%E1%BB%9Di-ph%E1%BB%A5-n%E1%BB%AF-tr%E1%BA%BB-thu-ho%E1%BA%A1ch-nh%C3%A0-tr%E1%BB%93ng-rau-di%E1%BA%BFp.jpg?s=2048x2048&w=is&k=20&c=YswOtBy9cZc6jTaDnKNvHuRPVFc8JIkt3CW16Gq-QH0='
+            bg: 'https://www.evogennutrition.com/cdn/shop/files/Aq-top-pump-web.jpg?v=1782665701&width=1200'
         },
         {
             id: 3,
@@ -32,7 +32,7 @@ const HeroSection = () => {
             title: 'Free Delivery',
             subTitle: 'Free delivery on all orders over $100. Order now and enjoy the convenience of having your groceries delivered to your door.',
             btnText: 'Delivery Now',
-            bg: 'https://images.unsplash.com/photo-1646143542229-8f8b9ad26747?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+            bg: 'https://www.evogennutrition.com/cdn/shop/files/NFS-Creatine-main-banner-web.jpg?v=1785417043&width=1200'
         }
     ]
 

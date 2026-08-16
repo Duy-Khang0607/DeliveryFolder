@@ -10,7 +10,9 @@ import { ArrowLeft, ArrowRight, Box, CheckCircle, DollarSign, Loader2, Package, 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import axios from "axios"
 import Image from "next/image"
+import { formatVndCompact } from "../lib/currency"
 import { useDeliveryDashboard, useDeliveryHistory } from "../hooks/useDeliveryDashboard"
+import DeliveryHistoryModal from "./DeliveryHistoryModal"
 
 interface propType {
   earning: {
@@ -322,7 +324,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Earnings</p>
-                    <p className="text-base font-extrabold text-green-600">${boy.totalEarnings}</p>
+                    <p className="text-base font-extrabold text-green-600">{formatVndCompact(boy.totalEarnings)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Accept %</p>
@@ -352,130 +354,24 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
         )}
       </motion.div>
 
-      {/* ── Delivery History Modal ── */}
-      <AnimatePresence>
-        {selectedBoy && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4"
-            onClick={() => setSelectedBoy(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.93, opacity: 0, y: 16 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.93, opacity: 0, y: 16 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              onClick={e => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[65vh] flex flex-col overflow-hidden"
-            >
-              {/* Modal header */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
-                <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
-                  {selectedBoy.image
-                    ? <Image src={selectedBoy.image} alt={selectedBoy.name} width={36} height={36} className="object-cover w-full h-full" />
-                    : <User className="w-4 h-4 text-gray-400" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800 text-sm truncate">{selectedBoy.name}</p>
-                  <p className="text-xs text-gray-400">Delivery History</p>
-                </div>
-                <button
-                  onClick={() => setSelectedBoy(null)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Stats pills */}
-              <div className="px-5 py-3 grid grid-cols-3 gap-3 border-b border-gray-100 shrink-0">
-                {[
-                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Completed', value: selectedBoy.completedDeliveries, color: 'text-green-700 bg-green-50' },
-                  { icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Earnings', value: `$${selectedBoy.totalEarnings}`, color: 'text-green-700 bg-green-50' },
-                  { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Accept Rate', value: `${selectedBoy.acceptanceRate}%`, color: 'text-blue-700 bg-blue-50' },
-                ].map(s => (
-                  <div key={s.label} className={`flex flex-col items-center py-2.5 rounded-xl ${s.color}`}>
-                    <span className="mb-0.5">{s.icon}</span>
-                    <p className="text-xs text-gray-500">{s.label}</p>
-                    <p className="font-extrabold text-sm">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Order list */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-3">
-                {historyLoading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-                  </div>
-                ) : historyData?.orders?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <Package className="w-8 h-8 text-gray-300" />
-                    <p className="text-sm text-gray-400">No delivered orders yet</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {historyData?.orders?.map((order: any) => (
-                      <div key={order._id} className="flex flex-col gap-1.5 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-gray-800 font-mono">
-                            #{order._id?.toString()?.slice(-6)}
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
-                            Delivered
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 gap-2">
-                          <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {(order.user as any)?.name || order.address?.fullName || '—'}
-                          </span>
-                          <span className="font-bold text-green-700">${order.totalAmount?.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-gray-400">
-                          <span>{order.items?.length} item{order.items?.length !== 1 ? 's' : ''}</span>
-                          <span>
-                            {order.deliveredAt
-                              ? new Date(order.deliveredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                              : order.createdAt
-                                ? new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Pagination */}
-              {historyData?.pagination && historyData.pagination.totalPages > 1 && (
-                <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between shrink-0">
-                  <button
-                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
-                    disabled={historyPage <= 1}
-                    className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> Prev
-                  </button>
-                  <span className="text-xs text-gray-400">
-                    Page <span className="font-bold text-gray-700">{historyPage}</span> / {historyData.pagination.totalPages}
-                  </span>
-                  <button
-                    onClick={() => setHistoryPage(p => Math.min(historyData.pagination.totalPages, p + 1))}
-                    disabled={historyPage >= historyData.pagination.totalPages}
-                    className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                  >
-                    Next <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <DeliveryHistoryModal
+        open={!!selectedBoy}
+        onClose={() => setSelectedBoy(null)}
+        name={selectedBoy?.name || ''}
+        subtitle="Delivery History"
+        image={selectedBoy?.image}
+        stats={selectedBoy ? [
+          { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Completed', value: selectedBoy.completedDeliveries, color: 'text-green-700 bg-green-50' },
+          { icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Earnings', value: formatVndCompact(selectedBoy.totalEarnings), color: 'text-green-700 bg-green-50' },
+          { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Accept Rate', value: `${selectedBoy.acceptanceRate}%`, color: 'text-blue-700 bg-blue-50' },
+        ] : []}
+        orders={historyData?.orders ?? []}
+        loading={historyLoading}
+        historyPage={historyPage}
+        totalPages={historyData?.pagination?.totalPages ?? 1}
+        onPageChange={setHistoryPage}
+        amountKey="totalAmount"
+      />
 
     </div>
   )

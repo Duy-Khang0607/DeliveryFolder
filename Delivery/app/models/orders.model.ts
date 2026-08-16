@@ -32,6 +32,8 @@ export interface IOrder {
     createdAt?: Date,
     updatedAt?: Date,
     isPaid: Boolean,
+    stockDeducted?: boolean,
+    couponApplied?: boolean,
     assignedDeliveryBoy?: IUser | null,
     assignment?: typeof DeliveryAssignment | null
     deliveryOTP?: string | null,
@@ -43,6 +45,9 @@ export interface IOrder {
     searchText: string
     couponCode?: string | null
     discountAmount?: number
+    deliveryDistanceKm?: number
+    deliveryFee?: number
+    shipperEarning?: number
 }
 
 const orderSchema = new mongoose.Schema<IOrder>({
@@ -90,6 +95,14 @@ const orderSchema = new mongoose.Schema<IOrder>({
         type: Boolean,
         default: false
     },
+    stockDeducted: {
+        type: Boolean,
+        default: false,
+    },
+    couponApplied: {
+        type: Boolean,
+        default: false,
+    },
     assignment: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "DeliveryAssignment",
@@ -130,6 +143,18 @@ const orderSchema = new mongoose.Schema<IOrder>({
         default: null,
     },
     discountAmount: {
+        type: Number,
+        default: 0,
+    },
+    deliveryDistanceKm: {
+        type: Number,
+        default: 0,
+    },
+    deliveryFee: {
+        type: Number,
+        default: 0,
+    },
+    shipperEarning: {
         type: Number,
         default: 0,
     },

@@ -2,12 +2,17 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Box, Loader2, LocationEdit, Mail, Phone, Timer, Truck, User } from 'lucide-react';
+import { Box, CheckCircle, DollarSign, History, Loader2, LocationEdit, Mail, Phone, Timer, Truck, User } from 'lucide-react';
 import { getSocket } from '../lib/socket';
 import { useSelector } from 'react-redux';
 import dynamic from 'next/dynamic';
 import { useToast } from './Toast';
+import { DELIVERY_EARNING_PER_ORDER, formatVnd, formatVndCompact } from '../lib/currency';
+import { calculateDeliveryPricing } from '../lib/deliveryPricing';
 import { Legend, PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from 'recharts';
+import DeliveryHistoryModal from './DeliveryHistoryModal';
+import { useDeliveryBoyHistory } from '../hooks/useDeliveryDashboard';
+import { useQueryClient } from '@tanstack/react-query';
 
 const LiveMap = dynamic(() => import('./LiveMap'), { ssr: false, loading: () => <div className='w-full h-64 bg-gray-100 animate-pulse rounded-lg' /> });
 const DeliveryChat = dynamic(() => import('./DeliveryChat'), { ssr: false });
@@ -17,8 +22,36 @@ interface IDeliveryLocation {
     longitude: number;
 }
 
-const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) => {
+const getOrderShipperEarning = (order: any): { distanceKm: number; shipperEarning: number } => {
+    if (order?.shipperEarning && order?.deliveryDistanceKm) {
+        return { distanceKm: order.deliveryDistanceKm, shipperEarning: order.shipperEarning }
+    }
+    const lat = order?.address?.latitude
+    const lng = order?.address?.longitude
+    if (lat != null && lng != null) {
+        const itemsTotal = order?.items?.reduce(
+            (sum: number, i: any) => sum + Number(i.price) * Number(i.quantity),
+            0
+        ) ?? 0
+        const pricing = calculateDeliveryPricing({
+            subTotal: itemsTotal,
+            destLatitude: Number(lat),
+            destLongitude: Number(lng),
+        })
+        return { distanceKm: pricing.distanceKm, shipperEarning: pricing.shipperEarning }
+    }
+    return { distanceKm: 0, shipperEarning: DELIVERY_EARNING_PER_ORDER }
+}
+
+const DeliveryBoyDashboard = ({
+    earning: initialEarning,
+    deliveryCount: initialDeliveryCount = 0,
+}: {
+    earning: number
+    deliveryCount?: number
+}) => {
     const [earning, setEarning] = useState(initialEarning);
+    const [deliveryCount, setDeliveryCount] = useState(initialDeliveryCount);
     const [assignments, setAssignments] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -39,7 +72,12 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     // Send OTP
     const [otp, setOtp] = useState('');
     const [loadingOTP, setLoadingOTP] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [historyPage, setHistoryPage] = useState(1);
     const { showToast } = useToast();
+    const queryClient = useQueryClient();
+
+    const { data: historyData, isLoading: historyLoading } = useDeliveryBoyHistory(historyPage, showHistory);
 
     const getAssignments = async () => {
         try {
@@ -123,9 +161,11 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
     const verifyOTP = async (orderId: string, otp: string) => {
         setLoadingOTP(true);
         try {
-            await axios.post(`/api/delivery/otp/verify`, { orderId, otp });
+            const res = await axios.post(`/api/delivery/otp/verify`, { orderId, otp });
             setOtp('');
-            setEarning((prev) => prev + 40);
+            setEarning((prev) => prev + (res?.data?.shipperEarning ?? DELIVERY_EARNING_PER_ORDER));
+            setDeliveryCount((prev) => prev + 1);
+            queryClient.invalidateQueries({ queryKey: ['delivery-boy-history'] });
             await fetchCurrentOrder();
             await getAssignments();
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -269,9 +309,19 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
         return (
             <div className='w-[90%] mx-auto mt-24 mb-12 h-full'>
                 {/* Header */}
-                <div className='mb-8'>
-                    <p className='text-xs font-semibold uppercase tracking-widest text-green-500 mb-1'>Dashboard</p>
-                    <h1 className='text-2xl sm:text-3xl font-extrabold text-gray-800'>Delivery Boy</h1>
+                <div className='mb-8 flex items-start justify-between gap-4'>
+                    <div>
+                        <p className='text-xs font-semibold uppercase tracking-widest text-green-500 mb-1'>Dashboard</p>
+                        <h1 className='text-2xl sm:text-3xl font-extrabold text-gray-800'>Delivery Boy</h1>
+                    </div>
+                    <motion.button
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => { setHistoryPage(1); setShowHistory(true) }}
+                        className='flex items-center gap-2 px-4 py-2.5 bg-white border border-green-200 text-green-700 text-sm font-semibold rounded-xl hover:bg-green-50 transition-all cursor-pointer shadow-sm'
+                    >
+                        <History className='w-4 h-4' />
+                        Today&apos;s History
+                    </motion.button>
                 </div>
 
                 {/* Earning banner */}
@@ -282,8 +332,8 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                     <div className='absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10' />
                     <div className='absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/10' />
                     <p className='text-green-100 text-sm font-medium mb-1 relative'>Today&apos;s Earnings</p>
-                    <p className='text-4xl sm:text-5xl font-extrabold text-white relative tracking-tight'>${earning.toFixed(2)}</p>
-                    <p className='text-green-100 text-xs mt-3 relative'>{Math.round(earning / 40)} deliveries completed today</p>
+                    <p className='text-4xl sm:text-5xl font-extrabold text-white relative tracking-tight'>{formatVnd(earning)}</p>
+                    <p className='text-green-100 text-xs mt-3 relative'>{deliveryCount} deliveries completed today</p>
                 </motion.div>
 
                 {/* Chart card */}
@@ -304,11 +354,11 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                     <div className='grid grid-cols-2 gap-3 mb-5'>
                         <div className='flex flex-col items-center justify-center bg-green-50 rounded-2xl py-4 border border-green-100'>
                             <p className='text-xs text-gray-400 font-semibold uppercase tracking-widest mb-1'>Earned</p>
-                            <p className='text-2xl font-extrabold text-green-700'>${earning.toFixed(2)}</p>
+                            <p className='text-2xl font-extrabold text-green-700'>{formatVndCompact(earning)}</p>
                         </div>
                         <div className='flex flex-col items-center justify-center bg-emerald-50 rounded-2xl py-4 border border-emerald-100'>
                             <p className='text-xs text-gray-400 font-semibold uppercase tracking-widest mb-1'>Deliveries</p>
-                            <p className='text-2xl font-extrabold text-emerald-600'>{Math.round(earning / 40)}</p>
+                            <p className='text-2xl font-extrabold text-emerald-600'>{deliveryCount}</p>
                         </div>
                     </div>
 
@@ -319,15 +369,19 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                                 cx="50%" cy="50%"
                                 innerRadius="40%" outerRadius="90%"
                                 data={[
-                                    { name: 'Deliveries', value: Math.min(Math.round(earning / 40), 9999), fill: '#86efac', max: 9999 },
-                                    { name: 'Earning ($)', value: Math.min(earning, 999999), fill: '#16a34a', max: 999999 },
+                                    { name: 'Deliveries', value: Math.min(deliveryCount, 9999), fill: '#86efac', max: 9999 },
+                                    { name: 'Earning (VND)', value: Math.min(earning, 999_999_999), fill: '#16a34a', max: 999_999_999 },
                                 ]}
                                 startAngle={180} endAngle={-180}
                             >
                                 <PolarAngleAxis type="number" domain={[0, 200]} angleAxisId={0} tick={false} />
                                 <RadialBar background={{ fill: '#f0fdf4' }} dataKey="value" cornerRadius={8} />
                                 <Tooltip
-                                    formatter={(value, name) => name === 'Earning ($)' ? [`$${value}`, name] : [value, name]}
+                                    formatter={(value, name) =>
+                                        name === 'Earning (VND)'
+                                            ? [formatVndCompact(Number(value)), name]
+                                            : [value, name]
+                                    }
                                     contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", fontSize: "13px" }}
                                 />
                                 <Legend iconType='circle' iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
@@ -336,7 +390,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                         {/* Center label */}
                         <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none'>
                             <span className='text-xs text-gray-400 font-medium'>Today</span>
-                            <span className='text-lg font-extrabold text-green-700'>${earning.toFixed(0)}</span>
+                            <span className='text-lg font-extrabold text-green-700'>{formatVndCompact(earning)}</span>
                         </div>
                     </div>
                 </motion.div>
@@ -362,6 +416,24 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                         Refresh Earnings
                     </motion.button>
                 </motion.div>
+
+                <DeliveryHistoryModal
+                    open={showHistory}
+                    onClose={() => setShowHistory(false)}
+                    name={userData?.name || 'Delivery Boy'}
+                    subtitle="Today's Delivery History"
+                    image={userData?.image}
+                    stats={[
+                        { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Completed', value: historyData?.summary?.completedDeliveries ?? deliveryCount, color: 'text-green-700 bg-green-50' },
+                        { icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Earnings', value: formatVndCompact(earning), color: 'text-green-700 bg-green-50' },
+                    ]}
+                    orders={historyData?.orders ?? []}
+                    loading={historyLoading}
+                    historyPage={historyPage}
+                    totalPages={historyData?.pagination?.totalPages ?? 1}
+                    onPageChange={setHistoryPage}
+                    emptyMessage="No deliveries completed today"
+                />
             </div>
         )
     }
@@ -505,6 +577,7 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                             const { _id, paymentMethod, createdAt, address } = orders?.order
                             const { fullName, mobile } = orders?.order?.address
                             const assignmentId = orders?._id || orders?.assignment || orders?.order?.assignment;
+                            const { distanceKm, shipperEarning } = getOrderShipperEarning(orders?.order)
 
                             return (
                                 <motion.div
@@ -545,6 +618,10 @@ const DeliveryBoyDashboard = ({ earning: initialEarning }: { earning: number }) 
                                         <div className='flex items-start gap-2.5'>
                                             <LocationEdit className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />
                                             <span className='text-sm text-gray-600 leading-snug'>{address?.fullAddress}</span>
+                                        </div>
+                                        <div className='flex items-center justify-between gap-2 px-3 py-2 bg-green-50 rounded-xl border border-green-100'>
+                                            <span className='text-xs text-gray-500'>{distanceKm} km</span>
+                                            <span className='text-xs font-bold text-green-700'>{formatVndCompact(shipperEarning)}</span>
                                         </div>
                                     </div>
 

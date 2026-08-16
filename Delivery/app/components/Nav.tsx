@@ -14,7 +14,7 @@ import profileImage from '../assets/profile.jpg'
 import deliveryBoyImage from '../assets/deliveryBoy.png'
 import { useToast } from './Toast'
 import FormEditUser from './FormEditUser'
-import { disconnectSocket } from '../lib/socket'
+import { disconnectSocket, getSocket } from '../lib/socket'
 
 const Nav = ({ user }: { user: IUser }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -26,7 +26,8 @@ const Nav = ({ user }: { user: IUser }) => {
   const searchMobileRef = useRef<HTMLFormElement>(null)
   const [sideBar, setSideBar] = useState(false)
   const router = useRouter()
-  const [orders, setOrders] = useState<number | undefined>(0)
+  const [userOrdersCount, setUserOrdersCount] = useState(0)
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
   const { cartData } = useSelector((state: RootState) => state?.cart)
   const { userData } = useSelector((state: RootState) => state?.user)
   const { showToast } = useToast()
@@ -51,10 +52,19 @@ const Nav = ({ user }: { user: IUser }) => {
     }
   }
 
-  const fetchOrders = async () => {
+  const fetchUserOrders = async () => {
     try {
-      const res = await axios.get('/api/auth/user/my-orders?page=1&limit=10');
-      setOrders(res?.data?.pagination?.totalItems || 0)
+      const res = await axios.get('/api/auth/user/my-orders?page=1&limit=10')
+      setUserOrdersCount(res?.data?.pagination?.totalItems || 0)
+    } catch (error: any) {
+      showToast(error?.response?.data?.message, 'error')
+    }
+  }
+
+  const fetchAdminPendingOrders = async () => {
+    try {
+      const res = await axios.get('/api/auth/admin/get-orders?page=1&limit=1&status=Pending')
+      setPendingOrdersCount(res?.data?.pagination?.totalItems || 0)
     } catch (error: any) {
       showToast(error?.response?.data?.message, 'error')
     }
@@ -70,8 +80,38 @@ const Nav = ({ user }: { user: IUser }) => {
   }
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    if (user?.role === 'user') {
+      fetchUserOrders()
+    } else if (user?.role === 'admin') {
+      fetchAdminPendingOrders()
+    }
+  }, [user?.role])
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return
+
+    const socket = getSocket()
+
+    const handleNewOrder = (order?: { status?: string }) => {
+      if (!order?.status || order.status === 'Pending') {
+        setPendingOrdersCount((prev) => prev + 1)
+      }
+    }
+
+    const handlePendingCountRefresh = () => {
+      fetchAdminPendingOrders()
+    }
+
+    socket?.on('new-order', handleNewOrder)
+    socket?.on('order-status-updated', handlePendingCountRefresh)
+    socket?.on('order-assigned', handlePendingCountRefresh)
+
+    return () => {
+      socket?.off('new-order', handleNewOrder)
+      socket?.off('order-status-updated', handlePendingCountRefresh)
+      socket?.off('order-assigned', handlePendingCountRefresh)
+    }
+  }, [user?.role])
 
   // Tắt dropdown Profile khi click ra ngoài
   useEffect(() => {
@@ -186,6 +226,11 @@ const Nav = ({ user }: { user: IUser }) => {
               ? <Image src={user?.image as string || profileImage} alt='user' width={20} height={20} className='w-5 h-5 rounded-full' />
               : <User className='w-5 h-5 text-green-500' />
           )}
+          {user?.role === 'admin' && pendingOrdersCount > 0 && (
+            <span className='absolute -top-1.5 -right-2 min-w-5 h-5 px-1 text-white font-bold text-xs flex items-center justify-center bg-red-500 rounded-full'>
+              {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+            </span>
+          )}
         </div>
 
         {/* Dropdown Profile */}
@@ -218,7 +263,7 @@ const Nav = ({ user }: { user: IUser }) => {
               {user?.role === 'user' && <>
                 <button onClick={() => router.push('/user/my-orders')} className='flex items-center gap-2 p-2 rounded-md w-full transition-all duration-300 cursor-pointer hover:bg-green-200'>
                   <Package className='w-5 h-5 text-green-500' />
-                  <span className='text-black text-sm md:text-md relative'>My Orders <span className='absolute top-0 -right-8 text-white font-bold text-xs flex items-center justify-center w-6 h-6 bg-red-500 rounded-full'>{orders ? orders : 0}</span></span>
+                  <span className='text-black text-sm md:text-md relative'>My Orders <span className='absolute top-0 -right-8 text-white font-bold text-xs flex items-center justify-center w-6 h-6 bg-red-500 rounded-full'>{userOrdersCount}</span></span>
                 </button>
               </>}
               <hr className='border-gray-200' />

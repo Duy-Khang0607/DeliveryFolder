@@ -26,4 +26,24 @@ const uploadOnCloudinary = async (file: Blob): Promise<string | null> => {
     }
 }
 
+export const uploadFromUrl = async (url: string): Promise<string | null> => {
+    if (!url?.trim()) return null
+    try {
+        const result = await cloudinary.uploader.upload(url.trim(), { resource_type: 'auto' })
+        return result?.secure_url || null
+    } catch (error) {
+        console.error(error)
+        return null
+    }
+}
+
+export const resolveGroceryImage = async (
+    file: Blob | null,
+    imageUrl: string | null
+): Promise<string | null> => {
+    if (file) return uploadOnCloudinary(file)
+    if (imageUrl?.trim()) return uploadFromUrl(imageUrl.trim())
+    return null
+}
+
 export default uploadOnCloudinary

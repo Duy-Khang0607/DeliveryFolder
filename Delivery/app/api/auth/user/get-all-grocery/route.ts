@@ -17,12 +17,20 @@ export async function GET(req: NextRequest) {
 
 
         const q = search.get('q')
-        const query = q ? {
-            $or: [
+        const category = search.get('category')
+
+        const query: Record<string, unknown> = {}
+
+        if (category) {
+            query.category = category
+        }
+
+        if (q) {
+            query.$or = [
                 { name: { $regex: q, $options: 'i' } },
                 { category: { $regex: q, $options: 'i' } }
             ]
-        } : {}
+        }
 
         // Total count
         const totalItems = await Grocery?.countDocuments(query);

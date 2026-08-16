@@ -11,6 +11,11 @@ const fetchDeliveryHistory = async (selectedBoy: string, historyPage: number) =>
     return data ?? []
 }
 
+const fetchDeliveryBoyHistory = async (historyPage: number) => {
+    const { data } = await axios.get(`/api/delivery/history?page=${historyPage}&limit=8&scope=today`)
+    return data ?? []
+}
+
 export const useDeliveryDashboard = () => {
     return useQuery({
         queryKey: ['admin-delivery-boys'],
@@ -25,5 +30,14 @@ export const useDeliveryHistory = (selectedBoy: string | undefined, historyPage:
         queryFn: () => fetchDeliveryHistory(selectedBoy || '', historyPage),
         placeholderData: keepPreviousData,
         enabled: !!selectedBoy,
+    })
+}
+
+export const useDeliveryBoyHistory = (historyPage: number, enabled: boolean) => {
+    return useQuery({
+        queryKey: ['delivery-boy-history', 'today', historyPage],
+        queryFn: () => fetchDeliveryBoyHistory(historyPage),
+        placeholderData: keepPreviousData,
+        enabled,
     })
 }

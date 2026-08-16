@@ -10,6 +10,8 @@ import ButtonHome from '@/app/components/ButtonHome'
 import { useState } from 'react'
 import axios from 'axios'
 import { useCartStockSync } from '@/app/hooks/useCartStockSync'
+import PopupImage from '@/app/HOC/PopupImage'
+import { formatVnd } from '@/app/lib/currency'
 
 const Cart = () => {
     const dispatch = useDispatch()
@@ -21,6 +23,9 @@ const Cart = () => {
     const [couponInput, setCouponInput] = useState('')
     const [couponLoading, setCouponLoading] = useState(false)
     const [couponError, setCouponError] = useState('')
+
+    // Popup image
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     const handleApplyCoupon = async () => {
         if (!couponInput.trim()) return
@@ -152,8 +157,9 @@ const Cart = () => {
                                                                 src={item?.image[0]}
                                                                 alt={item?.name}
                                                                 fill
-                                                                className='object-cover group-hover:scale-105 transition-transform duration-300'
+                                                                className='object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer'
                                                                 sizes='(max-width: 640px) 80px, 96px'
+                                                                onClick={() => item?.image?.[0] && setPreviewImage(item.image[0])}
                                                             />
                                                         ) : (
                                                             <div className='w-full h-full flex items-center justify-center bg-gray-100'>
@@ -172,7 +178,7 @@ const Cart = () => {
                                                             {item?.unit}
                                                         </span>
                                                         <p className='text-sm font-extrabold text-green-700'>
-                                                            ${item?.price}
+                                                            {formatVnd(Number(item?.price ?? 0))}
                                                             <span className='text-xs font-normal text-gray-400 ml-1'>× {item?.quantity}</span>
                                                         </p>
                                                         {/* Stock */}
@@ -259,12 +265,14 @@ const Cart = () => {
                     <div className='p-4 flex flex-col gap-3'>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Subtotal</span>
-                            <span className='text-sm font-bold text-green-700'>${subTotal.toFixed(2)}</span>
+                            <span className='text-sm font-bold text-green-700'>
+                                {formatVnd(subTotal)}
+                            </span>
                         </div>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Delivery Fee</span>
                             <span className='text-sm font-bold text-green-700'>
-                                {deliveryFee === 0 ? 'Free 🎉' : `$${deliveryFee}`}
+                                {deliveryFee === 0 ? 'Free' : formatVnd(deliveryFee)}
                             </span>
                         </div>
 
@@ -285,7 +293,7 @@ const Cart = () => {
                                         <p className='text-[11px] text-green-600'>
                                             {coupon.discountType === 'percentage'
                                                 ? `${coupon.discountValue}% off`
-                                                : `$${coupon.discountValue} off`} — saved ${discountAmount.toFixed(2)}
+                                                : `${formatVnd(coupon.discountValue)} off`} — saved {formatVnd(discountAmount)}
                                         </p>
                                     </div>
                                 </div>
@@ -334,13 +342,15 @@ const Cart = () => {
                         {discountAmount > 0 && (
                             <div className='flex items-center justify-between'>
                                 <span className='text-sm text-green-600 font-medium'>Discount</span>
-                                <span className='text-sm font-bold text-green-600'>-${discountAmount.toFixed(2)}</span>
+                                <span className='text-sm font-bold text-green-600'>-{formatVnd(discountAmount)}</span>
                             </div>
                         )}
 
                         <div className='flex items-center justify-between'>
                             <span className='font-extrabold text-gray-800 text-base'>Final Total</span>
-                            <span className='font-extrabold text-green-700 text-base'>${finalTotal.toFixed(2)}</span>
+                            <span className='font-extrabold text-green-700 text-base'>
+                                {formatVnd(finalTotal)}
+                            </span>
                         </div>
 
                         {cartData?.length > 0 && (
@@ -366,6 +376,19 @@ const Cart = () => {
                     </div>
                 </motion.div>
             </div >
+
+            {/*Popup image*/}
+            <AnimatePresence>
+                {previewImage && (
+                    <PopupImage
+                        image={previewImage}
+                        setOpen={(v) => {
+                            const next = typeof v === 'function' ? v(true) : v
+                            if (!next) setPreviewImage(null)
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </section >
     )
 }

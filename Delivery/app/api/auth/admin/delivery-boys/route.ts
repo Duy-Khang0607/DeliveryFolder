@@ -4,6 +4,7 @@ import DeliveryAssignment from "@/app/models/deliveryAssignment.model";
 import Orders from "@/app/models/orders.model";
 import User from "@/app/models/user.model";
 import { NextResponse } from "next/server";
+import { DELIVERY_EARNING_PER_ORDER } from "@/app/lib/currency";
 
 export async function GET() {
     try {
@@ -28,7 +29,7 @@ export async function GET() {
             Orders.find({
                 assignedDeliveryBoy: { $in: ids },
                 status: 'Delivered',
-            }).select('assignedDeliveryBoy deliveredAt totalAmount').lean(),
+            }).select('assignedDeliveryBoy deliveredAt totalAmount shipperEarning').lean(),
 
             DeliveryAssignment.find({
                 $or: [
@@ -55,9 +56,10 @@ export async function GET() {
                 a => a.rejectedBy?.some((id: any) => id.toString() === boyId)
             ).length;
 
+            const acceptedOffers = Math.max(0, totalBroadcasted - totalRejected);
             const acceptanceRate = totalBroadcasted > 0
-                ? Math.round((completedDeliveries / totalBroadcasted) * 100)
-                : completedDeliveries > 0 ? 100 : 0;
+                ? Math.min(100, Math.round((acceptedOffers / totalBroadcasted) * 100))
+                : 0;
 
             // lastDelivery = deliveredAt gần nhất trong Orders
             const lastDelivery = completedOrders.length
@@ -77,7 +79,10 @@ export async function GET() {
                 totalBroadcasted,
                 totalRejected,
                 acceptanceRate,
-                totalEarnings: completedDeliveries * 40,
+                totalEarnings: completedOrders.reduce(
+                    (sum, o) => sum + (o.shipperEarning || DELIVERY_EARNING_PER_ORDER),
+                    0
+                ),
                 lastDelivery,
             };
         });

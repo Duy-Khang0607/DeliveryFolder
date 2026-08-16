@@ -7,6 +7,7 @@ import PopupImage from '../HOC/PopupImage'
 import axios from 'axios'
 import { IUserClient } from '../types'
 import { useToast } from "@/app/components/Toast"
+import { formatVnd } from '@/app/lib/currency'
 import { useQuery } from '@tanstack/react-query'
 
 
@@ -296,7 +297,7 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                                         <p className='text-xs text-gray-400 mt-0.5'>{item?.quantity} × {item?.unit}</p>
                                     </div>
                                 </div>
-                                <p className='text-sm font-bold text-green-700 shrink-0'>${item?.price}</p>
+                                <p className='text-sm font-bold text-green-700 shrink-0'>{formatVnd(Number(item?.price ?? 0))}</p>
                             </motion.div>
                         ))
                     )}
@@ -312,7 +313,7 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                     </span>
                 </div>
                 <p className='font-extrabold text-sm md:text-base text-gray-800'>
-                    Total: <span className='text-green-700'>${orders?.totalAmount}</span>
+                    Total: <span className='text-green-700'>{formatVnd(Number(orders?.totalAmount ?? 0))}</span>
                 </p>
             </div>
 

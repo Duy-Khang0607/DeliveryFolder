@@ -10,6 +10,7 @@ import { AppDispatch, RootState } from '../redux/store'
 import { addToCart, decreaseQuantity, ICartSlice, increaseQuantity } from '../redux/cartSlice'
 import Link from 'next/link'
 import { useToast } from './Toast'
+import { formatVnd } from '../lib/currency'
 
 interface GroceryItemCardProps {
   groceries: IGrocery
@@ -107,7 +108,9 @@ const GroceyItemCard = ({ groceries }: GroceryItemCardProps) => {
         <div className='flex flex-col gap-2'>
           <div className='flex items-center gap-2'>
             <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
-            <p className='text-sm font-extrabold text-green-700'>${groceries?.price}</p>
+            <p className='text-sm font-extrabold text-green-700'>
+              {formatVnd(Number(groceries?.price ?? 0))}
+            </p>
           </div>
           <div className='flex items-center gap-2'>
             <Package className='w-4 h-4 text-gray-400 shrink-0' />

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/app/components/Toast'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { useCategoriesPaginated } from '@/app/hooks/useCategoriesPaginated'
 import { useUnitsPaginated } from '@/app/hooks/useUnitPaginated'
 import SearchInput from '@/app/components/SearchInput'

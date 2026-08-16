@@ -12,6 +12,7 @@ import { IGrocery } from '@/app/models/grocery.model'
 import { use } from 'react'
 import PopupImage from '@/app/HOC/PopupImage'
 import { useGetGroceryById } from '@/app/hooks/useGroceryId'
+import { formatVnd } from '@/app/lib/currency'
 
 const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
     const { id } = use(params)
@@ -150,7 +151,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                                                 {/* Price && Unit */}
                                                 <div className='flex items-center gap-2'>
                                                     <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
-                                                    <p className='text-xl font-extrabold text-green-700'>${item?.price}</p>
+                                                    <p className='text-xl font-extrabold text-green-700'>{formatVnd(Number(item?.price ?? 0))}</p>
                                                 </div>
                                                 <div className='flex items-center gap-2'>
                                                     <Package className='w-4 h-4 text-gray-400 shrink-0' />
@@ -290,12 +291,12 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
                     <div className='p-4 flex flex-col gap-3 flex-1'>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Subtotal</span>
-                            <span className='text-sm font-bold text-green-700'>${subTotal}</span>
+                            <span className='text-sm font-bold text-green-700'>{formatVnd(subTotal)}</span>
                         </div>
                         <div className='flex items-center justify-between'>
                             <span className='text-sm text-gray-500'>Delivery Fee</span>
                             <span className='text-sm font-bold text-green-700'>
-                                {deliveryFee === 0 ? 'Free 🎉' : `$${deliveryFee}`}
+                                {deliveryFee === 0 ? 'Free' : formatVnd(deliveryFee)}
                             </span>
                         </div>
 
@@ -303,7 +304,7 @@ const ItemDetail = ({ params }: { params: Promise<{ id: string }> }) => {
 
                         <div className='flex items-center justify-between'>
                             <span className='font-extrabold text-gray-800 text-base'>Final Total</span>
-                            <span className='font-extrabold text-green-700 text-base'>${finalTotal}</span>
+                            <span className='font-extrabold text-green-700 text-base'>{formatVnd(finalTotal)}</span>
                         </div>
 
                         {/* Cart items preview */}

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '../models/grocery.model'
 import CategorySilder from './CategorySilder'
 import GroceryItemCard from './GroceryItemCard'
-import {  useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Pagination from './Pagination'
 import { useSearchParams } from 'next/navigation'
 import { useGroceryPaginatedUser } from '../hooks/useGroceryPaginated'
@@ -16,15 +16,19 @@ const GrocerySection = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const searchParams = useSearchParams()
     const q = searchParams.get('q') || ''
-    const { data, isFetching } = useGroceryPaginatedUser(currentPage, q)
+    const { data, isFetching } = useGroceryPaginatedUser(currentPage, q, selectedCategory || undefined)
     const groceries = data?.groceries ?? []
     const totalPages = data?.pagination?.totalPages ?? 1
     const totalItems = data?.pagination?.totalItems ?? 0
 
-    const filteredGroceryList = useMemo(() => {
-        if (!selectedCategory) return groceries
-        return groceries?.filter((item: IGrocery) => item?.category === selectedCategory)
-    }, [selectedCategory, groceries])
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [q])
+
+    const handleSelectCategory = (category: string) => {
+        setCurrentPage(1)
+        setSelectedCategory(category)
+    }
 
     const handlePrevPage = () => {
         if (currentPage > 1) {
@@ -40,7 +44,7 @@ const GrocerySection = () => {
 
     return (
         <>
-            <CategorySilder selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
+            <CategorySilder selectedCategory={selectedCategory} onSelectCategory={handleSelectCategory} />
 
             {/* Grocery List Items */}
             <div className='w-[90%] md:w-[80%] mt-10 mx-auto'>
@@ -55,8 +59,8 @@ const GrocerySection = () => {
                 ) : (
                     <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-10 w-full'>
                         <AnimatePresence mode='popLayout' initial={false} key={selectedCategory}>
-                            {filteredGroceryList?.length > 0 ? (
-                                filteredGroceryList?.map((item: IGrocery) => (
+                            {groceries?.length > 0 ? (
+                                groceries?.map((item: IGrocery) => (
                                     <GroceryItemCard key={item?._id.toString()} groceries={item} />
                                 ))
                             ) : (
