@@ -76,19 +76,21 @@ io.on("connection", (socket) => {
   })
 
   socket.on("disconnect", async (reason) => {
+    if (!socket.userId) return
+
     try {
       const res = await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/disconnect`, {
-        userId: socket?.userId
+        userId: socket.userId,
+        socketId: socket.id,
       }, internalHeaders)
-      const { name, role } = res.data?.user || {}
 
-      // ✅ THÊM: broadcast cho tất cả client
-      if (socket.userId) {
-        io.emit('user-status-updated', { userId: socket.userId, isOnline: false, name, role })
-      }
+      // Bỏ qua socket cũ sau reload/reconnect — user đã online với socket mới
+      if (res.data?.stale) return
+
+      const { name, role } = res.data?.user || {}
+      io.emit('user-status-updated', { userId: socket.userId, isOnline: false, name, role })
     } catch (error) {
       console.error('❌ Disconnect error:', error.message);
-
     }
   });
 
