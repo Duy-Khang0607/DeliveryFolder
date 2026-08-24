@@ -103,7 +103,6 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
     const { userId, isOnline, name, role } = data
     const displayName = name || `#${userId.slice(-6)}`
     const config = ROLE_CONFIG[role || ''] || { label: 'User', color: 'text-blue-200' }
-    console.log({data})
     if (data) {
       showToast(
         <div className="flex flex-col leading-tight text-green-700">

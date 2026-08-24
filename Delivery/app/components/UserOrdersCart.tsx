@@ -1,6 +1,6 @@
 'use client'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, Box, CardSim, CheckCircle, ChevronDown, ChevronUp, Loader2, LocationEdit, Package, Phone, RefreshCw, TicketCheck, Truck, User, X, XCircle } from 'lucide-react'
+import { AlertTriangle, Box, CardSim, CheckCircle, ChevronDown, ChevronUp, CreditCard, Loader2, LocationEdit, Package, Phone, RefreshCw, TicketCheck, Truck, User, X, XCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import PopupImage from '../HOC/PopupImage'
@@ -23,6 +23,9 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
     const [expand, setExpand] = useState(false)
     const [isOpenImage, setOpenImage] = useState(false)
     const [status, setStatus] = useState<string>(orders?.status || '')
+    const [paymentMethod, setPaymentMethod] = useState(orders?.paymentMethod || 'cod')
+    const [isPaid, setIsPaid] = useState(Boolean(orders?.isPaid))
+    const [payOnlineLoading, setPayOnlineLoading] = useState(false)
     const router = useRouter()
     const [showConfirmCancel, setShowConfirmCancel] = useState(false)
     const [reorderLoading, setReorderLoading] = useState(false)
@@ -33,6 +36,25 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
     const { showToast } = useToast()
 
     const dispatch = useDispatch<AppDispatch>()
+
+    const handlePayOnline = async () => {
+        setPayOnlineLoading(true)
+        try {
+            const res = await axios.post(
+                `/api/auth/user/orders/${orders?._id}/change-payment-method`,
+                { targetMethod: 'online' }
+            )
+            if (res?.data?.url) {
+                window.location.href = res.data.url
+                return
+            }
+            showToast('Failed to create payment session', 'error')
+        } catch (error: any) {
+            showToast(error?.response?.data?.message || 'Failed to switch to online payment', 'error')
+        } finally {
+            setPayOnlineLoading(false)
+        }
+    }
 
     const handleCancel = async (orderId: string) => {
         try {
@@ -96,10 +118,20 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                 setStatus((prev) => prev === data?.status ? prev : data?.status)
             }
         }
+
+        const handlePaymentUpdate = (data: any) => {
+            if (data?.orderId?.toString() === orders?._id.toString()) {
+                if (data?.paymentMethod) setPaymentMethod(data.paymentMethod)
+                if (typeof data?.isPaid === 'boolean') setIsPaid(data.isPaid)
+            }
+        }
+
         socket?.on('order-status-updated', handleStatusUpdate)
+        socket?.on('order-payment-updated', handlePaymentUpdate)
 
         return () => {
             socket?.off('order-status-updated', handleStatusUpdate)
+            socket?.off('order-payment-updated', handlePaymentUpdate)
         }
 
     }, [orders?._id])
@@ -130,8 +162,8 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
 
                 <div className='flex flex-row items-center gap-2 flex-wrap justify-end'>
                     {status !== 'Delivered' && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${orders?.isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                            {orders?.isPaid ? 'Paid' : 'Unpaid'}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                            {isPaid ? 'Paid' : 'Unpaid'}
                         </span>
                     )}
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${styleStatus}`}>
@@ -144,9 +176,24 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
             <div className='p-4 flex flex-col gap-3 flex-1'>
                 {/* Order info */}
                 <div className='flex flex-col gap-2'>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-2 flex-wrap'>
                         <CardSim className='w-4 h-4 text-gray-400 shrink-0' />
-                        <span className='text-sm text-gray-700'>{orders?.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}</span>
+                        <span className='text-sm text-gray-700'>
+                            {paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}
+                        </span>
+                        {status === 'Pending' && paymentMethod === 'cod' && !isPaid && (
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                disabled={payOnlineLoading}
+                                onClick={handlePayOnline}
+                                className='inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
+                            >
+                                {payOnlineLoading
+                                    ? <Loader2 className='w-3 h-3 animate-spin' />
+                                    : <CreditCard className='w-3 h-3' />}
+                                Pay Online
+                            </motion.button>
+                        )}
                     </div>
                     <div className='flex items-start gap-2'>
                         <LocationEdit className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />

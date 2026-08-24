@@ -77,15 +77,28 @@ const ManageUsers = () => {
         }
     }
 
-    const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean }) => {
+    const handleUserStatusUpdated = (data: { userId: string, isOnline: boolean, name: string, role: string }) => {
         queryClient.invalidateQueries({ queryKey: ['users', 'pagination'] })
 
-        const { userId, isOnline } = data
+        const { userId, isOnline, name, role } = data
 
-        const idUser = userId.toString().slice(-6)
+        const displayName = name || `#${userId?.toString().slice(-6)}`
 
-        if (data) showToast(`User ${idUser} ${isOnline ? 'Online' : 'Offline'}`, isOnline ? 'success' : 'warning')
+        const config = ROLE_CONFIG[role || ''] || { label: 'User', color: 'text-blue-200' }
 
+        if (data) showToast(
+            <div className="flex flex-col leading-tight text-green-700">
+                <span className="font-bold text-sm">{displayName}</span>
+                <span className="flex items-center gap-1">
+                    {config.label} ·
+                    {isOnline
+                        ? <><Wifi className='w-4 h-4 font-bold text-green-700' /> Online</>
+                        : <><WifiOff className='w-4 h-4 font-bold text-red-700' /> Offline</>
+                    }
+                </span>
+            </div>,
+            isOnline ? 'success' : 'error'
+        )
     }
 
     useEffect(() => {

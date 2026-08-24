@@ -55,6 +55,8 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
     const [isOpenImage, setOpenImage] = useState(false)
     const statusPayment = ['Out of delivery', 'Pending', 'Cancelled']
     const [status, setStatus] = useState<string>('Pending')
+    const [isPaid, setIsPaid] = useState(Boolean(orders?.isPaid))
+    const [paymentMethod, setPaymentMethod] = useState(orders?.paymentMethod ?? 'cod')
     const [loading, setLoading] = useState(false)
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [assigning, setAssigning] = useState<string | null>(null)
@@ -111,6 +113,11 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
         setStatus(orders?.status)
     }, [orders?.status])
 
+    useEffect(() => {
+        setIsPaid(Boolean(orders?.isPaid))
+        setPaymentMethod(orders?.paymentMethod ?? 'cod')
+    }, [orders?.isPaid, orders?.paymentMethod])
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -132,8 +139,8 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
 
                 <div className='flex flex-row items-center gap-2 flex-wrap justify-end'>
                     {status !== 'Delivered' && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${orders?.isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                            {orders?.isPaid ? 'Paid' : 'Unpaid'}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                            {isPaid ? 'Paid' : 'Unpaid'}
                         </span>
                     )}
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${styleStatus}`}>
@@ -180,7 +187,7 @@ const AdminOrdersCart = ({ orders, handleStatusChange }: AdminOrderProps) => {
                     </div>
                     <div className='flex items-center gap-2'>
                         <CardSim className='w-4 h-4 text-gray-400 shrink-0' />
-                        <span className='text-sm text-gray-700'>{orders?.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}</span>
+                        <span className='text-sm text-gray-700'>{paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}</span>
                     </div>
                     <div className='flex items-start gap-2'>
                         <LocationEdit className='w-4 h-4 text-gray-400 shrink-0 mt-0.5' />

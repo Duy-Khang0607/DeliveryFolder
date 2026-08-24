@@ -18,17 +18,36 @@ const OrderSuccessContent = () => {
 
     useEffect(() => {
         const finalizeOrder = async () => {
-            try {
-                if (sessionId) {
-                    await axios.post('/api/auth/user/stripe/confirm-payment', { sessionId })
+            const maxRetries = 3
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    if (sessionId) {
+                        await axios.post('/api/auth/user/stripe/confirm-payment', { sessionId })
+                    }
+                    break
+                } catch (error: unknown) {
+                    const status = axios.isAxiosError(error) ? error.response?.status : undefined
+                    const message = axios.isAxiosError(error)
+                        ? String(error.response?.data?.message ?? '')
+                        : ''
+                    const isRetryable =
+                        (status === 409 ||
+                            (status === 400 && message === 'Payment not completed')) &&
+                        attempt < maxRetries - 1
+
+                    if (!isRetryable) {
+                        console.error('Failed to confirm online payment:', error)
+                        break
+                    }
+
+                    await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)))
                 }
-            } catch (error) {
-                console.error('Failed to confirm online payment:', error)
-            } finally {
-                dispatch(clearCart())
-                queryClient.invalidateQueries({ queryKey: ['grocery'] })
-                queryClient.invalidateQueries({ queryKey: ['orders'] })
             }
+
+            dispatch(clearCart())
+            queryClient.invalidateQueries({ queryKey: ['grocery'] })
+            queryClient.invalidateQueries({ queryKey: ['orders'] })
         }
 
         finalizeOrder()

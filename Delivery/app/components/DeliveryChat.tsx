@@ -132,7 +132,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
 
 
     return (
-        <div className='w-full rounded-md shadow-md border border-gray-300 p-4 overflow-hidden h-full mt-5 relative'>
+        <div className='w-full rounded-md shadow-md border border-gray-300 p-4 overflow-hidden h-full relative mt-0'>
             {loading ? (
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}

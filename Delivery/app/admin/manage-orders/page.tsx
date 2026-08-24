@@ -38,14 +38,27 @@ const ManageOrders = () => {
     const totalItems = data?.pagination?.totalItems ?? 0
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
-        // Update cache trực tiếp thay vì setOrders
         queryClient.setQueryData(
-            ['orders', 'pagination', currentPage],
+            ['orders', 'pagination', currentPage, status, debouncedSearch],
             (oldData: any) => ({
                 ...oldData,
                 orders: oldData?.orders?.map((order: IOrder) =>
                     order?._id?.toString() === orderId
                         ? { ...order, status: newStatus as IOrder['status'] }
+                        : order
+                )
+            })
+        )
+    }
+
+    const handlePaymentChange = (orderId: string, payment: { paymentMethod?: IOrder['paymentMethod']; isPaid?: boolean }) => {
+        queryClient.setQueryData(
+            ['orders', 'pagination', currentPage, status, debouncedSearch],
+            (oldData: any) => ({
+                ...oldData,
+                orders: oldData?.orders?.map((order: IOrder) =>
+                    order?._id?.toString() === orderId
+                        ? { ...order, ...payment }
                         : order
                 )
             })
@@ -85,18 +98,36 @@ const ManageOrders = () => {
             queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
         }
 
+        const handleOrderPaymentUpdated = (data: {
+            orderId?: string
+            paymentMethod?: IOrder['paymentMethod']
+            isPaid?: boolean
+        }) => {
+            console.log({data})
+            if (data?.orderId) {
+                handlePaymentChange(data.orderId.toString(), {
+                    paymentMethod: data.paymentMethod,
+                    isPaid: data.isPaid,
+                })
+            } else {
+                queryClient.invalidateQueries({ queryKey: ['orders', 'pagination'] })
+            }
+        }
+
         socket?.on('new-order', handleNewOrder)
         socket?.on('order-assigned', handleOrderAssigned)
         socket?.on('order-status-updated', handleOrderStatusUpdated)
+        socket?.on('order-payment-updated', handleOrderPaymentUpdated)
         socket?.on('all-rejected', handleAllRejected)
 
         return () => {
             socket?.off('new-order', handleNewOrder)
             socket?.off('order-assigned', handleOrderAssigned)
             socket?.off('order-status-updated', handleOrderStatusUpdated)
+            socket?.off('order-payment-updated', handleOrderPaymentUpdated)
             socket?.off('all-rejected', handleAllRejected)
         }
-    }, [queryClient]) // thêm queryClient vào dependency
+    }, [queryClient, currentPage, status, debouncedSearch, showToast])
 
     useEffect(() => {
         setCurrentPage(1)

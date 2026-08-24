@@ -194,8 +194,20 @@ const Checkout = () => {
                 idempotencyKey: idempotencyKeyState,
                 couponCode: coupon?.code ?? null,
             });
+
+            if (res?.data?.alreadyPaid) {
+                queryClient.invalidateQueries({ queryKey: ['orders'] })
+                router.push('/user/my-orders')
+                return
+            }
+
+            if (!res?.data?.url) {
+                toast.showToast('Failed to create payment session', 'error')
+                return
+            }
+
             setPay(false)
-            window.location.href = res?.data.url
+            window.location.href = res.data.url
         } catch (error: any) {
             toast.showToast(error?.response?.data?.message || 'Failed to pay online !', 'error');
         } finally {
