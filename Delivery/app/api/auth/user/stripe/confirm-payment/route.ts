@@ -1,10 +1,13 @@
+import { NextRequest, NextResponse } from "next/server";
+
+// Stripe đã chuyển sang xGate — giữ code cũ để tham khảo
+/*
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { createOrderFromPendingCheckout } from "@/app/lib/createOrderFromPendingCheckout";
 import { fulfillExistingOrderPayment } from "@/app/lib/fulfillExistingOrderPayment";
 import { fulfillOnlineOrder } from "@/app/lib/fulfillOnlineOrder";
 import Orders from "@/app/models/orders.model";
-import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -101,4 +104,12 @@ export async function POST(req: NextRequest) {
         console.error("CONFIRM PAYMENT ERROR:", error);
         return NextResponse.json({ success: false, message: "Failed to confirm payment" }, { status: 500 });
     }
+}
+*/
+
+export async function POST(_req: NextRequest) {
+    return NextResponse.json(
+        { success: false, message: "Stripe payment is disabled. Use xGate." },
+        { status: 410 }
+    );
 }

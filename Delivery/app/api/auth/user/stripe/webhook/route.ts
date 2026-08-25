@@ -1,10 +1,13 @@
+import { NextRequest, NextResponse } from "next/server";
+
+// Stripe đã chuyển sang xGate — giữ code cũ để tham khảo
+/*
 import { createOrderFromPendingCheckout } from "@/app/lib/createOrderFromPendingCheckout";
 import { fulfillExistingOrderPayment } from "@/app/lib/fulfillExistingOrderPayment";
 import { fulfillOnlineOrder } from "@/app/lib/fulfillOnlineOrder";
 import connectDB from "@/app/lib/db";
 import Orders from "@/app/models/orders.model";
 import PendingCheckout from "@/app/models/pendingCheckout.model";
-import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -80,4 +83,9 @@ export async function POST(req: NextRequest) {
         console.error({ error });
         return NextResponse.json({ error: "Webhook signature verification failed" }, { status: 500 });
     }
+}
+*/
+
+export async function POST(_req: NextRequest) {
+    return NextResponse.json({ error: "Stripe webhook is disabled. Use xGate." }, { status: 410 });
 }
