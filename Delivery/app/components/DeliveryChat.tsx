@@ -25,28 +25,28 @@ type IProps = {
 const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
     const [newMessage, setNewMessage] = useState('');
     const [message, setMessage] = useState<IMessage[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [isFetchingMessages, setIsFetchingMessages] = useState(false);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const messagesRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const { showToast } = useToast();
 
     useEffect(() => {
-        if (messagesRef.current && !loading) {
+        if (messagesRef.current && !isFetchingMessages) {
             messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
         }
-    }, [message, loading]);
+    }, [message, isFetchingMessages]);
 
-    const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+
         try {
-            setLoading(true);
-            e.preventDefault();
-            if (!newMessage.trim()) return;
-
             const socket = getSocket()
             const messageData = {
                 roomId: orderId.toString(),
-                text: newMessage,
+                text: newMessage.trim(),
                 senderId: deliveryBoyId?.toString() || '',
                 time: new Date().toLocaleDateString([], {
                     hour: '2-digit',
@@ -60,14 +60,11 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
                 messageId: crypto.randomUUID(),
             }
 
-            // CHỈ EMIT message, KHÔNG listen ở đây
             socket?.emit("send-message", messageData)
             setNewMessage('')
+            requestAnimationFrame(() => inputRef.current?.focus())
         } catch (error: any) {
             showToast(error?.response?.data?.message || 'Failed to send message !', 'error');
-            setLoading(false);
-        } finally {
-            setLoading(false);
         }
     }
 
@@ -75,16 +72,15 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
         if (!orderId) return;
 
         try {
-            setLoading(true);
+            setIsFetchingMessages(true);
             const res = await axios.post(`/api/chat/messages`, { roomId: orderId.toString() })
             if (res?.data?.success) {
                 setMessage(res?.data?.messages)
             }
         } catch (error: any) {
             showToast(error?.response?.data?.message || 'Failed to fetch messages !', 'error');
-            setLoading(false);
         } finally {
-            setLoading(false);
+            setIsFetchingMessages(false);
         }
     }
 
@@ -133,7 +129,7 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
 
     return (
         <div className='w-full rounded-md shadow-md border border-gray-300 p-4 overflow-hidden h-full relative mt-0'>
-            {loading ? (
+            {isFetchingMessages ? (
                 <motion.div
                     initial={{ y: 40, opacity: 0 }}
                     animate={{ y: [0, -10, 0], opacity: 1 }}
@@ -234,8 +230,22 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
                     <div className='w-full mt-auto flex flex-col gap-4'>
                         <div className='w-full border border-gray-300/50'></div>
                         <form className='w-full flex flex-row items-center justify-center gap-2' onSubmit={sendMessage}>
-                            <input type="text" placeholder='Your message' className='w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300' value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
-                            <button aria-label="Send message" disabled={newMessage.length === 0} className={`w-auto text-white rounded-md p-2 transition-all duration-300 ${newMessage.length > 0 ? 'bg-green-700 hover:bg-green-800 cursor-pointer' : 'bg-gray-500 cursor-not-allowed'}`}>
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                enterKeyHint="send"
+                                placeholder='Your message'
+                                className='w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300'
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                            />
+                            <button
+                                type="submit"
+                                aria-label="Send message"
+                                disabled={newMessage.length === 0}
+                                onPointerDown={(e) => e.preventDefault()}
+                                className={`w-auto text-white rounded-md p-2 transition-all duration-300 ${newMessage.length > 0 ? 'bg-green-700 hover:bg-green-800 cursor-pointer' : 'bg-gray-500 cursor-not-allowed'}`}
+                            >
                                 <Send className='w-5 h-5' />
                             </button>
                         </form>
@@ -248,3 +258,4 @@ const DeliveryChat = ({ orderId, deliveryBoyId, role }: IProps) => {
 }
 
 export default DeliveryChat
+
