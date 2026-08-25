@@ -40,7 +40,7 @@ export async function fulfillExistingOrderPayment(
     if (order.paymentMethod === "cod" && paid) {
         const updated = await Orders.findByIdAndUpdate(
             orderId,
-            { paymentMethod: "online", stripeSessionUrl: null },
+            { paymentMethod: "online", stripeSessionUrl: null, paymentQrUrl: null, transferCode: null },
             { new: true }
         );
         const finalOrder = updated || order;
@@ -54,7 +54,13 @@ export async function fulfillExistingOrderPayment(
 
     const updated = await Orders.findByIdAndUpdate(
         orderId,
-        { paymentMethod: "online", isPaid: true, stripeSessionUrl: null },
+        {
+            paymentMethod: "online",
+            isPaid: true,
+            stripeSessionUrl: null,
+            paymentQrUrl: null,
+            transferCode: null,
+        },
         { new: true }
     );
 

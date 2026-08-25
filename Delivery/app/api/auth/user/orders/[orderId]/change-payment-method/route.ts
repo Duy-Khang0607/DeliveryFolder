@@ -1,11 +1,10 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
+import { buildOrderTransferCode } from "@/app/lib/xgate/buildTransferCode";
+import { CHECKOUT_EXPIRES_MINUTES } from "@/app/lib/xgate/config";
+import { buildVietQrUrl } from "@/app/lib/xgate/generateVietQR";
 import Orders from "@/app/models/orders.model";
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const CHECKOUT_EXPIRES_MINUTES = 30;
 
 type RouteContext = { params: Promise<{ orderId: string }> };
 
@@ -48,7 +47,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
             );
         }
 
-        // COD → Online
         if (targetMethod === "online") {
             if (order.paymentMethod !== "cod" || order.isPaid) {
                 return NextResponse.json(
@@ -57,47 +55,45 @@ export async function POST(req: NextRequest, context: RouteContext) {
                 );
             }
 
-            if (order.stripeSessionUrl) {
-                return NextResponse.json({ url: order.stripeSessionUrl }, { status: 200 });
+            if (order.paymentQrUrl && order.transferCode) {
+                const expiresAt = new Date(Date.now() + CHECKOUT_EXPIRES_MINUTES * 60 * 1000);
+                return NextResponse.json(
+                    {
+                        orderId: order._id.toString(),
+                        qrUrl: order.paymentQrUrl,
+                        transferCode: order.transferCode,
+                        amount: order.totalAmount,
+                        expiresAt,
+                    },
+                    { status: 200 }
+                );
             }
 
-            const expiresAt = Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRES_MINUTES * 60;
-
-            const stripeSession = await stripe.checkout.sessions.create(
-                {
-                    payment_method_types: ["card"],
-                    mode: "payment",
-                    success_url: `${process.env.NEXT_BASE_URL}/user/order-success?session_id={CHECKOUT_SESSION_ID}`,
-                    cancel_url: `${process.env.NEXT_BASE_URL}/user/my-orders`,
-                    expires_at: expiresAt,
-                    line_items: [
-                        {
-                            price_data: {
-                                currency: "vnd",
-                                product_data: {
-                                    name: `Order #${order._id.toString().slice(-6)}`,
-                                },
-                                unit_amount: Math.round(order.totalAmount),
-                            },
-                            quantity: 1,
-                        },
-                    ],
-                    metadata: {
-                        orderId: order._id.toString(),
-                        purpose: "change_to_online",
-                    },
-                },
-                { idempotencyKey: `change-to-online-${order._id.toString()}-${Date.now()}` }
-            );
+            const transferCode = buildOrderTransferCode(order._id.toString());
+            const qrUrl = buildVietQrUrl({
+                amount: order.totalAmount,
+                description: transferCode,
+            });
+            const expiresAt = new Date(Date.now() + CHECKOUT_EXPIRES_MINUTES * 60 * 1000);
 
             await Orders.findByIdAndUpdate(order._id, {
-                stripeSessionUrl: stripeSession.url,
+                transferCode,
+                paymentQrUrl: qrUrl,
+                stripeSessionUrl: null,
             });
 
-            return NextResponse.json({ url: stripeSession.url }, { status: 200 });
+            return NextResponse.json(
+                {
+                    orderId: order._id.toString(),
+                    qrUrl,
+                    transferCode,
+                    amount: order.totalAmount,
+                    expiresAt,
+                },
+                { status: 200 }
+            );
         }
 
-        // Online (unpaid) → COD — edge case đơn cũ
         if (targetMethod === "cod") {
             if (order.paymentMethod !== "online" || order.isPaid) {
                 return NextResponse.json(
@@ -108,7 +104,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
             const updated = await Orders.findByIdAndUpdate(
                 orderId,
-                { paymentMethod: "cod", stripeSessionUrl: null },
+                {
+                    paymentMethod: "cod",
+                    stripeSessionUrl: null,
+                    paymentQrUrl: null,
+                    transferCode: null,
+                },
                 { new: true }
             );
 

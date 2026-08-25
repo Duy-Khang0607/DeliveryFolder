@@ -3,9 +3,8 @@ import Orders from "../models/orders.model"
 import AdminDashboardClient from "./AdminDashboardClient"
 import Users from "../models/user.model"
 import Groceries from "../models/grocery.model"
-import { Box, Truck } from "lucide-react"
+import { Box, Truck, Banknote } from "lucide-react"
 import { User } from "lucide-react"
-import { DollarSign } from "lucide-react"
 import { IOrder } from "../models/orders.model"
 
 const AdminDashboard = async () => {
@@ -51,7 +50,7 @@ const AdminDashboard = async () => {
     { title: "Total Orders", value: totalOrders, icon: <Box className='w-5 h-5 text-green-700' /> },
     { title: "Total Customers", value: totalCustomer, icon: <User className='w-5 h-5 text-green-700' /> },
     { title: "Pending Deliveries", value: pendingDeliveries, icon: <Truck className='w-5 h-5 text-green-700' /> },
-    { title: "Total Revenue", value: totalRevenue, icon: <DollarSign className='w-5 h-5 text-green-700' /> },
+    { title: "Total Revenue", value: totalRevenue, icon: <Banknote className='w-5 h-5 text-green-700' /> },
   ]
 
   const formatOrdersData = JSON.parse(JSON.stringify(orders))

@@ -44,8 +44,8 @@ const UserOrdersCart = ({ orders }: UserOrderProps) => {
                 `/api/auth/user/orders/${orders?._id}/change-payment-method`,
                 { targetMethod: 'online' }
             )
-            if (res?.data?.url) {
-                window.location.href = res.data.url
+            if (res?.data?.orderId) {
+                router.push(`/user/payment/order/${res.data.orderId}`)
                 return
             }
             showToast('Failed to create payment session', 'error')

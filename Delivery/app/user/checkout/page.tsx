@@ -201,13 +201,13 @@ const Checkout = () => {
                 return
             }
 
-            if (!res?.data?.url) {
+            if (!res?.data?.pendingCheckoutId) {
                 toast.showToast('Failed to create payment session', 'error')
                 return
             }
 
             setPay(false)
-            window.location.href = res.data.url
+            router.push(`/user/payment/pending/${res.data.pendingCheckoutId}`)
         } catch (error: any) {
             toast.showToast(error?.response?.data?.message || 'Failed to pay online !', 'error');
         } finally {
@@ -442,7 +442,7 @@ const Checkout = () => {
                         {/* Online */}
                         <div onClick={() => setPaymentMethod('online')} className={`w-full border border-gray-300 rounded-md p-2 flex flex-row items-center gap-2 hover:bg-green-200 transition-all duration-200 hover:border-green-600 cursor-pointer ${paymentMethod === 'online' ? 'bg-green-200' : 'bg-white'}`}>
                             <CreditCard className='w-5 h-5 text-green-700' />
-                            <span className='text-base text-black'>Pay Online (stripe)</span>
+                            <span className='text-base text-black'>Pay Online</span>
                         </div>
 
                         {/* Delivery */}

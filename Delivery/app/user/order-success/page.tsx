@@ -6,7 +6,6 @@ import { Suspense, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import axios from 'axios'
 import { clearCart } from '@/app/redux/cartSlice'
 import ButtonHome from '@/app/components/ButtonHome'
 
@@ -14,44 +13,13 @@ const OrderSuccessContent = () => {
     const dispatch = useDispatch()
     const queryClient = useQueryClient()
     const searchParams = useSearchParams()
-    const sessionId = searchParams.get('session_id')
+    const isOnlinePayment = searchParams.get('payment') === 'online'
 
     useEffect(() => {
-        const finalizeOrder = async () => {
-            const maxRetries = 3
-
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
-                try {
-                    if (sessionId) {
-                        await axios.post('/api/auth/user/stripe/confirm-payment', { sessionId })
-                    }
-                    break
-                } catch (error: unknown) {
-                    const status = axios.isAxiosError(error) ? error.response?.status : undefined
-                    const message = axios.isAxiosError(error)
-                        ? String(error.response?.data?.message ?? '')
-                        : ''
-                    const isRetryable =
-                        (status === 409 ||
-                            (status === 400 && message === 'Payment not completed')) &&
-                        attempt < maxRetries - 1
-
-                    if (!isRetryable) {
-                        console.error('Failed to confirm online payment:', error)
-                        break
-                    }
-
-                    await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)))
-                }
-            }
-
-            dispatch(clearCart())
-            queryClient.invalidateQueries({ queryKey: ['grocery'] })
-            queryClient.invalidateQueries({ queryKey: ['orders'] })
-        }
-
-        finalizeOrder()
-    }, [dispatch, queryClient, sessionId])
+        dispatch(clearCart())
+        queryClient.invalidateQueries({ queryKey: ['grocery'] })
+        queryClient.invalidateQueries({ queryKey: ['orders'] })
+    }, [dispatch, queryClient])
 
     return (
         <section className='w-[90%] sm:w-[85%] md:w-[80%] mx-auto h-full pt-10'>
@@ -92,7 +60,7 @@ const OrderSuccessContent = () => {
                     transition={{ duration: 0.4 }}
                     className='text-4xl font-extrabold text-green-700'
                 >
-                    Order Placed Successfully
+                    {isOnlinePayment ? 'Thanh toán thành công!' : 'Order Placed Successfully'}
                 </motion.h1>
 
                 <motion.p
@@ -101,7 +69,11 @@ const OrderSuccessContent = () => {
                     transition={{ duration: 0.4 }}
                     className='text-base w-full max-w-2xl'
                 >
-                    Thank you for shopping with us! Your order has been placed and is being processed. You can track its progress in your <strong>My Orders</strong> section
+                    {isOnlinePayment
+                        ? 'Cảm ơn bạn! Chuyển khoản đã được xác nhận và đơn hàng đang được xử lý. Bạn có thể theo dõi tại '
+                        : 'Thank you for shopping with us! Your order has been placed and is being processed. You can track its progress in your '}
+                    <strong>My Orders</strong>
+                    {isOnlinePayment ? '.' : ' section'}
                 </motion.p>
 
                 <motion.div
@@ -126,7 +98,7 @@ const OrderSuccessContent = () => {
                         href="/user/my-orders"
                         className='text-white bg-green-700 p-2 rounded-lg hover:bg-green-500 transition-all duration-300 cursor-pointer flex flex-row items-center gap-2 justify-center'
                     >
-                        Go to My Orders  <MoveRight className='w-5 h-5' />
+                        {isOnlinePayment ? 'Xem đơn hàng' : 'Go to My Orders'}  <MoveRight className='w-5 h-5' />
                     </Link>
                 </motion.div>
             </section>

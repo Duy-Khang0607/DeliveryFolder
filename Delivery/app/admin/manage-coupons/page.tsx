@@ -11,6 +11,7 @@ import { useToast } from '@/app/components/Toast'
 import { useRouter } from 'next/navigation'
 import { ICoupon } from '@/app/models/coupon.model'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { formatVnd } from '@/app/lib/currency'
 
 // ─── Types ───────────────────────────────────────────────────
 interface CouponForm {
@@ -124,19 +125,19 @@ const CouponFormModal = ({
                                 onChange={e => set('discountType', e.target.value)}
                             >
                                 <option value='percentage'>Percentage (%)</option>
-                                <option value='fixed'>Fixed ($)</option>
+                                <option value='fixed'>Fixed (VND)</option>
                             </select>
                         </div>
                         <div>
                             <label className={labelClass}>
-                                Value * {form.discountType === 'percentage' ? '(%)' : '($)'}
+                                Value * {form.discountType === 'percentage' ? '(%)' : '(VND)'}
                             </label>
                             <input
                                 type='number'
                                 min={0}
                                 max={form.discountType === 'percentage' ? 100 : undefined}
                                 className={inputClass}
-                                placeholder={form.discountType === 'percentage' ? '10' : '5'}
+                                placeholder={form.discountType === 'percentage' ? '10' : '50000'}
                                 value={form.discountValue}
                                 onChange={e => set('discountValue', e.target.value)}
                             />
@@ -146,7 +147,7 @@ const CouponFormModal = ({
                     {/* Min order + max uses */}
                     <div className='grid grid-cols-2 gap-3'>
                         <div>
-                            <label className={labelClass}>Min Order ($)</label>
+                            <label className={labelClass}>Min Order (VND)</label>
                             <input
                                 type='number'
                                 min={0}
@@ -410,7 +411,7 @@ const ManageCoupons = () => {
                                                         : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                                     {coupon.discountType === 'percentage'
                                                         ? <><Percent className='w-3 h-3' /> {coupon.discountValue}% off</>
-                                                        : <>${coupon.discountValue} off</>}
+                                                        : <>{formatVnd(Number(coupon.discountValue))} off</>}
                                                 </span>
 
                                                 {/* Status badge */}
@@ -458,7 +459,7 @@ const ManageCoupons = () => {
                                         {/* Row 2: metadata */}
                                         <div className='flex flex-wrap items-center gap-3 text-xs text-gray-500'>
                                             {coupon.minOrderAmount > 0 && (
-                                                <span>Min order: <strong className='text-gray-700'>${coupon.minOrderAmount}</strong></span>
+                                                <span>Min order: <strong className='text-gray-700'>{formatVnd(coupon.minOrderAmount)}</strong></span>
                                             )}
                                             {coupon.expiresAt && (
                                                 <span className='flex items-center gap-1'>

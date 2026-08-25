@@ -1,5 +1,5 @@
 'use client'
-import { BadgePlus, Loader2, Package, User, Plus, Box, DollarSign, Loader } from 'lucide-react'
+import { BadgePlus, Loader2, Package, User, Plus, Box, Banknote, Loader } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import axios from 'axios'
@@ -62,7 +62,7 @@ const AddGrocery = () => {
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/,/g, '') // bỏ dấu phẩy cũ
     if (!/^\d*$/.test(raw)) return              // chỉ cho nhập số
-    const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
+    const formatted = raw ? Number(raw).toLocaleString('vi-VN') : ''
     setPrice(formatted)
   }
 
@@ -182,12 +182,12 @@ const AddGrocery = () => {
               {/* Price */}
               <div>
                 <label className={labelClass}>
-                  <DollarSign className='w-3.5 h-3.5' /> Price
+                  <Banknote className='w-3.5 h-3.5' /> Price (VND)
                 </label>
                 <div className='relative'>
                   <input
                     type="text"
-                    placeholder='Enter price'
+                    placeholder='Nhập giá (VND)'
                     className={`${inputClass} pr-10`}
                     value={price} onChange={handlePriceChange}
                   />

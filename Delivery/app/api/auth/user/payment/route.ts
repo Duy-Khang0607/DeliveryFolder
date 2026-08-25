@@ -1,16 +1,15 @@
 import { auth } from "@/app/auth";
 import connectDB from "@/app/lib/db";
 import { calculateDeliveryPricing } from "@/app/lib/deliveryPricing";
+import { buildPendingTransferCode } from "@/app/lib/xgate/buildTransferCode";
+import { CHECKOUT_EXPIRES_MINUTES } from "@/app/lib/xgate/config";
+import { buildVietQrUrl } from "@/app/lib/xgate/generateVietQR";
 import Coupon from "@/app/models/coupon.model";
 import Grocery from "@/app/models/grocery.model";
 import Orders from "@/app/models/orders.model";
 import PendingCheckout from "@/app/models/pendingCheckout.model";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const CHECKOUT_EXPIRES_MINUTES = 30;
 
 export async function POST(req: NextRequest) {
     try {
@@ -60,8 +59,17 @@ export async function POST(req: NextRequest) {
                 idempotencyKey,
                 status: "pending",
             });
-            if (existingPending?.stripeSessionUrl) {
-                return NextResponse.json({ url: existingPending.stripeSessionUrl }, { status: 200 });
+            if (existingPending?.qrUrl && existingPending._id) {
+                return NextResponse.json(
+                    {
+                        pendingCheckoutId: existingPending._id.toString(),
+                        qrUrl: existingPending.qrUrl,
+                        transferCode: existingPending.transferCode,
+                        amount: existingPending.totalAmount,
+                        expiresAt: existingPending.expiresAt,
+                    },
+                    { status: 200 }
+                );
             }
 
             const completedPending = await PendingCheckout.findOne({
@@ -147,38 +155,29 @@ export async function POST(req: NextRequest) {
             expiresAt,
         });
 
-        const stripeSession = await stripe.checkout.sessions.create(
-            {
-                payment_method_types: ["card"],
-                mode: "payment",
-                success_url: `${process.env.NEXT_BASE_URL}/user/order-success?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.NEXT_BASE_URL}/user/checkout`,
-                expires_at: Math.floor(expiresAt.getTime() / 1000),
-                line_items: [
-                    {
-                        price_data: {
-                            currency: "vnd",
-                            product_data: {
-                                name: "Delivery App Order Payment",
-                            },
-                            unit_amount: Math.round(finalAmount),
-                        },
-                        quantity: 1,
-                    },
-                ],
-                metadata: { pendingCheckoutId: pendingCheckout._id.toString() },
-            },
-            idempotencyKey ? { idempotencyKey } : undefined
-        );
-
-        await PendingCheckout.findByIdAndUpdate(pendingCheckout._id, {
-            stripeSessionId: stripeSession.id,
-            stripeSessionUrl: stripeSession.url,
+        const transferCode = buildPendingTransferCode(pendingCheckout._id.toString());
+        const qrUrl = buildVietQrUrl({
+            amount: finalAmount,
+            description: transferCode,
         });
 
-        return NextResponse.json({ url: stripeSession?.url }, { status: 200 });
+        await PendingCheckout.findByIdAndUpdate(pendingCheckout._id, {
+            transferCode,
+            qrUrl,
+        });
+
+        return NextResponse.json(
+            {
+                pendingCheckoutId: pendingCheckout._id.toString(),
+                qrUrl,
+                transferCode,
+                amount: finalAmount,
+                expiresAt,
+            },
+            { status: 200 }
+        );
     } catch (error) {
-        console.error("CREATE CHECKOUT SESSION ERROR:", error);
+        console.error("CREATE XGATE CHECKOUT ERROR:", error);
         return NextResponse.json({ success: false, message: "Order Payment error" }, { status: 500 });
     }
 }

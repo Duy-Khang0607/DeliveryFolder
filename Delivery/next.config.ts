@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "www.evogennutrition.com",
       },
+      {
+        protocol: "https",
+        hostname: "qr.xgate.vn",
+      },
     ],
   },
 };

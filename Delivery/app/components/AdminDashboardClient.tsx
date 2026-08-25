@@ -6,11 +6,11 @@ import { ReactElement } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 import { getSocket } from "../lib/socket"
 import { useToast } from "./Toast"
-import { ArrowLeft, ArrowRight, Box, CheckCircle, DollarSign, Loader2, Package, TrendingUp, Truck, User, Wifi, WifiOff, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, Banknote, Box, CheckCircle, Loader2, Package, TrendingUp, Truck, User, Wifi, WifiOff, X } from "lucide-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import axios from "axios"
 import Image from "next/image"
-import { formatVndCompact } from "../lib/currency"
+import { formatVnd, formatVndCompact } from "../lib/currency"
 import { useDeliveryDashboard, useDeliveryHistory } from "../hooks/useDeliveryDashboard"
 import DeliveryHistoryModal from "./DeliveryHistoryModal"
 
@@ -49,7 +49,7 @@ const STAT_ICONS: Record<string, ReactElement> = {
   "Total Orders": <Box className='w-5 h-5 text-green-400' />,
   "Total Customers": <User className='w-5 h-5 text-green-400' />,
   "Pending Deliveries": <Truck className='w-5 h-5 text-green-400' />,
-  "Total Revenue": <DollarSign className='w-5 h-5 text-green-400' />,
+  "Total Revenue": <Banknote className='w-5 h-5 text-green-400' />,
 }
 
 const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
@@ -85,6 +85,9 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
 
   // Fetch history for selected boy
   const { data: historyData, isLoading: historyLoading } = useDeliveryHistory(selectedBoy?._id, historyPage)
+
+  const formatStatValue = (title: string, value: number) =>
+    title === "Total Revenue" ? formatVndCompact(value) : value.toLocaleString("vi-VN")
 
   const title = filter === "today" ? "Today" : filter === "sevenDays" ? "Last 7 Days" : "Total"
 
@@ -192,7 +195,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
         <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/10" />
         <p className="text-green-100 text-sm font-medium mb-1 relative">{title} Revenue</p>
         <p className="text-4xl sm:text-5xl font-extrabold text-white relative tracking-tight">
-          ${earningState[filter as keyof typeof earningState]?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+          {formatVnd(earningState[filter as keyof typeof earningState] ?? 0)}
         </p>
         <p className="text-green-100 text-xs mt-3 relative">Real-time earnings via socket</p>
       </motion.div>
@@ -214,7 +217,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs font-medium tracking-wide uppercase mb-3">{stat?.title}</p>
-                  <p className="text-3xl font-black text-white">{stat?.value}</p>
+                  <p className="text-3xl font-black text-white">{formatStatValue(stat?.title, stat?.value)}</p>
                 </div>
                 <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-800/50 text-green-400 text-lg shrink-0 shadow-lg shadow-green-500/50">
                   {stat?.icon}
@@ -361,7 +364,7 @@ const AdminDashboardClient = ({ earning, stats, chartData }: propType) => {
         image={selectedBoy?.image}
         stats={selectedBoy ? [
           { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Completed', value: selectedBoy.completedDeliveries, color: 'text-green-700 bg-green-50' },
-          { icon: <DollarSign className="w-3.5 h-3.5" />, label: 'Earnings', value: formatVndCompact(selectedBoy.totalEarnings), color: 'text-green-700 bg-green-50' },
+          { icon: <Banknote className="w-3.5 h-3.5" />, label: 'Earnings', value: formatVndCompact(selectedBoy.totalEarnings), color: 'text-green-700 bg-green-50' },
           { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Accept Rate', value: `${selectedBoy.acceptanceRate}%`, color: 'text-blue-700 bg-blue-50' },
         ] : []}
         orders={historyData?.orders ?? []}

@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { BadgePlus, DollarSign, Edit, Loader, Loader2, User, Box } from 'lucide-react'
+import { BadgePlus, Banknote, Edit, Loader, Loader2, User, Box } from 'lucide-react'
 import { useToast } from './Toast'
 import axios from 'axios'
 import { IGrocery } from '../models/grocery.model'
@@ -33,7 +33,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
     const [name, setName] = useState<string>(editItem?.name.toString() || '')
     const [category, setCategory] = useState<string>(editItem?.category.toString() || '')
     const [unit, setUnit] = useState<string>(editItem?.unit?.toString() || '')
-    const [price, setPrice] = useState<string>(editItem?.price?.toLocaleString('en-US') || '')
+    const [price, setPrice] = useState<string>(editItem?.price?.toLocaleString('vi-VN') || '')
     const [stock, setStock] = useState<number>(editItem?.stock || 0)
     const [categorySearch, setCategorySearch] = useState('')
     const [unitSearch, setUnitSearch] = useState('')
@@ -72,7 +72,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value.replace(/,/g, '') // bỏ dấu phẩy cũ
         if (!/^\d*$/.test(raw)) return              // chỉ cho nhập số
-        const formatted = raw ? Number(raw).toLocaleString('en-US') : ''
+        const formatted = raw ? Number(raw).toLocaleString('vi-VN') : ''
         setPrice(formatted)
     }
 
@@ -172,12 +172,12 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                         {/* Price */}
                         <div>
                             <label className={labelClass}>
-                                <DollarSign className='w-3.5 h-3.5' /> Price
+                                <Banknote className='w-3.5 h-3.5' /> Price (VND)
                             </label>
                             <div className='relative'>
                                 <input
                                     type="text"
-                                    placeholder='Enter price'
+                                    placeholder='Nhập giá (VND)'
                                     className={`${inputClass} pr-10`}
                                     value={price} onChange={handlePriceChange}
                                 />
@@ -187,7 +187,7 @@ const FormEditGrocery = ({ isEdit, title, description, setEdit, editItem, fetchG
                         {/* Stock */}
                         <div>
                             <label className={labelClass}>
-                                <DollarSign className='w-3.5 h-3.5' /> Stock
+                                <Box className='w-3.5 h-3.5' /> Stock
                             </label>
                             <div className='relative'>
                                 <input

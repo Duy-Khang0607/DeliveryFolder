@@ -31,6 +31,9 @@ export interface IPendingCheckout {
     idempotencyKey?: string | null;
     stripeSessionId?: string | null;
     stripeSessionUrl?: string | null;
+    transferCode?: string | null;
+    qrUrl?: string | null;
+    xgateTransactionId?: string | null;
     status: "pending" | "processing" | "completed" | "expired";
     orderId?: mongoose.Types.ObjectId | null;
     expiresAt?: Date | null;
@@ -86,6 +89,9 @@ const pendingCheckoutSchema = new mongoose.Schema<IPendingCheckout>(
         },
         stripeSessionId: { type: String, default: null },
         stripeSessionUrl: { type: String, default: null },
+        transferCode: { type: String, default: null, unique: true, sparse: true },
+        qrUrl: { type: String, default: null },
+        xgateTransactionId: { type: String, default: null },
         status: {
             type: String,
             enum: ["pending", "processing", "completed", "expired"],

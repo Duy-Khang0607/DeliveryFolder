@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { IGrocery } from '@/app/models/grocery.model'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { AlertTriangle, Box, DollarSign, Edit, Loader2, Minus, Package, Plus, Tag, Trash2, Warehouse } from 'lucide-react'
+import { AlertTriangle, Box, Banknote, Edit, Loader2, Minus, Package, Plus, Tag, Trash2, Warehouse } from 'lucide-react'
 import Image from 'next/image'
 import FormEditGrocery from '@/app/components/FormEditGrocery'
 import ButtonHome from '@/app/components/ButtonHome'
@@ -213,7 +213,7 @@ const ViewGrocery = () => {
                             {/* Price + Unit */}
                             <div className='flex items-center justify-between gap-2'>
                               <div className='flex items-center gap-1.5'>
-                                <DollarSign className='w-4 h-4 text-gray-400 shrink-0' />
+                                <Banknote className='w-4 h-4 text-gray-400 shrink-0' />
                                 <p className='text-sm font-extrabold text-green-700'>
                                   {formatVnd(Number(item?.price ?? 0))}
                                   <span className='text-xs font-medium text-gray-400 ml-1'>/ {item?.unit || '—'}</span>

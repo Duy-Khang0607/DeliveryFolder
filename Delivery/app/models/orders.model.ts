@@ -42,6 +42,9 @@ export interface IOrder {
     otpSentAt?: Date | null,
     idempotencyKey?: string | null,
     stripeSessionUrl?: string | null
+    transferCode?: string | null
+    paymentQrUrl?: string | null
+    xgateTransactionId?: string | null
     searchText: string
     couponCode?: string | null
     discountAmount?: number
@@ -137,6 +140,19 @@ const orderSchema = new mongoose.Schema<IOrder>({
     stripeSessionUrl: {
         type: String,
         default: null
+    },
+    transferCode: {
+        type: String,
+        default: null,
+        sparse: true,
+    },
+    paymentQrUrl: {
+        type: String,
+        default: null,
+    },
+    xgateTransactionId: {
+        type: String,
+        default: null,
     },
     couponCode: {
         type: String,
